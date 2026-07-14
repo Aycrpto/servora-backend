@@ -125,11 +125,23 @@ section{position:relative}
 .search select{font-weight:600;color:var(--ink2);cursor:pointer;padding-right:4px}
 .search select option{color:#0b1f17}
 .search .btn{flex:none}
-.suggest{position:absolute;top:calc(100% + 10px);left:0;right:0;background:var(--card);border:1px solid var(--line2);border-radius:14px;box-shadow:var(--shadow-2);padding:8px;display:none;z-index:40;color:var(--ink)}
+.combo-toggle{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--faint);transition:background .2s,color .2s;min-height:36px}
+.combo-toggle:hover{background:var(--soft);color:var(--green)}
+.combo-toggle svg{transition:transform .25s}
+.search.open .combo-toggle svg{transform:rotate(180deg)}
+.suggest{position:absolute;top:calc(100% + 10px);left:0;right:0;background:var(--card);border:1px solid var(--line2);border-radius:14px;box-shadow:var(--shadow-2);padding:8px;display:none;z-index:40;color:var(--ink);max-height:min(560px,72vh);overflow-y:auto;overscroll-behavior:contain}
 .suggest.open{display:block}
-.suggest button{display:flex;width:100%;align-items:center;gap:12px;padding:13px 14px;border-radius:10px;font-size:15px;color:var(--ink2);text-align:left;transition:background .15s;min-height:48px}
+.suggest::-webkit-scrollbar{width:8px}
+.suggest::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+.suggest .sug-label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:10px 14px 6px}
+.sug-list{display:grid;grid-template-columns:1fr}
+@media(min-width:761px){.sug-list{grid-template-columns:1fr 1fr;gap:2px}}
+.suggest button{display:flex;width:100%;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;font-size:15px;color:var(--ink2);text-align:left;transition:background .15s;min-height:46px}
 .suggest button:hover{background:var(--soft)}
-.suggest .tag{margin-left:auto;font-size:12px;color:var(--faint)}
+.suggest button.sel{background:var(--chip-green-bg)}
+.suggest button.sel .tag{color:var(--green);font-weight:700}
+.suggest button.active{background:var(--chip-green-bg);color:var(--green)}
+.suggest .tag{margin-left:auto;font-size:12px;color:var(--faint);flex:none}
 .hero-chips{display:flex;flex-wrap:wrap;gap:16px;margin-top:24px;font-size:13.5px;color:#bcd3c4}
 .hero-chips span{display:inline-flex;align-items:center;gap:7px}
 .hero-chips svg{color:var(--green-hi);flex:none}
@@ -139,8 +151,9 @@ section{position:relative}
 
 /* hero visual */
 .hero-visual{position:relative;min-height:480px}
-.pro-float{position:absolute;background:#fff;color:#0b1f17;border-radius:18px;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.4);width:250px;transition:transform .3s}
-.pro-float:hover{transform:translateY(-6px) rotate(0deg)!important}
+.pro-float{position:absolute;background:#fff;color:#0b1f17;border-radius:18px;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.4);width:250px;transition:transform .3s,box-shadow .3s;text-align:left;cursor:pointer}
+.pro-float:hover{transform:translateY(-6px) rotate(0deg)!important;box-shadow:0 36px 80px rgba(0,0,0,.5)}
+.pro-float:active{transform:scale(.97)!important}
 .pro-float .top{display:flex;gap:12px;align-items:center;margin-bottom:12px}
 .avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:17px;color:#fff;flex:none}
 .pro-float h4{font-size:15.5px;font-weight:700;line-height:1.2}
@@ -216,21 +229,36 @@ section{position:relative}
 .sec-head p{font-size:17px;color:var(--muted)}
 
 /* ============ CATEGORIES ============ */
-.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-.cat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:26px 24px;transition:transform .25s,box-shadow .25s,border-color .25s;cursor:pointer;position:relative;overflow:hidden;text-align:left}
-.cat::after{content:"";position:absolute;inset:auto -30% -55% auto;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(22,196,122,.12),transparent 70%);opacity:0;transition:opacity .3s}
-.cat:hover{transform:translateY(-6px);box-shadow:var(--shadow-2);border-color:color-mix(in srgb,var(--green) 30%,var(--line))}
+.cats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+.cat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:30px 26px 24px;transition:transform .25s,box-shadow .25s,border-color .25s;cursor:pointer;position:relative;overflow:hidden;text-align:left;min-width:0;display:flex;flex-direction:column}
+.cat::after{content:"";position:absolute;inset:auto -30% -55% auto;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(22,196,122,.13),transparent 70%);opacity:0;transition:opacity .3s}
+.cat:hover{transform:translateY(-6px);box-shadow:var(--shadow-2);border-color:color-mix(in srgb,var(--green) 35%,var(--line))}
 .cat:hover::after{opacity:1}
-.cat .ico{width:52px;height:52px;border-radius:14px;background:var(--chip-green-bg);display:grid;place-items:center;color:var(--green);margin-bottom:18px;transition:transform .3s}
-.cat:hover .ico{transform:scale(1.08) rotate(-4deg)}
-.cat h3{font-size:17px;font-weight:700;margin-bottom:5px}
-.cat .from{font-size:13.5px;color:var(--muted)}
-.cat .from b{color:var(--green);font-weight:700}
-.cat .meta{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:12.5px;color:var(--faint)}
-.cat .arrow{color:var(--green);font-weight:700;transition:transform .25s;white-space:nowrap}
-.cat:hover .arrow{transform:translateX(5px)}
+.cat .ico{width:58px;height:58px;border-radius:16px;background:var(--chip-green-bg);display:grid;place-items:center;color:var(--green);margin-bottom:20px;transition:transform .3s,background .3s,color .3s}
+.cat:hover .ico{transform:scale(1.06) rotate(-4deg);background:var(--green);color:#fff}
+[data-theme="dark"] .cat:hover .ico{color:#04150d}
+.cat h3{font-size:18px;font-weight:700;margin-bottom:6px;overflow-wrap:break-word;letter-spacing:-.01em}
+.cat-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:16px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cat-stats{font-size:12px;color:var(--faint);margin-top:auto;margin-bottom:10px}
+.cat-stats .st{color:var(--gold-deep);font-weight:700}
+[data-theme="dark"] .cat-stats .st{color:var(--gold-hi)}
+.cat-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px dashed var(--line);padding-top:14px}
+.cat .from{font-size:13px;color:var(--muted)}
+.cat .from b{color:var(--green);font-weight:800;font-size:15px}
+.cat .go{flex:none;width:34px;height:34px;border-radius:50%;background:var(--chip-green-bg);color:var(--green);display:grid;place-items:center;transition:transform .25s,background .25s,color .25s}
+.cat:hover .go{background:var(--green);color:#fff;transform:translateX(4px)}
+[data-theme="dark"] .cat:hover .go{color:#04150d}
 .cat .pop{position:absolute;top:14px;right:14px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--chip-gold-bg);color:var(--gold-deep);padding:4px 9px;border-radius:999px}
 [data-theme="dark"] .cat .pop{color:var(--gold-hi)}
+/* touch devices: replace hover lift with press feedback */
+@media(hover:none){
+  .cat:hover,.pro:hover,.step:hover,.tier:hover{transform:none;box-shadow:none}
+  .cat:hover .ico,.cat:hover .go{transform:none;background:var(--chip-green-bg);color:var(--green)}
+  .tier.hot:hover{transform:scale(1.03)}
+  .cat:active,.pro:active{transform:scale(.975);border-color:var(--green)}
+  .cat:active .ico,.cat:active .go{background:var(--green);color:#fff}
+  [data-theme="dark"] .cat:active .ico,[data-theme="dark"] .cat:active .go{color:#04150d}
+}
 
 /* ============ PROBLEM ============ */
 .problem{background:linear-gradient(180deg,#0a2418,#07341f);color:#eef6f0;border-radius:32px;margin:0 24px}
@@ -381,8 +409,14 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .socials a:hover{background:rgba(255,255,255,.1);border-color:var(--gold-hi)}
 
 /* ============ LIVE TICKER ============ */
-.ticker{position:fixed;left:20px;bottom:20px;z-index:60;background:var(--card);color:var(--ink);border-radius:16px;box-shadow:var(--shadow-2);padding:13px 38px 13px 14px;display:flex;gap:12px;align-items:center;font-size:13px;max-width:340px;transform:translateY(150%);transition:transform .5s cubic-bezier(.22,.61,.36,1);border:1px solid var(--line)}
+.ticker{position:fixed;left:20px;bottom:20px;z-index:60;background:var(--card);color:var(--ink);border-radius:16px;box-shadow:var(--shadow-2);padding:13px 38px 17px 14px;display:flex;gap:12px;align-items:center;font-size:13px;max-width:340px;transform:translateY(150%);transition:transform .5s cubic-bezier(.22,.61,.36,1);border:1px solid var(--line);cursor:pointer}
 .ticker.show{transform:none}
+.ticker:hover{border-color:color-mix(in srgb,var(--green) 35%,var(--line))}
+.ticker .tprog{position:absolute;left:14px;right:14px;bottom:7px;height:3px;border-radius:99px;background:var(--line2);overflow:hidden;pointer-events:none}
+.ticker .tprog::after{content:"";display:block;height:100%;background:var(--green-hi);border-radius:99px;transform-origin:left;transform:scaleX(0)}
+.ticker.show .tprog::after{animation:tickbar 5.2s linear forwards}
+.ticker:hover .tprog::after{animation-play-state:paused}
+@keyframes tickbar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 .ticker .avatar{width:38px;height:38px;font-size:13px}
 .ticker b{font-weight:700}
 .ticker .ago{color:var(--faint);font-size:11.5px;display:block}
@@ -396,7 +430,10 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 
 /* ============ MODALS ============ */
 .modal-bg{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
-.modal-bg.open{display:flex}
+.modal-bg.open{display:flex;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0}}
+::selection{background:var(--gold-soft);color:var(--green-ink)}
+[data-theme="dark"] ::selection{background:rgba(242,184,75,.35);color:#fff}
 .modal{background:var(--card);color:var(--ink);border-radius:24px;max-width:470px;width:100%;padding:36px 32px;position:relative;animation:pop .35s cubic-bezier(.22,.61,.36,1);max-height:92vh;overflow-y:auto;border:1px solid var(--line2)}
 @keyframes pop{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
 .modal .close{position:absolute;top:14px;right:14px;width:42px;height:42px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-size:17px;color:var(--muted);min-height:42px}
@@ -425,24 +462,45 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .pmodal .pstat b{display:block;font-size:17px;font-weight:800}
 .pmodal .pstat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
 .pmodal .bio{font-size:14.5px;color:var(--muted);line-height:1.65;margin-bottom:16px}
+.pmodal .skills-label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.pmodal .skills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.pmodal .skill-chip{font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--ink2)}
 .pmodal .rev{background:var(--soft);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;padding:14px 16px;font-size:13.5px;color:var(--ink2);font-style:italic;margin-bottom:6px}
 .pmodal .rev b{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:8px;font-weight:600}
 .pmodal .price-line{display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line);margin-top:16px;padding-top:14px;font-size:14px;color:var(--muted)}
 .pmodal .price-line b{font-size:19px;color:var(--ink);font-family:var(--serif)}
 
+/* ============ MICRO-INTERACTIONS ============ */
+.logo .logo-mark{transition:transform .25s}
+.logo:hover .logo-mark{transform:rotate(-8deg) scale(1.06)}
+.press b{transition:color .25s,opacity .25s}
+.press b:hover{color:var(--ink);opacity:1}
+.faq summary{transition:color .2s}
+.faq summary:hover{color:var(--green)}
+.rating-pill{transition:transform .25s,box-shadow .25s}
+.rating-pill:hover{transform:translateY(-3px);box-shadow:var(--shadow-1)}
+.foot-grid ul a,.foot-grid ul button{transition:color .2s,transform .2s}
+.foot-grid ul a:hover,.foot-grid ul button:hover{transform:translateX(3px)}
+.pro{cursor:pointer}
+.hero-chips span{transition:color .25s}
+.hero-chips span:hover{color:#fff}
+
 /* ============ RESPONSIVE ============ */
 @media(max-width:1024px){
   .hero-in{grid-template-columns:1fr;gap:48px;padding:52px 0 68px}
   .hero-visual{min-height:420px;max-width:560px;margin:0 auto;width:100%}
-  .cats,.results-grid{grid-template-columns:repeat(2,1fr)}
+  .cats,.results-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .fix{grid-template-columns:repeat(2,1fr)}
   .band .wrap{grid-template-columns:repeat(2,1fr);gap:36px}
   .foot-grid{grid-template-columns:1fr 1fr 1fr}
   .foot-brand{grid-column:1/-1}
 }
-@media(max-width:760px){
-  .nav-links,.nav-cta .btn-ghost,.nav-cta .btn-primary{display:none}
+@media(max-width:880px){
+  .nav-links,.nav-cta .btn-ghost{display:none}
   .hamburger{display:flex}
+}
+@media(max-width:760px){
+  .nav-cta .btn-primary{display:none}
   .sec{padding:60px 0}
   .sec-head{margin-bottom:40px}
   .btn{min-height:52px}
@@ -450,10 +508,15 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   .search{flex-direction:column;padding:10px;gap:8px}
   .search .divider{display:none}
   .search .field{border:1.5px solid var(--line);border-radius:12px;width:100%;min-height:52px}
+  .combo-toggle{width:44px;height:44px;min-height:44px}
   .search .city{border:1.5px solid var(--line);border-radius:12px;width:100%;justify-content:flex-start;min-height:52px}
   .search select{width:100%}
   .search .btn{width:100%}
-  .hero-stats{gap:20px;flex-wrap:wrap;justify-content:space-between}
+  .hero-in{gap:32px;padding:40px 0 56px}
+  .eyebrow{font-size:12px;margin-bottom:18px;padding:7px 13px}
+  .hero h1{font-size:clamp(32px,9vw,38px)}
+  .hero-sub{font-size:15px;margin-bottom:26px}
+  .hero-stats{gap:20px;flex-wrap:wrap;justify-content:space-between;margin-top:30px;padding-top:22px}
   .hero-stats div b{font-size:24px}
   .pain-grid,.steps,.tiers,.results-grid{grid-template-columns:1fr}
   .tier.hot{transform:none}
@@ -463,12 +526,24 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   .problem .wrap{padding-top:64px;padding-bottom:64px}
   .pro-float{width:216px;padding:14px}
   .pc3{display:none}
-  .hero-visual{min-height:340px}
+  .hero-visual{min-height:300px}
+  .pro{padding:18px}
   .ticker{left:12px;right:12px;max-width:none;bottom:calc(84px + env(safe-area-inset-bottom))}
   .mob-bar{display:flex}
   .foot-grid{grid-template-columns:1fr 1fr}
-  .cats{grid-template-columns:1fr 1fr;gap:12px}
-  .cat{padding:20px 16px}
+  .cats{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .cat{padding:20px 16px 16px;border-radius:18px}
+  .cat .ico{width:48px;height:48px;border-radius:13px;margin-bottom:14px}
+  .cat .ico svg{width:24px;height:24px}
+  .cat h3{font-size:15.5px}
+  .cat-desc{font-size:11.5px;margin-bottom:12px}
+  .cat-stats{font-size:10.5px;margin-bottom:8px}
+  .cat-foot{padding-top:12px}
+  .cat .from{font-size:11.5px}
+  .cat .from b{font-size:13px}
+  .cat .go{width:30px;height:30px}
+  .cat .go svg{width:13px;height:13px}
+  .cat .pop{top:10px;right:10px;font-size:9px;padding:3px 7px}
   .fix{grid-template-columns:1fr}
   .free-banner{padding:20px}
   .free-banner .btn{width:100%}
@@ -476,14 +551,19 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   footer{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
   .foot-grid ul a,.foot-grid ul button{min-height:44px}
   .pros-track .pro{flex:0 0 84%}
+  /* carousel bleeds to screen edges so cards peek on both sides */
+  .pros-track{margin:0 -24px;padding-left:24px;padding-right:24px;scroll-padding-left:24px}
+  .sec h2{font-size:clamp(26px,7.5vw,34px)}
+  .sec-head p{font-size:15px}
 }
-@media(max-width:420px){.cats{grid-template-columns:1fr}}
+@media(max-width:400px){.modal .row2{grid-template-columns:1fr}}
+@media(max-width:330px){.cats{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
 
 <!-- ============ ANNOUNCEMENT ============ -->
-<div class="annc">🇳🇬 <b>100% free for customers</b> — no signup, no booking fees · Live in <b>Lagos, Abuja &amp; Port Harcourt</b></div>
+<div class="annc">🇳🇬 <b>100% free for customers</b> — no signup, no booking fees · Now covering <b>all 36 states + FCT Abuja</b></div>
 
 <!-- ============ NAV ============ -->
 <nav class="nav" id="nav">
@@ -530,16 +610,19 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <form class="search" id="searchForm" autocomplete="off">
         <div class="field">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="searchInput" placeholder="What do you need done? Try “AC repair”">
+          <input type="text" id="searchInput" placeholder="What do you need done? Select or type…" role="combobox" aria-expanded="false" aria-controls="suggest" aria-autocomplete="list" autocomplete="off">
+          <button type="button" class="combo-toggle" id="comboToggle" aria-label="Show popular services" tabindex="-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
         </div>
         <div class="divider"></div>
         <div class="city">
-          <select id="citySelect" aria-label="City">
-            <option>Lagos</option><option>Abuja</option><option>Port Harcourt</option>
-          </select>
+          <!-- DYNAMIC: options populated from NIGERIAN_STATES (all 36 states + FCT) -->
+          <select id="citySelect" aria-label="State"></select>
         </div>
         <button type="submit" class="btn btn-gold">Find Pros</button>
-        <div class="suggest" id="suggest"></div>
+        <!-- DYNAMIC: combobox options come from the service taxonomy (ServoraAPI.getServices()) -->
+        <div class="suggest" id="suggest" role="listbox" aria-label="Service suggestions"></div>
       </form>
       <div class="hero-chips">
         <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg> Free for customers — always</span>
@@ -552,32 +635,34 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <div><b data-count="1.2" data-decimal="1" data-prefix="₦" data-suffix="B+">0</b><span>Paid out safely</span></div>
       </div>
     </div>
-    <div class="hero-visual" aria-hidden="true">
-      <div class="booked-toast"><span class="pulse"></span> Amaka in Lekki just booked an AC technician</div>
-      <div class="pro-float pc1">
+    <!-- DYNAMIC: hero showcase cards — clickable snapshots of real seeded pros
+         (ids map to the pros data; future: top Elite subscribers) -->
+    <div class="hero-visual">
+      <div class="booked-toast" aria-hidden="true"><span class="pulse"></span> Amaka in Lekki just booked an AC technician</div>
+      <button class="pro-float pc1" data-profile="1" aria-label="View Emeka Obi's profile">
         <div class="top">
           <div class="avatar" style="background:#0e7a4a">EO</div>
           <div><h4>Emeka Obi</h4><div class="trade">Electrician · Yaba</div></div>
         </div>
         <div class="rating"><span class="s">★ 4.9</span><span class="n">(214 jobs)</span></div>
         <div class="badges"><span class="badge v">✓ ID Verified</span><span class="badge t">Top Rated</span></div>
-      </div>
-      <div class="pro-float pc2">
+      </button>
+      <button class="pro-float pc2" data-profile="13" aria-label="View Funke Adeyemi's profile">
         <div class="top">
           <div class="avatar" style="background:#b0731a">FA</div>
           <div><h4>Funke Adeyemi</h4><div class="trade">Makeup Artist · VI</div></div>
         </div>
         <div class="rating"><span class="s">★ 5.0</span><span class="n">(98 jobs)</span></div>
         <div class="badges"><span class="badge v">✓ ID Verified</span><span class="badge f">★ Featured</span></div>
-      </div>
-      <div class="pro-float pc3">
+      </button>
+      <button class="pro-float pc3" data-profile="4" aria-label="View Ibrahim Kabiru's profile">
         <div class="top">
           <div class="avatar" style="background:#4655c4">IK</div>
           <div><h4>Ibrahim Kabiru</h4><div class="trade">Plumber · Gwarinpa</div></div>
         </div>
         <div class="rating"><span class="s">★ 4.8</span><span class="n">(167 jobs)</span></div>
         <div class="badges"><span class="badge v">✓ ID Verified</span><span class="badge t">Fast Responder</span></div>
-      </div>
+      </button>
     </div>
   </div>
 </header>
@@ -604,6 +689,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <button data-sort="price">₦ Lowest price</button>
       <button data-sort="jobs">🏆 Most jobs done</button>
     </div>
+    <!-- DYNAMIC: search results render from ServoraAPI.getPros({category, state, sort})
+         (future: GET /api/pros?category=&state=&sort=) -->
     <div class="results-grid" id="resultsGrid"></div>
   </div>
 </section>
@@ -616,6 +703,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <h2>Whatever breaks, whoever you need — <em>we have a pro for it.</em></h2>
       <p>Every professional is ID-verified, skill-tested and reviewed by real customers. Browse and contact them free — no account, no fees, no wahala.</p>
     </div>
+    <!-- DYNAMIC: service categories render from ServoraAPI.getServices() (future: GET /api/services) -->
     <div class="cats" id="cats"></div>
   </div>
 </section>
@@ -716,6 +804,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <button class="icon-btn" id="prosNext" aria-label="Next"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
       </div>
     </div>
+    <!-- DYNAMIC: featured pros render from ServoraAPI.getFeaturedPros() — Elite subscribers get
+         these paid placement slots (future: GET /api/pros/featured) -->
     <div class="pros-track" id="prosTrack"></div>
   </div>
 </section>
@@ -867,8 +957,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <div class="body">Our <b>Job-Done Guarantee</b> covers every booking: report an issue within 7 days and we’ll send the pro back to fix it free of charge, send a different pro, or refund you. Around 97% of jobs are done right the first time — but when they’re not, you’re never the one holding the bill.</div>
       </details>
       <details class="faq">
-        <summary>Which cities do you cover? <span class="pm">+</span></summary>
-        <div class="body">We’re live in <b>Lagos, Abuja and Port Harcourt</b>, covering all major districts. Ibadan and Enugu are launching next — join the waitlist in the app and you’ll get ₦2,000 off your first booking when we arrive.</div>
+        <summary>Which parts of Nigeria do you cover? <span class="pm">+</span></summary>
+        <div class="body">Servora covers <b>all 36 states and FCT Abuja</b>. Coverage is deepest in <b>Lagos and the South West</b> (Oyo, Ogun, Osun), plus Abuja and Port Harcourt — and new pros are verified nationwide every day. If your state has few pros yet, post your job anyway: we’ll notify you the moment a verified pro near you joins, and you’ll get ₦2,000 off that first booking.</div>
       </details>
       <details class="faq">
         <summary>I’m a professional. How do I join and what does it cost? <span class="pm">+</span></summary>
@@ -947,7 +1037,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© 2026 Servora Technologies Ltd. Lagos · Abuja · Port Harcourt</span>
+      <span>© 2026 Servora Technologies Ltd. · Covering all 36 states + FCT Abuja</span>
       <div class="pay"><span>Paystack</span><span>Flutterwave</span><span>Verve</span><span>Bank Transfer</span></div>
     </div>
   </div>
@@ -960,10 +1050,11 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 </div>
 
 <!-- ============ LIVE TICKER ============ -->
-<div class="ticker" id="ticker" aria-hidden="true">
+<div class="ticker" id="ticker" role="status" title="See pros for this service">
   <div class="avatar" id="tickAvatar" style="background:#0e7a4a">C</div>
   <div><b id="tickText">Chinedu in Surulere booked a plumber</b><span class="ago" id="tickAgo">2 minutes ago · Lagos</span></div>
   <button class="tx" id="tickClose" aria-label="Dismiss">✕</button>
+  <span class="tprog" aria-hidden="true"></span>
 </div>
 
 <!-- ============ CONTACT / POST-JOB MODAL ============ -->
@@ -1027,23 +1118,84 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <div class="pstat"><b id="pfResp">~12 min</b><span>Responds</span></div>
     </div>
     <p class="bio" id="pfBio"></p>
+    <div class="skills-label">Services offered</div>
+    <div class="skills" id="pfSkills"></div>
     <div class="rev"><span id="pfRev"></span><b id="pfRevWho"></b></div>
     <div class="price-line"><span>Starting price</span><b id="pfPrice">₦8,000</b></div>
     <button class="btn btn-gold" id="pfContact">Contact — free, no signup</button>
   </div>
 </div>
 
+<!-- ============ PRO REGISTRATION MODAL (dynamic-ready) ============
+     Applications go through ServoraAPI.registerPro() — swap for
+     POST /api/pros/register. Once verification passes, the new
+     profile appears automatically in listings & featured slots. -->
+<div class="modal-bg" id="regBg">
+  <div class="modal" id="regModal" role="dialog" aria-modal="true">
+    <button class="close" id="regClose" aria-label="Close">✕</button>
+    <div class="form-view">
+      <h3 id="regTitle">Join Servora — Pro plan</h3>
+      <p class="sub">Create your professional profile. Verification takes ~48 hours — then your profile goes live and the leads start.</p>
+      <div class="row2">
+        <div>
+          <label>Full name</label>
+          <input type="text" id="rName" placeholder="e.g. Emeka Obi">
+        </div>
+        <div>
+          <label>WhatsApp number</label>
+          <input type="tel" id="rPhone" placeholder="080X XXX XXXX">
+        </div>
+      </div>
+      <label>Your trade</label>
+      <select id="rTrade"></select>
+      <label>State you work in</label>
+      <select id="rState"></select>
+      <div class="note">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span><b>4-stage verification:</b> NIN/ID check, skill assessment, two guarantor references and address confirmation. Have your NIN and guarantor contacts ready.</span>
+      </div>
+      <button class="btn btn-gold" id="rSubmit">Apply — go live in ~48 hours</button>
+    </div>
+    <div class="success">
+      <div class="big"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h3 style="padding-right:0">Application received! 🎉</h3>
+      <p class="sub" id="regSuccessMsg" style="margin-bottom:26px">Our verification team will WhatsApp you within 48 hours.</p>
+      <button class="btn btn-primary" id="rDone">Done</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/* ============ DATA ============ */
+/* ================================================================
+   DATA LAYER — frontend-only seed data (demo mode)
+   ----------------------------------------------------------------
+   When the backend is ready, replace the bodies of the ServoraAPI
+   methods (below the seed arrays) with real fetch() calls. The UI
+   only ever renders through ServoraAPI — never directly from the
+   seed arrays — so nothing else needs to change.
+
+   Planned endpoints:
+     GET  /api/services                     → service categories
+     GET  /api/pros?category=&state=&sort=  → verified pro profiles
+     GET  /api/pros/featured                → Elite subscribers first
+     POST /api/leads                        → customer job requests
+     POST /api/pros/register                → professional sign-ups
+   ================================================================ */
+
+/* All 36 Nigerian states + FCT — powers every location selector */
+const NIGERIAN_STATES=["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT Abuja","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
+const POPULAR_STATES=["Lagos","FCT Abuja","Rivers","Oyo","Ogun"];
+
+/* Service taxonomy (fairly static — future: GET /api/services) */
 const services=[
- {name:"Electricians",from:"₦8,000",jobs:"14,200 jobs done",pop:"Most booked",kw:["wiring","socket","light","fuse","generator","fan","power","electric","dstv"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg>'},
- {name:"Plumbers",from:"₦7,500",jobs:"11,800 jobs done",kw:["pipe","leak","tap","toilet","water","drain","bathroom","sink"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>'},
- {name:"Cleaners",from:"₦12,000",jobs:"18,400 jobs done",pop:"Popular",kw:["clean","deep clean","fumigation","laundry","housekeeping","wash"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.7 4.6L18 9.3l-4.3 1.7L12 15.6l-1.7-4.6L6 9.3l4.3-1.7L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/><path d="M5 16l.6 1.6L7.2 18l-1.6.6L5 20.2 4.4 18.6 2.8 18l1.6-.4L5 16z"/></svg>'},
- {name:"AC Technicians",from:"₦10,000",jobs:"9,600 jobs done",kw:["ac","air","cooling","gas","refill","aircon","split unit"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M12 12 4 7m8 5 8-5m-8 5-8 5m8-5 8 5M8 4l4 2 4-2M8 20l4-2 4 2"/></svg>'},
- {name:"Car Mechanics",from:"₦15,000",jobs:"7,900 jobs done",kw:["car","engine","brake","mechanic","vehicle","service","battery"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 5.9L3 18l3 3 5.8-5.7a4.5 4.5 0 0 0 5.9-6l-3 3-2.8-.7-.7-2.8 3.5-2.5z"/></svg>'},
- {name:"Tutors",from:"₦5,000/hr",jobs:"6,200 sessions",kw:["tutor","lesson","maths","english","exam","jamb","waec","teacher"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4a2 2 0 0 0-2-2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M20 17v5H6.5a2.5 2.5 0 0 1 0-5"/></svg>'},
- {name:"Makeup Artists",from:"₦20,000",jobs:"5,400 bookings",kw:["makeup","glam","bridal","gele","beauty"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 4 4L7.5 20.5 3 21l.5-4.5L15 5z"/><path d="m13 7 4 4"/></svg>'},
- {name:"Photographers",from:"₦35,000",jobs:"4,800 shoots",kw:["photo","camera","wedding","event","shoot","portrait","video"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>'}
+ {name:"Electricians",from:"₦8,000",jobs:"14,200 jobs done",desc:"Wiring, sockets, fans & inverter installs",rating:4.8,pop:"Most booked",kw:["wiring","socket","light","fuse","generator","fan","power","electric","dstv"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg>'},
+ {name:"Plumbers",from:"₦7,500",jobs:"11,800 jobs done",desc:"Leaks, pipes, pumps & bathroom fittings",rating:4.7,kw:["pipe","leak","tap","toilet","water","drain","bathroom","sink"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>'},
+ {name:"Cleaners",from:"₦12,000",jobs:"18,400 jobs done",desc:"Deep cleaning, fumigation & housekeeping",rating:4.9,pop:"Popular",kw:["clean","deep clean","fumigation","laundry","housekeeping","wash"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.7 4.6L18 9.3l-4.3 1.7L12 15.6l-1.7-4.6L6 9.3l4.3-1.7L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/><path d="M5 16l.6 1.6L7.2 18l-1.6.6L5 20.2 4.4 18.6 2.8 18l1.6-.4L5 16z"/></svg>'},
+ {name:"AC Technicians",from:"₦10,000",jobs:"9,600 jobs done",desc:"Servicing, gas refills & installations",rating:4.8,kw:["ac","air","cooling","gas","refill","aircon","split unit"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M12 12 4 7m8 5 8-5m-8 5-8 5m8-5 8 5M8 4l4 2 4-2M8 20l4-2 4 2"/></svg>'},
+ {name:"Car Mechanics",from:"₦15,000",jobs:"7,900 jobs done",desc:"Diagnostics, repairs & home service",rating:4.7,kw:["car","engine","brake","mechanic","vehicle","service","battery"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 5.9L3 18l3 3 5.8-5.7a4.5 4.5 0 0 0 5.9-6l-3 3-2.8-.7-.7-2.8 3.5-2.5z"/></svg>'},
+ {name:"Tutors",from:"₦5,000/hr",jobs:"6,200 sessions",desc:"Maths, sciences, English & exam prep",rating:4.9,kw:["tutor","lesson","maths","english","exam","jamb","waec","teacher"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4a2 2 0 0 0-2-2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M20 17v5H6.5a2.5 2.5 0 0 1 0-5"/></svg>'},
+ {name:"Makeup Artists",from:"₦20,000",jobs:"5,400 bookings",desc:"Bridal glam, gele & event makeup",rating:4.9,kw:["makeup","glam","bridal","gele","beauty"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 4 4L7.5 20.5 3 21l.5-4.5L15 5z"/><path d="m13 7 4 4"/></svg>'},
+ {name:"Photographers",from:"₦35,000",jobs:"4,800 shoots",desc:"Weddings, events & studio portraits",rating:4.8,kw:["photo","camera","wedding","event","shoot","portrait","video"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>'}
 ];
 const pros=[
  {n:"Emeka Obi",cat:"Electricians",area:"Yaba",city:"Lagos",r:4.9,j:214,price:8000,pl:"₦8,000",resp:12,c:"#0e7a4a",b:["v","t"],bio:"11 years on the tools. Rewiring, DB boards, socket & lighting installs, generator changeovers. Neat work, no stories.",rev:"“Fixed a fault three other electricians couldn’t find. Charged exactly what he quoted.”",who:"Kelechi U. · Yaba"},
@@ -1061,23 +1213,102 @@ const pros=[
  {n:"Funke Adeyemi",cat:"Makeup Artists",area:"Victoria Island",city:"Lagos",r:5.0,j:98,price:20000,pl:"₦20,000",resp:35,c:"#b0731a",b:["v","f"],bio:"Bridal glam, gele artistry & photoshoot makeup. Featured in BellaNaija Weddings. Books out 3 weeks ahead — plan early.",rev:"“I cried when I saw my bridal look. Then fixed my face — because Funke made it cry-proof.”",who:"Tolu A. · bride, VI"},
  {n:"Zainab Musa",cat:"Makeup Artists",area:"Jabi",city:"Abuja",r:4.9,j:76,price:18000,pl:"₦18,000",resp:28,c:"#c2452f",b:["v","t"],bio:"Soft glam & editorial looks. Home service across Abuja. Hypoallergenic kit available on request.",rev:"“Flawless from morning church to evening reception. Not one touch-up needed.”",who:"Hadiza M. · Jabi"},
  {n:"Chioma Nwosu",cat:"Photographers",area:"GRA",city:"Port Harcourt",r:5.0,j:76,price:35000,pl:"₦35,000",resp:40,c:"#7a3fa0",b:["v","f"],bio:"Weddings, birthdays & corporate events. 48-hour preview delivery. Two shooters on every wedding — no missed moments.",rev:"“Previews landed before the party even ended. Unreal quality.”",who:"Emeka & Ada · GRA"},
- {n:"Damilare Oni",cat:"Photographers",area:"Lekki",city:"Lagos",r:4.9,j:112,price:40000,pl:"₦40,000",resp:33,c:"#0e7a4a",b:["v","t"],bio:"Portraits, events & brand shoots. Studio in Lekki or on location. Shot 40+ weddings in 2025 alone.",rev:"“He showed up early. In this Lagos? Early. And the photos — chef’s kiss.”",who:"Tunde A. · Surulere"}
+ {n:"Damilare Oni",cat:"Photographers",area:"Lekki",city:"Lagos",r:4.9,j:112,price:40000,pl:"₦40,000",resp:33,c:"#0e7a4a",b:["v","t"],bio:"Portraits, events & brand shoots. Studio in Lekki or on location. Shot 40+ weddings in 2025 alone.",rev:"“He showed up early. In this Lagos? Early. And the photos — chef’s kiss.”",who:"Tunde A. · Surulere"},
+ /* South-West expansion seeds (Oyo, Ogun, Osun) */
+ {n:"Kunle Ajayi",cat:"Electricians",area:"Bodija",city:"Ibadan",r:4.8,j:121,price:7500,pl:"₦7,500",resp:16,c:"#12876f",b:["v","t"],bio:"Residential wiring, DB upgrades and inverter installs across Ibadan. 9 years on the tools, zero shortcuts.",rev:"“Traced a fault the estate electrician gave up on. Neat, honest work.”",who:"Mrs. Adebisi · Bodija"},
+ {n:"Folake Ogunleye",cat:"Cleaners",area:"Ring Road",city:"Ibadan",r:4.9,j:164,price:10000,pl:"₦10,000",resp:13,c:"#c2452f",b:["v","t"],bio:"Deep cleaning and post-construction cleaning with a 2-person team. Ibadan homes and offices, same-week slots.",rev:"“The kitchen looked newer than when we moved in. Booked her monthly.”",who:"Damola K. · Ring Road"},
+ {n:"Peter Adewale",cat:"Plumbers",area:"Oke-Ilewo",city:"Abeokuta",r:4.7,j:88,price:6500,pl:"₦6,500",resp:21,c:"#2f6ec2",b:["v"],bio:"Pipes, pumps, tanks and borehole connections across Abeokuta. Materials receipts always included.",rev:"“Fixed our pressure problem in one visit. Fair price, no stories.”",who:"Chief Sowunmi · Oke-Ilewo"},
+ {n:"Ronke Fashola",cat:"Makeup Artists",area:"Osogbo",city:"Osogbo",r:4.9,j:59,price:15000,pl:"₦15,000",resp:24,c:"#7a3fa0",b:["v","t"],bio:"Bridal and event glam across Osun. Gele artistry included. Travels with full kit — you just sit down.",rev:"“My gele alone collected compliments all day. Worth every naira.”",who:"Yetunde A. · Osogbo"}
 ];
+
+/* Enrich seed pros with the fields the backend will store natively.
+   Pro profile schema (what GET /api/pros returns per record):
+     { id, n(ame), cat(egory), area, city, state, r(ating), j(obs),
+       price, pl (display price), resp(onse mins), c(olor), b(adges),
+       tier: 'starter' | 'pro' | 'elite',   ← subscription drives ranking
+       bio, rev(iew), who }
+   Registered professionals (POST /api/pros/register) get this same
+   shape once verification passes, and appear in listings automatically. */
+const stateOfCity={"Lagos":"Lagos","Abuja":"FCT Abuja","Port Harcourt":"Rivers","Ibadan":"Oyo","Abeokuta":"Ogun","Osogbo":"Osun"};
+pros.forEach((p,i)=>{
+  p.id=i+1;
+  p.state=stateOfCity[p.city];
+  p.tier=p.b.includes('f')?'elite':p.b.includes('t')?'pro':'starter';
+});
+const proById=id=>pros.find(p=>p.id===id);
+
+/* Services offered per trade — shown on profile modals.
+   FUTURE: each pro stores their own `skills` array at registration;
+   this map is the fallback until then (p.skills || categorySkills[p.cat]). */
+const categorySkills={
+  "Electricians":["Wiring & rewiring","Sockets & lighting","Inverter & solar setup","Generator changeover","Fault finding"],
+  "Plumbers":["Leak detection & repair","Pipes & fittings","Pumps & tanks","Toilets & bathrooms","Water heaters"],
+  "Cleaners":["Deep cleaning","Post-construction cleaning","Fumigation","Housekeeping","Laundry & ironing"],
+  "AC Technicians":["Servicing & maintenance","Gas refill (with pressure test)","Installation","Repairs","Cold rooms"],
+  "Car Mechanics":["Computer diagnostics","Engine repairs","Brakes & suspension","Servicing","Home/office callout"],
+  "Tutors":["Maths & sciences","English & literacy","WAEC/JAMB prep","Homework support","Home lessons"],
+  "Makeup Artists":["Bridal glam","Gele artistry","Event makeup","Photoshoot looks","Home service"],
+  "Photographers":["Weddings","Events & parties","Portraits & studio","Corporate shoots","48-hour previews"]
+};
+
+/* ================================================================
+   ServoraAPI — swap each method body for a real fetch() later.
+   ================================================================ */
+const ServoraAPI={
+  /* FUTURE: return (await fetch('/api/services')).json() */
+  async getServices(){return services},
+
+  /* FUTURE: fetch(`/api/pros?category=${category}&state=${state}&sort=${sort}`)
+     Ranking rule the backend must keep: sort key first, then
+     subscription tier (Elite > Pro > Starter) as tiebreak. */
+  async getPros({category=null,state=null,sort='rating'}={}){
+    let list=pros.slice();
+    if(category)list=list.filter(p=>p.cat===category);
+    const inState=state?list.filter(p=>p.state===state):list;
+    const stateCovered=inState.length>0;
+    if(state&&stateCovered)list=inState;
+    const tierRank={elite:0,pro:1,starter:2};
+    const by={rating:(a,b)=>b.r-a.r,resp:(a,b)=>a.resp-b.resp,price:(a,b)=>a.price-b.price,jobs:(a,b)=>b.j-a.j};
+    list.sort((a,b)=>by[sort](a,b)||tierRank[a.tier]-tierRank[b.tier]);
+    return{pros:list,stateCovered};
+  },
+
+  /* FUTURE: fetch('/api/pros/featured') — paid placement:
+     Elite subscribers first, then Pro, ranked by rating. */
+  async getFeaturedPros(){
+    const tierRank={elite:0,pro:1,starter:2};
+    return pros.filter(p=>p.tier!=='starter')
+      .sort((a,b)=>tierRank[a.tier]-tierRank[b.tier]||b.r-a.r).slice(0,8);
+  },
+
+  /* FUTURE: POST /api/leads — customer stays account-free;
+     the lead is routed to matching pros by category + state. */
+  async submitLead(lead){console.log('[demo] lead captured →',lead);return{ok:true}},
+
+  /* FUTURE: POST /api/pros/register — creates a profile in
+     'pending_verification'; it enters listings automatically
+     once the 4-stage verification passes. */
+  async registerPro(application){console.log('[demo] pro application →',application);return{ok:true,status:'pending_verification'}}
+};
 const testimonials=[
  {q:"My AC guy vanished mid-repair last year. The Servora technician came same day, quoted ₦18,000 upfront, and the app held my money until the unit was blowing cold. <em>This is how it should always work.</em>",n:"Adaeze O.",r:"Homeowner · Lekki Phase 1, Lagos",c:"#0e7a4a"},
  {q:"I didn't even create an account. Typed the job, dropped my number, and had <em>three quotes before my food delivery arrived.</em>",n:"Tunde A.",r:"Customer · Surulere, Lagos",c:"#b0731a"},
  {q:"As a plumber, Servora changed everything. I used to sit at home waiting for referrals. Now I get 3–4 jobs a week and the money enters my account <em>the same day</em>. The Pro plan paid for itself in one job.",n:"Ibrahim K.",r:"Pro on Servora since 2025 · Abuja",c:"#4655c4"},
  {q:"The cleaner was so good I set up a bi-weekly booking. My landlady begged for her number — I sent her the app instead. <em>My small revenge.</em>",n:"Ngozi E.",r:"Customer · Gwarinpa, Abuja",c:"#c2452f"}
 ];
+/* Ticker feed — [name, area, action, city, avatar color, category].
+   FUTURE: stream real completed bookings (GET /api/bookings/recent). */
 const bookings=[
- ["Chinedu","Surulere","booked a plumber","Lagos","#0e7a4a"],
- ["Amaka","Lekki","booked an AC technician","Lagos","#b0731a"],
- ["Yusuf","Wuse II","booked an electrician","Abuja","#4655c4"],
- ["Bisi","Ikeja","booked a deep cleaning","Lagos","#c2452f"],
- ["Efe","GRA","booked a photographer","Port Harcourt","#7a3fa0"],
- ["Kemi","Gbagada","booked a makeup artist","Lagos","#2f6ec2"],
- ["Musa","Garki","booked a car mechanic","Abuja","#0e7a4a"],
- ["Ada","Trans Amadi","booked a maths tutor","Port Harcourt","#b0731a"]
+ ["Chinedu","Surulere","booked a plumber","Lagos","#0e7a4a","Plumbers"],
+ ["Amaka","Lekki","booked an AC technician","Lagos","#b0731a","AC Technicians"],
+ ["Yusuf","Wuse II","booked an electrician","Abuja","#4655c4","Electricians"],
+ ["Bisi","Ikeja","booked a deep cleaning","Lagos","#c2452f","Cleaners"],
+ ["Efe","GRA","booked a photographer","Port Harcourt","#7a3fa0","Photographers"],
+ ["Kemi","Gbagada","booked a makeup artist","Lagos","#2f6ec2","Makeup Artists"],
+ ["Musa","Garki","booked a car mechanic","Abuja","#0e7a4a","Car Mechanics"],
+ ["Ada","Trans Amadi","booked a maths tutor","Port Harcourt","#b0731a","Tutors"],
+ ["Kunle","Bodija","booked an electrician","Ibadan, Oyo","#12876f","Electricians"],
+ ["Sade","Oke-Ilewo","booked a plumber","Abeokuta, Ogun","#c2452f","Plumbers"]
 ];
 const singular={"Electricians":"an electrician","Plumbers":"a plumber","Cleaners":"a cleaner","AC Technicians":"an AC technician","Car Mechanics":"a car mechanic","Tutors":"a tutor","Makeup Artists":"a makeup artist","Photographers":"a photographer"};
 const badgeMap={v:'<span class="badge v">✓ ID Verified</span>',t:'<span class="badge t">Top Rated</span>',f:'<span class="badge f">★ Featured</span>'};
@@ -1090,19 +1321,29 @@ document.getElementById('themeBtn').onclick=()=>{
   localStorage.setItem('servora-theme',cur);
 };
 
-/* ============ RENDER CATEGORIES ============ */
-document.getElementById('cats').innerHTML=services.map((s,i)=>`
+/* ============ RENDER: SERVICE CATEGORIES (dynamic-ready) ============ */
+ServoraAPI.getServices().then(list=>{
+  document.getElementById('cats').innerHTML=list.map((s,i)=>`
  <button class="cat rv d${(i%4)+1}" data-browse="${s.name}">
    ${s.pop?`<span class="pop">${s.pop}</span>`:''}
    <div class="ico">${s.icon}</div>
    <h3>${s.name}</h3>
-   <div class="from">from <b>${s.from}</b></div>
-   <div class="meta"><span>${s.jobs}</span><span class="arrow">Browse →</span></div>
+   <p class="cat-desc">${s.desc}</p>
+   <div class="cat-stats"><span class="st">★ ${s.rating}</span> · ${s.jobs}</div>
+   <div class="cat-foot">
+     <span class="from">from <b>${s.from}</b></span>
+     <span class="go" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+   </div>
  </button>`).join('');
+  /* late-rendered cards must join the scroll-reveal observer */
+  document.querySelectorAll('#cats .rv').forEach(el=>io.observe(el));
+});
 
-/* ============ PRO CARD TEMPLATE ============ */
-function proCard(p,idx){
- return `<div class="pro">
+/* ============ PRO CARD TEMPLATE ============
+   Renders one pro profile record (see schema above). Cards reference
+   pros by id, so server-fetched lists plug straight in. */
+function proCard(p){
+ return `<div class="pro" data-profile="${p.id}">
    <div class="top">
      <div class="avatar" style="background:${p.c}">${initials(p.n)}</div>
      <div><h4>${p.n}</h4><div class="trade">${p.cat.replace(/s$/,'')} · ${p.area}, ${p.city}</div></div>
@@ -1112,16 +1353,18 @@ function proCard(p,idx){
    <div class="resp"><span class="dot"></span>Responds in ~${p.resp} min</div>
    <div class="statline"><span>Starting price</span><b>${p.pl}</b></div>
    <div class="cta-row">
-     <button class="btn btn-ghost btn-sm" data-profile="${idx}">Profile</button>
-     <button class="btn btn-primary btn-sm" data-contact="${idx}">Contact</button>
+     <button class="btn btn-ghost btn-sm" data-profile="${p.id}">Profile</button>
+     <button class="btn btn-primary btn-sm" data-contact="${p.id}">Contact</button>
    </div>
    <div class="free-tag">Free to contact · no signup</div>
  </div>`;
 }
 
-/* ============ FEATURED TRACK ============ */
-const featured=pros.map((p,i)=>({p,i})).filter(x=>x.p.b.includes('f')||x.p.b.includes('t')).slice(0,8);
-document.getElementById('prosTrack').innerHTML=featured.map(x=>proCard(x.p,x.i)).join('');
+/* ============ RENDER: FEATURED PROS (dynamic-ready) ============
+   Paid placement — Elite subscribers first (future GET /api/pros/featured) */
+ServoraAPI.getFeaturedPros().then(list=>{
+  document.getElementById('prosTrack').innerHTML=list.map(proCard).join('');
+});
 document.getElementById('prosNext').onclick=()=>document.getElementById('prosTrack').scrollBy({left:310,behavior:'smooth'});
 document.getElementById('prosPrev').onclick=()=>document.getElementById('prosTrack').scrollBy({left:-310,behavior:'smooth'});
 
@@ -1129,31 +1372,40 @@ document.getElementById('prosPrev').onclick=()=>document.getElementById('prosTra
 const input=document.getElementById('searchInput'),sug=document.getElementById('suggest'),citySel=document.getElementById('citySelect');
 const resultsSec=document.getElementById('results'),resultsGrid=document.getElementById('resultsGrid');
 let currentCat=null,currentSort='rating';
+
+/* Location selectors — all 36 states + FCT, popular states pinned on top */
+function fillStateSelect(sel,def='Lagos'){
+  sel.innerHTML=
+    `<optgroup label="Popular">${POPULAR_STATES.map(s=>`<option>${s}</option>`).join('')}</optgroup>`+
+    `<optgroup label="All states (A–Z)">${NIGERIAN_STATES.map(s=>`<option>${s}</option>`).join('')}</optgroup>`;
+  sel.value=def;
+}
+fillStateSelect(citySel);
+/* Match free text to a service: name substring, keyword prefix,
+   or exact keyword token (avoids "spaceship" matching kw "ac") */
 function matchService(q){
   q=q.toLowerCase().trim();
   if(!q)return null;
-  return services.find(s=>s.name.toLowerCase().includes(q)||s.kw.some(k=>q.includes(k)||k.includes(q)))||null;
+  const tokens=q.split(/\s+/);
+  return services.find(s=>s.name.toLowerCase().includes(q)||s.kw.some(k=>k.startsWith(q)||tokens.includes(k)))||null;
 }
-function renderResults(){
-  let list=pros.map((p,i)=>({p,i}));
-  if(currentCat)list=list.filter(x=>x.p.cat===currentCat);
-  const city=citySel.value;
-  const inCity=list.filter(x=>x.p.city===city);
-  const usingCity=inCity.length>0;
-  if(usingCity)list=inCity;
-  const sorters={rating:(a,b)=>b.p.r-a.p.r,resp:(a,b)=>a.p.resp-b.p.resp,price:(a,b)=>a.p.price-b.p.price,jobs:(a,b)=>b.p.j-a.p.j};
-  list.sort(sorters[currentSort]);
+/* Renders listings from ServoraAPI.getPros — real registered pros
+   will flow through this exact same path once the backend lands. */
+async function renderResults(){
+  const state=citySel.value;
+  const {pros:list,stateCovered}=await ServoraAPI.getPros({category:currentCat,state,sort:currentSort});
   const label=list.length===1?(currentCat?currentCat.replace(/s$/,''):'pro'):(currentCat||'pros');
-  document.getElementById('resultsTitle').innerHTML=`${list.length} vetted <em>${label}</em> ${usingCity?'in '+city:'across Nigeria'}`;
-  const avg=Math.round(list.reduce((s,x)=>s+x.p.resp,0)/(list.length||1));
-  document.getElementById('resultsSub').textContent=`All ID-verified · avg. response ~${avg} min · contact free, no signup${usingCity?'':' · also serving '+city+' soon'}`;
-  resultsGrid.innerHTML=list.length?list.map(x=>proCard(x.p,x.i)).join(''):'<div class="none">No pros found — try another service.</div>';
+  document.getElementById('resultsTitle').innerHTML=`${list.length} vetted <em>${label}</em> ${stateCovered?'in '+state:'across Nigeria'}`;
+  const avg=Math.round(list.reduce((s,p)=>s+p.resp,0)/(list.length||1));
+  document.getElementById('resultsSub').textContent=stateCovered
+    ?`All ID-verified · avg. response ~${avg} min · contact free, no signup`
+    :`No ${(currentCat||'pros').toLowerCase()} in ${state} yet — showing top pros nationwide · new pros are verified daily`;
+  resultsGrid.innerHTML=list.length?list.map(proCard).join(''):'<div class="none">No pros found — try another service.</div>';
 }
 function openResults(cat){
   currentCat=cat;
   resultsSec.classList.add('open');
-  renderResults();
-  resultsSec.scrollIntoView({behavior:'smooth',block:'start'});
+  renderResults().then(()=>resultsSec.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 document.getElementById('closeResults').onclick=()=>{resultsSec.classList.remove('open');currentCat=null};
 document.getElementById('sorts').addEventListener('click',e=>{
@@ -1163,20 +1415,79 @@ document.getElementById('sorts').addEventListener('click',e=>{
   renderResults();
 });
 citySel.addEventListener('change',()=>{if(resultsSec.classList.contains('open'))renderResults()});
-function renderSug(list){
-  sug.innerHTML=list.map(s=>`<button type="button" data-browse="${s.name}">${s.icon.replace('width="26" height="26"','width="18" height="18"')} ${s.name}<span class="tag">from ${s.from}</span></button>`).join('');
-  sug.classList.toggle('open',list.length>0);
+/* ============ SERVICE COMBOBOX ============
+   Works like the states dropdown: click the chevron (or focus/type)
+   to open, ↑/↓ + Enter to pick, Esc to close. Options come from the
+   service taxonomy — future: ServoraAPI.getServices(). */
+let sugActive=-1;
+function setSugOpen(open){
+  sug.classList.toggle('open',open);
+  document.querySelector('.search').classList.toggle('open',open);
+  input.setAttribute('aria-expanded',open);
+  if(!open){sugActive=-1;input.removeAttribute('aria-activedescendant')}
 }
-input.addEventListener('focus',()=>renderSug(services));
-input.addEventListener('input',()=>{
+function renderSug(list,label){
+  sugActive=-1;
+  const cur=input.value.trim().toLowerCase();
+  sug.innerHTML=list.length
+    ?`<div class="sug-label">${label}</div><div class="sug-list">`+list.map((s,i)=>{const sel=s.name.toLowerCase()===cur;return `<button type="button" id="sug-opt-${i}" role="option" aria-selected="${sel}" class="${sel?'sel':''}" data-browse="${s.name}">${s.icon.replace('width="26" height="26"','width="18" height="18"')} ${s.name}<span class="tag">${sel?'✓ Selected':'from '+s.from}</span></button>`}).join('')+`</div>`
+    :`<div class="sug-label">No matching service</div><div class="sug-list"><button type="button" role="option" id="sug-opt-0" data-post>📝 Post your job instead — pros come to you</button></div>`;
+  setSugOpen(true);
+  ensureSugVisible();
+}
+/* Nudge the page so the whole list is on screen (no-op if already visible).
+   Smooth scroll first; instant fallback for webviews that freeze animations. */
+function ensureSugVisible(){
+  const gap=()=>Math.ceil(sug.getBoundingClientRect().bottom-innerHeight);
+  if(gap()>0){
+    scrollBy({top:gap()+16,behavior:'smooth'});
+    setTimeout(()=>{if(sug.classList.contains('open')&&gap()>0)scrollBy({top:gap()+16,behavior:'instant'})},400);
+  }
+}
+function filterSug(){
   const q=input.value.toLowerCase().trim();
-  renderSug(q?services.filter(s=>s.name.toLowerCase().includes(q)||s.kw.some(k=>k.includes(q))):services);
+  const tokens=q.split(/\s+/);
+  const list=q?services.filter(s=>s.name.toLowerCase().includes(q)||s.kw.some(k=>k.startsWith(q)||tokens.includes(k))):services;
+  renderSug(list,q?'Matching services':'Popular services');
+}
+input.addEventListener('focus',filterSug);
+input.addEventListener('input',filterSug);
+input.addEventListener('keydown',e=>{
+  const opts=[...sug.querySelectorAll('[role="option"]')];
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!sug.classList.contains('open')){filterSug();return}
+    if(!opts.length)return;
+    sugActive=e.key==='ArrowDown'?(sugActive+1)%opts.length:(sugActive-1+opts.length)%opts.length;
+    opts.forEach((o,i)=>o.classList.toggle('active',i===sugActive));
+    input.setAttribute('aria-activedescendant',opts[sugActive].id);
+    opts[sugActive].scrollIntoView({block:'nearest'});
+  }else if(e.key==='Enter'&&sugActive>=0&&opts[sugActive]){
+    e.preventDefault();opts[sugActive].click();
+  }else if(e.key==='Escape'){setSugOpen(false)}
 });
-document.addEventListener('click',e=>{if(!e.target.closest('.search'))sug.classList.remove('open')});
+document.getElementById('comboToggle').addEventListener('click',e=>{
+  e.stopPropagation();
+  if(sug.classList.contains('open'))setSugOpen(false);
+  else{input.focus();renderSug(services,'Popular services')}
+});
+/* clicking anywhere in the field (icon, padding) opens the list too */
+document.querySelector('.search .field').addEventListener('click',e=>{
+  if(e.target.closest('.combo-toggle'))return;
+  input.focus();
+  if(!sug.classList.contains('open'))filterSug();
+});
+/* picking a suggestion fills the input, then the global [data-browse]
+   delegation opens the matching listings */
+sug.addEventListener('click',e=>{
+  const b=e.target.closest('[data-browse]');
+  if(b){input.value=b.dataset.browse;setSugOpen(false)}
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.search'))setSugOpen(false)});
 document.getElementById('searchForm').addEventListener('submit',e=>{
   e.preventDefault();
   const m=matchService(input.value);
-  sug.classList.remove('open');
+  setSugOpen(false);
   openResults(m?m.name:null);
 });
 
@@ -1265,19 +1576,28 @@ sw.onclick=()=>{
 };
 
 /* ============ LIVE TICKER ============ */
-const ticker=document.getElementById('ticker');let bi=0,tickerOff=false,tickTimeout;
+const ticker=document.getElementById('ticker');let lastBk=-1,tickerOff=false,tickTimeout,tickerCat=null;
 function showTicker(){
-  if(tickerOff||document.getElementById('modalBg').classList.contains('open'))return;
-  const[b,area,act,city,col]=bookings[bi%bookings.length];bi++;
+  if(tickerOff||document.querySelector('.modal-bg.open'))return;
+  let i;do{i=Math.floor(Math.random()*bookings.length)}while(i===lastBk);lastBk=i;
+  const[b,area,act,city,col,cat]=bookings[i];tickerCat=cat;
   document.getElementById('tickAvatar').textContent=b[0];
   document.getElementById('tickAvatar').style.background=col;
   document.getElementById('tickText').textContent=`${b} in ${area} ${act}`;
   document.getElementById('tickAgo').textContent=`${Math.floor(Math.random()*9)+1} minutes ago · ${city} · escrow-protected`;
+  ticker.classList.remove('show');void ticker.offsetWidth; /* restart the progress-bar animation */
   ticker.classList.add('show');
   clearTimeout(tickTimeout);
   tickTimeout=setTimeout(()=>ticker.classList.remove('show'),5200);
 }
-document.getElementById('tickClose').onclick=()=>{tickerOff=true;ticker.classList.remove('show')};
+/* hover pauses auto-dismiss; click browses that service; ✕ dismisses for good */
+ticker.addEventListener('mouseenter',()=>clearTimeout(tickTimeout));
+ticker.addEventListener('mouseleave',()=>{if(ticker.classList.contains('show'))tickTimeout=setTimeout(()=>ticker.classList.remove('show'),1800)});
+ticker.addEventListener('click',()=>{
+  ticker.classList.remove('show');clearTimeout(tickTimeout);
+  if(tickerCat)openResults(tickerCat);
+});
+document.getElementById('tickClose').onclick=e=>{e.stopPropagation();tickerOff=true;ticker.classList.remove('show')};
 setTimeout(showTicker,4500);setInterval(showTicker,14000);
 
 /* ============ CONTACT / POST-JOB MODAL ============ */
@@ -1290,8 +1610,8 @@ function openPostJob(hint){
   document.getElementById('successMsg').innerHTML='Vetted pros near you are reviewing your job right now. Expect your first quotes within <b>15 minutes</b> — we’ll ping you on WhatsApp.';
   showModal();
 }
-function openContact(idx){
-  const p=pros[idx];modalPro=p;
+function openContact(id){
+  const p=proById(id);modalPro=p;
   document.getElementById('modalTitle').textContent=`Contact ${p.n.split(' ')[0]} — free`;
   document.getElementById('modalSub').textContent=`${p.n} (${p.cat.replace(/s$/,'')}, ${p.area}) typically responds in ~${p.resp} minutes. No account needed.`;
   document.getElementById('successMsg').innerHTML=`Your message is on its way to <b>${p.n.split(' ')[0]}</b> — expect a reply within <b>~${p.resp} minutes</b> on WhatsApp. Your number was shared with this pro only.`;
@@ -1300,20 +1620,33 @@ function openContact(idx){
 function showModal(){
   modal.classList.remove('done');
   modalBg.classList.add('open');document.body.style.overflow='hidden';
-  sug.classList.remove('open');
+  setSugOpen(false);
   closeProfile();
 }
 function closeModal(){modalBg.classList.remove('open');document.body.style.overflow=''}
 document.getElementById('modalClose').onclick=closeModal;
 document.getElementById('mDone').onclick=closeModal;
 modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
-document.getElementById('mSubmit').onclick=()=>modal.classList.add('done');
+document.getElementById('mSubmit').onclick=()=>{
+  /* FUTURE: this payload posts to /api/leads and is routed to matching pros */
+  ServoraAPI.submitLead({
+    type:modalPro?'direct_contact':'job_post',
+    proId:modalPro?modalPro.id:null,
+    description:document.getElementById('mDesc').value,
+    area:document.getElementById('mArea').value,
+    name:document.getElementById('mName').value,
+    phone:document.getElementById('mPhone').value,
+    when:document.getElementById('mWhen').value,
+    state:citySel.value
+  });
+  modal.classList.add('done');
+};
 
 /* ============ PROFILE MODAL ============ */
 const profileBg=document.getElementById('profileBg');
 let profilePro=null;
-function openProfile(idx){
-  const p=pros[idx];profilePro=idx;
+function openProfile(id){
+  const p=proById(id);profilePro=id;
   document.getElementById('pfAvatar').textContent=initials(p.n);
   document.getElementById('pfAvatar').style.background=p.c;
   document.getElementById('pfName').textContent=p.n;
@@ -1323,6 +1656,8 @@ function openProfile(idx){
   document.getElementById('pfJobs').textContent=p.j;
   document.getElementById('pfResp').textContent='~'+p.resp+' min';
   document.getElementById('pfBio').textContent=p.bio;
+  /* per-pro skills once registration stores them; category fallback for seeds */
+  document.getElementById('pfSkills').innerHTML=(p.skills||categorySkills[p.cat]||[]).map(s=>`<span class="skill-chip">${s}</span>`).join('');
   document.getElementById('pfRev').textContent=p.rev;
   document.getElementById('pfRevWho').textContent='— '+p.who+' · verified booking';
   document.getElementById('pfPrice').textContent=p.pl;
@@ -1332,7 +1667,37 @@ function closeProfile(){profileBg.classList.remove('open');if(!modalBg.classList
 document.getElementById('profileClose').onclick=closeProfile;
 profileBg.addEventListener('click',e=>{if(e.target===profileBg)closeProfile()});
 document.getElementById('pfContact').onclick=()=>{if(profilePro!==null)openContact(profilePro)};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeProfile()}});
+
+/* ============ PRO REGISTRATION MODAL ============
+   Demo capture only — the payload already matches what
+   POST /api/pros/register will expect. */
+const regBg=document.getElementById('regBg'),regModal=document.getElementById('regModal');
+let regPlan='Pro';
+fillStateSelect(document.getElementById('rState'));
+document.getElementById('rTrade').innerHTML=services.map(s=>`<option>${s.name}</option>`).join('');
+function openRegister(plan){
+  regPlan=plan;
+  document.getElementById('regTitle').textContent=`Join Servora — ${plan} plan`;
+  regModal.classList.remove('done');
+  regBg.classList.add('open');document.body.style.overflow='hidden';
+}
+function closeRegister(){regBg.classList.remove('open');if(!modalBg.classList.contains('open'))document.body.style.overflow=''}
+document.getElementById('regClose').onclick=closeRegister;
+document.getElementById('rDone').onclick=closeRegister;
+regBg.addEventListener('click',e=>{if(e.target===regBg)closeRegister()});
+document.getElementById('rSubmit').onclick=()=>{
+  const app={
+    name:document.getElementById('rName').value,
+    phone:document.getElementById('rPhone').value,
+    trade:document.getElementById('rTrade').value,
+    state:document.getElementById('rState').value,
+    plan:regPlan
+  };
+  ServoraAPI.registerPro(app);
+  document.getElementById('regSuccessMsg').innerHTML=`Once verification passes (~48 hours), your profile appears automatically in <b>${app.trade}</b> listings for <b>${app.state}</b>. Our team will WhatsApp you — have your NIN and two guarantor contacts ready.`;
+  regModal.classList.add('done');
+};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeProfile();closeRegister()}});
 
 /* ============ GLOBAL CLICK DELEGATION ============ */
 document.addEventListener('click',e=>{
@@ -1343,13 +1708,7 @@ document.addEventListener('click',e=>{
   const post=e.target.closest('[data-post]');
   if(post){openPostJob();return}
   const postPro=e.target.closest('[data-post-pro]');
-  if(postPro){
-    modalPro=null;
-    document.getElementById('modalTitle').textContent=`Join Servora — ${postPro.dataset.postPro} plan`;
-    document.getElementById('modalSub').textContent='Tell us about your trade. Verification takes ~48 hours, then the leads start.';
-    document.getElementById('successMsg').innerHTML='Application received! Our verification team will reach out on WhatsApp within <b>48 hours</b>. Have your NIN and two guarantor contacts ready.';
-    showModal();return;
-  }
+  if(postPro){openRegister(postPro.dataset.postPro);return}
   const contact=e.target.closest('[data-contact]');
   if(contact){openContact(+contact.dataset.contact);return}
   const profile=e.target.closest('[data-profile]');
