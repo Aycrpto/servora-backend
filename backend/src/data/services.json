@@ -1,0 +1,10 @@
+[
+  { "name": "Electricians",    "priceFrom": 8000,  "priceLabel": "₦8,000",     "desc": "Wiring, sockets, fans & inverter installs" },
+  { "name": "Plumbers",        "priceFrom": 7500,  "priceLabel": "₦7,500",     "desc": "Leaks, pipes, pumps & bathroom fittings" },
+  { "name": "Cleaners",        "priceFrom": 12000, "priceLabel": "₦12,000",    "desc": "Deep cleaning, fumigation & housekeeping" },
+  { "name": "AC Technicians",  "priceFrom": 10000, "priceLabel": "₦10,000",    "desc": "Servicing, gas refills & installations" },
+  { "name": "Car Mechanics",   "priceFrom": 15000, "priceLabel": "₦15,000",    "desc": "Diagnostics, repairs & home service" },
+  { "name": "Tutors",          "priceFrom": 5000,  "priceLabel": "₦5,000/hr",  "desc": "Maths, sciences, English & exam prep" },
+  { "name": "Makeup Artists",  "priceFrom": 20000, "priceLabel": "₦20,000",    "desc": "Bridal glam, gele & event makeup" },
+  { "name": "Photographers",   "priceFrom": 35000, "priceLabel": "₦35,000",    "desc": "Weddings, events & studio portraits" }
+]

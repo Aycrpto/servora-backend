@@ -1,1 +1,10 @@
 .claude/settings.local.json
+node_modules/
+# secrets — never commit (API keys, tokens)
+.env
+.env.*
+!.env.example
+# runtime state — created from backend/data/db.seed.json on first run
+backend/data/db.json
+# user-uploaded portfolio photos
+uploads/

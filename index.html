@@ -70,7 +70,7 @@ section{position:relative}
 .logo-mark{width:34px;height:34px;border-radius:9px;background:#0e7a4a;display:grid;place-items:center;flex:none}
 .logo-mark svg{width:20px;height:20px}
 .logo em{font-style:normal}.logo .dot{color:var(--gold)}
-.nav-links{display:flex;gap:28px;font-size:14.5px;font-weight:500;color:var(--ink2)}
+.nav-links{display:flex;gap:23px;font-size:14.5px;font-weight:500;color:var(--ink2)}
 .nav-links a{position:relative;padding:6px 0;transition:color .2s}
 .nav-links a:hover,.nav-links a.active{color:var(--green)}
 .nav-links a::after{content:"";position:absolute;left:0;bottom:0;width:0;height:2px;background:var(--gold);transition:width .25s}
@@ -443,6 +443,96 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .modal label{display:block;font-size:13px;font-weight:700;margin:15px 0 7px;color:var(--ink2)}
 .modal input,.modal select,.modal textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 15px;font-family:inherit;font-size:16px;color:var(--ink);background:var(--soft);outline:none;transition:border-color .2s}
 .modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--green);background:var(--card)}
+/* real-time validation states */
+.modal input.invalid,.modal select.invalid{border-color:#c2452f;background:rgba(194,69,47,.06)}
+.modal input.valid{border-color:var(--green)}
+.ferr{font-size:12px;color:#b03a26;margin:5px 2px 0;line-height:1.45}
+.ferr:empty{display:none}
+.ferr::before{content:"⚠ ";font-size:11px}
+[data-theme="dark"] .ferr{color:#ff8a73}
+[data-theme="dark"] .modal input.invalid{border-color:#e0604a}
+.modal input[type="file"]{border-style:dashed;padding:11px 13px;font-size:13px;cursor:pointer}
+.modal input[type="file"]::file-selector-button{font-family:inherit;font-size:12.5px;font-weight:700;color:var(--green);background:var(--chip-green-bg);border:none;border-radius:999px;padding:7px 14px;margin-right:10px;cursor:pointer}
+/* portfolio / past-work uploader */
+.pf-sec{margin-top:18px;background:var(--soft);border:1.5px dashed var(--line);border-radius:14px;padding:16px}
+.pf-title{font-size:13.5px;font-weight:700;color:var(--ink)}
+.pf-rec{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;background:var(--chip-gold-bg);color:var(--gold-deep);padding:3px 8px;border-radius:999px;margin-left:6px;vertical-align:middle}
+[data-theme="dark"] .pf-rec{color:var(--gold-hi)}
+.pf-help{font-size:12.5px;color:var(--muted);margin:6px 0 12px;line-height:1.5}
+.pf-drop{display:flex;align-items:center;justify-content:center;gap:9px;border:1.5px dashed var(--green);border-radius:12px;background:var(--card);padding:13px;font-size:13.5px;font-weight:600;color:var(--green);cursor:pointer;transition:background .2s,opacity .2s;min-height:48px}
+.pf-drop:hover{background:var(--chip-green-bg)}
+.pf-drop.drag{background:var(--chip-green-bg);border-style:solid;transform:scale(1.01)}
+.pf-drop.full{opacity:.45;pointer-events:none}
+.pf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.pf-grid:empty{display:none}
+.pf-thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--card);animation:thumbIn .25s ease}
+@keyframes thumbIn{from{opacity:0;transform:scale(.9)}}
+.pf-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s}
+.pf-thumb:hover img{transform:scale(1.07)}
+.pf-thumb .rm{position:absolute;top:4px;right:4px;width:22px;height:22px;min-height:22px;border-radius:50%;background:rgba(6,32,21,.75);color:#fff;font-size:11px;display:grid;place-items:center;padding:0}
+.pf-thumb .rm:hover{background:#c2452f}
+.pf-count{font-size:11px;color:var(--faint);margin-top:8px;text-align:right}
+.pf-count:empty{display:none}
+/* lead confirmation screen */
+.sum-line{font-size:12.5px;color:var(--muted);background:var(--soft);border:1px solid var(--line2);border-radius:10px;padding:9px 13px;margin:10px 0 4px;text-align:center}
+.sum-line:empty{display:none}
+.next-steps{list-style:none;text-align:left;margin:16px 0 4px;display:flex;flex-direction:column;gap:11px;counter-reset:ns}
+.next-steps li{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;color:var(--ink2);line-height:1.5;counter-increment:ns}
+.next-steps li::before{content:counter(ns);flex:none;width:22px;height:22px;border-radius:50%;background:var(--chip-green-bg);color:var(--green);font-size:11px;font-weight:800;display:grid;place-items:center;margin-top:2px}
+.lead-ref{font-size:11.5px;color:var(--faint);margin:14px 0 2px;letter-spacing:.04em;text-align:center}
+.lead-ref:empty{display:none}
+/* pro leads inbox */
+.leads-list{margin-top:16px;display:flex;flex-direction:column;gap:10px;max-height:46vh;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
+.lead-card{background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:13px 15px;font-size:13px}
+.lead-card .lc-top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px}
+.lead-type{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:999px;background:var(--chip-green-bg);color:var(--green)}
+.lead-type.job{background:var(--chip-gold-bg);color:var(--gold-deep)}
+[data-theme="dark"] .lead-type.job{color:var(--gold-hi)}
+.lead-card time{color:var(--faint);font-size:11px}
+.lead-card .lc-desc{font-weight:600;color:var(--ink);margin-bottom:4px;line-height:1.45}
+.lead-card .lc-meta{color:var(--muted);font-size:12px;margin-top:2px}
+.lead-card .lc-cta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.lead-card .lc-cta a{font-size:12px;font-weight:700;color:var(--green);border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;display:inline-flex;gap:5px;align-items:center;transition:border-color .2s;min-height:34px}
+.lead-card .lc-cta a:hover{border-color:var(--green)}
+.leads-empty{text-align:center;color:var(--muted);padding:24px 10px;font-size:13.5px;line-height:1.6}
+/* login + signed-in bar */
+.linkish{color:var(--green);font-weight:700;text-decoration:underline;font-size:inherit;padding:0}
+.lbl-soft{font-weight:500;color:var(--faint)}
+.dash-id{display:flex;align-items:center;gap:11px;background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:10px 12px;margin-top:4px}
+.dash-id .avatar{width:38px;height:38px;font-size:13px}
+.dash-id .who b{font-size:13.5px;display:block;line-height:1.25}
+.dash-id .who span{font-size:11.5px;color:var(--muted)}
+.dash-id .lo{margin-left:auto;font-size:11.5px;font-weight:700;color:#c2452f;padding:7px 11px;border-radius:999px;min-height:34px;flex:none}
+.dash-id .lo:hover{background:rgba(194,69,47,.12)}
+/* dashboard: stats, inline profile edit, search & filters */
+.dash-modal{max-width:560px}
+.dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
+.dash-stat{background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:11px 8px;text-align:center}
+.dash-stat b{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em}
+.dash-stat span{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.dash-edit{margin-top:9px;background:var(--soft);border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+.dash-edit summary{list-style:none;cursor:pointer;padding:12px 15px;font-size:13px;font-weight:700;min-height:44px;display:flex;align-items:center;gap:7px;transition:color .2s}
+.dash-edit summary:hover{color:var(--green)}
+.dash-edit summary::-webkit-details-marker{display:none}
+.dash-edit summary::after{content:"▾";margin-left:auto;color:var(--faint);transition:transform .25s}
+.dash-edit[open] summary::after{transform:rotate(180deg)}
+.dash-edit .de-body{padding:0 15px 15px}
+.dash-edit label{font-size:12px;margin-top:11px}
+.de-msg{font-size:12px;margin-top:9px;text-align:center;color:var(--green);font-weight:700}
+.de-msg.err{color:#c2452f}
+.de-msg:empty{display:none}
+.dash-tools{margin-top:13px;display:flex;flex-direction:column;gap:9px}
+.dash-search{display:flex;align-items:center;gap:9px;background:var(--soft);border:1.5px solid var(--line);border-radius:12px;padding:0 12px;transition:border-color .2s}
+.dash-search:focus-within{border-color:var(--green)}
+.dash-search svg{color:var(--faint);flex:none}
+.dash-search input{flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:16px;color:var(--ink);padding:10px 0;min-height:44px;min-width:0}
+.fchips{display:flex;gap:6px;flex-wrap:wrap}
+.fchips button{font-size:12px;font-weight:700;padding:7px 13px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);color:var(--muted);min-height:36px;transition:.2s}
+.fchips button.on{background:var(--green);border-color:var(--green);color:#fff}
+[data-theme="dark"] .fchips button.on{color:#04150d}
+.fchips button:not(.on):hover{border-color:var(--green);color:var(--green)}
+.lead-count{font-size:11px;color:var(--faint);text-align:right}
+.lead-count:empty{display:none}
 .modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .modal .btn{width:100%;margin-top:22px}
 .modal .note{display:flex;gap:10px;align-items:flex-start;background:var(--chip-green-bg);border-radius:12px;padding:13px 15px;font-size:12.5px;color:var(--ink2);margin-top:16px;line-height:1.5}
@@ -463,12 +553,98 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .pmodal .pstat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
 .pmodal .bio{font-size:14.5px;color:var(--muted);line-height:1.65;margin-bottom:16px}
 .pmodal .skills-label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+/* public portfolio gallery */
+.pf-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px}
+.pf-gallery .shot{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--soft);cursor:zoom-in;padding:0}
+.pf-gallery .shot img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.pf-gallery .shot:hover img{transform:scale(1.06)}
+.pf-gallery .shot.more::after{content:attr(data-more);position:absolute;inset:0;background:rgba(6,32,21,.62);color:#fff;display:grid;place-items:center;font-size:15px;font-weight:800}
+.pf-none{font-size:12.5px;color:var(--muted);background:var(--soft);border:1px dashed var(--line);border-radius:10px;padding:14px;text-align:center;margin-bottom:16px}
+/* lightbox */
+.lightbox{position:fixed;inset:0;z-index:110;background:rgba(4,16,10,.92);display:none;align-items:center;justify-content:center;padding:20px}
+.lightbox.open{display:flex;animation:fadeIn .2s ease}
+.lightbox img{max-width:100%;max-height:86vh;border-radius:12px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.lightbox .lb-x{position:absolute;top:16px;right:16px;width:44px;height:44px;min-height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:18px;display:grid;place-items:center}
+.lightbox .lb-x:hover{background:rgba(255,255,255,.26)}
+.lightbox .lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;min-height:46px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;font-size:20px}
+.lightbox .lb-nav:hover{background:rgba(255,255,255,.26)}
+.lightbox .lb-prev{left:16px}.lightbox .lb-next{right:16px}
+.lightbox .lb-count{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#cfe3d6;font-size:12.5px;font-weight:600}
+/* mini shots on result cards */
+.pro-shots{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:12px}
+.pro-shots img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}
+/* dashboard portfolio manager */
+.dpf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:8px 0}
+.dpf-grid:empty{display:none}
+.dpf-thumb{position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;border:1px solid var(--line);background:var(--card)}
+.dpf-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.dpf-thumb .rm{position:absolute;top:3px;right:3px;width:21px;height:21px;min-height:21px;border-radius:50%;background:rgba(6,32,21,.78);color:#fff;font-size:10px;display:grid;place-items:center;padding:0}
+.dpf-thumb .rm:hover{background:#c2452f}
+.dpf-empty{font-size:12px;color:var(--muted);padding:10px 0}
 .pmodal .skills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
 .pmodal .skill-chip{font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--ink2)}
 .pmodal .rev{background:var(--soft);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;padding:14px 16px;font-size:13.5px;color:var(--ink2);font-style:italic;margin-bottom:6px}
 .pmodal .rev b{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:8px;font-weight:600}
 .pmodal .price-line{display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line);margin-top:16px;padding-top:14px;font-size:14px;color:var(--muted)}
 .pmodal .price-line b{font-size:19px;color:var(--ink);font-family:var(--serif)}
+
+/* ============ SUPPORT CHAT ============ */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.help-fab{position:fixed;right:20px;bottom:20px;z-index:62;display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;border-radius:999px;padding:13px 20px;font-size:14.5px;font-weight:700;box-shadow:0 10px 30px rgba(12,138,82,.4);transition:transform .2s,box-shadow .2s;min-height:50px}
+[data-theme="dark"] .help-fab{color:#04150d}
+.help-fab:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(12,138,82,.5)}
+.help-fab:active{transform:scale(.96)}
+.sup-modal{max-width:440px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:min(680px,90vh)}
+.sup-head{display:flex;align-items:center;gap:12px;padding:20px 22px 14px;border-bottom:1px solid var(--line2);flex:none}
+.sup-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(140deg,var(--green),var(--green-hi));color:#fff;display:grid;place-items:center;font-family:var(--serif);font-weight:600;font-size:19px;flex:none}
+.sup-head h3{font-size:17px;font-family:var(--sans);font-weight:700;margin:0;padding:0;letter-spacing:0}
+.sup-status{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.sup-status i{width:7px;height:7px;border-radius:50%;background:var(--green-hi);animation:pulse 2s infinite}
+.sup-tabs{display:flex;gap:4px;padding:10px 14px;border-bottom:1px solid var(--line2);flex:none}
+.sup-tabs button{flex:1;font-size:13px;font-weight:700;padding:9px;border-radius:9px;color:var(--muted);min-height:40px;transition:.2s}
+.sup-tabs button.on{background:var(--chip-green-bg);color:var(--green)}
+.sup-tabs button:not(.on):hover{background:var(--soft)}
+.sup-panel{padding:16px 18px;overflow-y:auto;flex:1;min-height:0}
+.sup-panel[hidden]{display:none}
+#panelChat{display:flex;flex-direction:column;padding:0}
+.chat-log{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:16px 18px 4px;display:flex;flex-direction:column;gap:10px;min-height:240px}
+.msg{max-width:86%;font-size:13.5px;line-height:1.55;padding:10px 14px;border-radius:15px;animation:msgIn .25s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}}
+.msg.bot{background:var(--soft);border:1px solid var(--line2);border-bottom-left-radius:5px;align-self:flex-start;color:var(--ink2)}
+.msg.me{background:var(--green);color:#fff;border-bottom-right-radius:5px;align-self:flex-end}
+[data-theme="dark"] .msg.me{color:#04150d}
+.msg b{font-weight:700}
+.msg.bot a{color:var(--green);font-weight:700;text-decoration:underline}
+.msg .handoff{display:flex;flex-direction:column;gap:7px;margin-top:11px}
+.msg .handoff a{display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;color:var(--ink2);text-decoration:none;min-height:42px;transition:border-color .2s}
+.msg .handoff a:hover{border-color:var(--green);color:var(--green)}
+.typing{display:flex;gap:4px;align-self:flex-start;background:var(--soft);border:1px solid var(--line2);border-radius:15px;border-bottom-left-radius:5px;padding:13px 15px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--faint);animation:blink 1.3s infinite}
+.typing i:nth-child(2){animation-delay:.18s}.typing i:nth-child(3){animation-delay:.36s}
+@keyframes blink{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.chat-chips{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px 0;flex:none}
+.chat-chips:empty{display:none}
+.chat-chips button{font-size:11.5px;font-weight:600;border:1.5px solid var(--line);background:var(--card);color:var(--ink2);border-radius:999px;padding:7px 12px;min-height:34px;transition:.2s}
+.chat-chips button:hover{border-color:var(--green);color:var(--green)}
+.chat-input{display:flex;gap:8px;padding:12px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line2);flex:none;align-items:center}
+.chat-input input{flex:1;border:1.5px solid var(--line);border-radius:999px;padding:11px 16px;font-family:inherit;font-size:16px;color:var(--ink);background:var(--soft);outline:none;min-height:46px;min-width:0;transition:border-color .2s}
+.chat-input input:focus{border-color:var(--green);background:var(--card)}
+.chat-send{width:46px;height:46px;min-height:46px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;flex:none;transition:.2s}
+[data-theme="dark"] .chat-send{color:#04150d}
+.chat-send:hover{filter:brightness(1.08);transform:scale(1.05)}
+.sup-channel{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:9px;transition:border-color .2s,transform .2s;min-height:62px}
+.sup-channel:hover{border-color:var(--green);transform:translateY(-2px)}
+.sup-channel .ch-ico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:17px;flex:none}
+.sup-channel.wa .ch-ico{background:var(--chip-green-bg)}
+.sup-channel.em .ch-ico{background:var(--chip-gold-bg)}
+.sup-channel .ch-txt{display:flex;flex-direction:column;min-width:0}
+.sup-channel .ch-txt b{font-size:14px}
+.sup-channel .ch-txt span{font-size:11.5px;color:var(--muted);line-height:1.4}
+.sup-channel .ch-go{margin-left:auto;color:var(--green);font-weight:700;flex:none}
+.sup-or{display:flex;align-items:center;gap:10px;margin:16px 0 4px;color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.sup-or::before,.sup-or::after{content:"";flex:1;height:1px;background:var(--line2)}
+#panelContact label{margin-top:12px}
+#panelContact textarea{resize:vertical}
 
 /* ============ MICRO-INTERACTIONS ============ */
 .logo .logo-mark{transition:transform .25s}
@@ -528,7 +704,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   .pc3{display:none}
   .hero-visual{min-height:300px}
   .pro{padding:18px}
-  .ticker{left:12px;right:12px;max-width:none;bottom:calc(84px + env(safe-area-inset-bottom))}
+  /* right gap keeps the ticker clear of the support FAB */
+  .ticker{left:12px;right:74px;max-width:none;bottom:calc(84px + env(safe-area-inset-bottom))}
   .mob-bar{display:flex}
   .foot-grid{grid-template-columns:1fr 1fr}
   .cats{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -555,8 +732,34 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   .pros-track{margin:0 -24px;padding-left:24px;padding-right:24px;scroll-padding-left:24px}
   .sec h2{font-size:clamp(26px,7.5vw,34px)}
   .sec-head p{font-size:15px}
+  /* modals become bottom-sheets: full-width, slide up, thumb-reachable */
+  .modal-bg{align-items:flex-end;padding:0}
+  .modal{max-width:none;width:100%;border-radius:22px 22px 0 0;border-bottom:none;padding:24px 20px calc(24px + env(safe-area-inset-bottom));max-height:92vh;animation:sheetUp .34s cubic-bezier(.22,.61,.36,1)}
+  .modal::before{content:"";position:absolute;top:9px;left:50%;transform:translateX(-50%);width:40px;height:4px;border-radius:99px;background:var(--line)}
+  .modal h3{padding-top:8px}
+  .modal .close{top:12px;right:12px}
+  .modal .btn{min-height:54px;font-size:16px}
+  .dash-stats{grid-template-columns:repeat(3,1fr)}
+  .leads-list{max-height:none}
+  .dash-modal .leads-list{max-height:52vh}
+  /* support: FAB clears the bottom action bar; chat fills the sheet */
+  .help-fab{right:12px;bottom:calc(84px + env(safe-area-inset-bottom));padding:12px;gap:0;width:50px;justify-content:center}
+  .help-fab span{display:none}
+  .sup-modal{max-height:88vh;padding:0}
+  .sup-modal::before{z-index:2}
+  .sup-head{padding-top:26px}
+  .chat-log{min-height:180px}
+  .sup-panel{padding:14px 16px}
+  .chat-log,.chat-chips{padding-left:16px;padding-right:16px}
+  .chat-input{padding-left:16px;padding-right:16px}
 }
-@media(max-width:400px){.modal .row2{grid-template-columns:1fr}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@media(max-width:400px){
+  .modal .row2{grid-template-columns:1fr}
+  .dash-stats{grid-template-columns:repeat(2,1fr)}
+  .fchips{gap:5px}
+  .fchips button{padding:7px 11px;font-size:11.5px}
+}
 @media(max-width:330px){.cats{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
@@ -578,6 +781,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <a href="#pros" data-spy="pros">Top Pros</a>
       <a href="#for-pros" data-spy="for-pros">For Professionals</a>
       <a href="#faq" data-spy="faq">FAQ</a>
+      <a href="#" data-leads data-login-label>Pro Login</a>
     </div>
     <div class="nav-cta">
       <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode">
@@ -596,6 +800,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   <a href="#pros">Top Pros</a>
   <a href="#for-pros">For Professionals</a>
   <a href="#faq">FAQ</a>
+  <a href="#" data-leads data-login-label>Pro Login</a>
   <button class="btn btn-primary" data-post>Book a Pro — free</button>
   <a href="#for-pros" class="btn btn-ghost">Become a Pro</a>
 </div>
@@ -918,6 +1123,9 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <div class="lead-note">For teams doing 10+ jobs a week</div>
       </div>
     </div>
+    <div class="rv" style="text-align:center;margin-top:28px">
+      <button class="btn btn-ghost btn-sm" data-leads>📥 Already a pro? View your leads</button>
+    </div>
     <div class="ad-strip rv">
       <div>
         <h4>📣 Advertise with Servora</h4>
@@ -1021,6 +1229,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <h5>For Pros</h5>
         <ul>
           <li><a href="#for-pros">Become a Pro</a></li>
+          <li><button data-leads>My leads</button></li>
           <li><a href="#for-pros">Pricing &amp; plans</a></li>
           <li><a href="#for-pros">Featured listings</a></li>
           <li><a href="mailto:ads@servora.ng">Advertise with us</a></li>
@@ -1031,8 +1240,9 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <ul>
           <li><a href="#how">How it works</a></li>
           <li><a href="#reviews">Reviews</a></li>
-          <li><a href="#faq">FAQ &amp; support</a></li>
-          <li><a href="mailto:hello@servora.ng">Contact us</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><button data-support>💬 Support chat</button></li>
+          <li><button data-support="contact">Contact support</button></li>
         </ul>
       </div>
     </div>
@@ -1061,25 +1271,31 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 <div class="modal-bg" id="modalBg">
   <div class="modal" id="modal" role="dialog" aria-modal="true">
     <button class="close" id="modalClose" aria-label="Close">✕</button>
-    <div class="form-view">
+    <!-- Semantic form: real-time debounced validation, labels bound via
+         for/id, errors announced to screen readers through aria-live -->
+    <form class="form-view" id="leadForm" novalidate>
       <h3 id="modalTitle">Post a job — free</h3>
       <p class="sub" id="modalSub">Takes 60 seconds. Vetted pros reply with quotes — usually within 15 minutes.</p>
-      <label>What do you need done?</label>
-      <input type="text" id="mDesc" placeholder="e.g. AC not cooling, needs gas refill">
-      <label>Your area</label>
-      <input type="text" id="mArea" placeholder="e.g. Lekki Phase 1, Lagos">
+      <label for="mDesc">What do you need done?</label>
+      <input type="text" id="mDesc" name="description" placeholder="e.g. AC not cooling, needs gas refill" required aria-required="true" aria-describedby="mDescErr" autocomplete="off">
+      <p class="ferr" id="mDescErr" aria-live="polite"></p>
+      <label for="mArea">Your area</label>
+      <input type="text" id="mArea" name="area" placeholder="e.g. Lekki Phase 1, Lagos" required aria-required="true" aria-describedby="mAreaErr" autocomplete="address-level2">
+      <p class="ferr" id="mAreaErr" aria-live="polite"></p>
       <div class="row2">
         <div>
-          <label>First name</label>
-          <input type="text" id="mName" placeholder="e.g. Ayo">
+          <label for="mName">First name</label>
+          <input type="text" id="mName" name="name" placeholder="e.g. Ayo" required aria-required="true" aria-describedby="mNameErr" autocomplete="given-name">
+          <p class="ferr" id="mNameErr" aria-live="polite"></p>
         </div>
         <div>
-          <label>WhatsApp number</label>
-          <input type="tel" id="mPhone" placeholder="080X XXX XXXX">
+          <label for="mPhone">WhatsApp number</label>
+          <input type="tel" id="mPhone" name="phone" inputmode="tel" placeholder="080X XXX XXXX" required aria-required="true" aria-describedby="mPhoneErr" autocomplete="tel">
+          <p class="ferr" id="mPhoneErr" aria-live="polite"></p>
         </div>
       </div>
-      <label>When?</label>
-      <select id="mWhen">
+      <label for="mWhen">When?</label>
+      <select id="mWhen" name="when">
         <option>As soon as possible</option>
         <option>Today</option>
         <option>Tomorrow</option>
@@ -1089,12 +1305,19 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
         <span><b>No account created, no fees.</b> Your number is shared only with pros you contact. Payment is held in escrow and released when you confirm the job is done.</span>
       </div>
-      <button class="btn btn-gold" id="mSubmit">Get my free quotes →</button>
-    </div>
+      <button type="submit" class="btn btn-gold" id="mSubmit">Get my free quotes →</button>
+    </form>
     <div class="success">
       <div class="big"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
       <h3 style="padding-right:0">Request sent! 🎉</h3>
-      <p class="sub" id="successMsg" style="margin-bottom:26px">Vetted pros near you are reviewing your job right now. Expect your first quotes within <b>15 minutes</b> — we’ll ping you on WhatsApp.</p>
+      <p class="sub" id="successMsg" style="margin-bottom:8px">Your request has been sent to the professional.</p>
+      <div class="sum-line" id="leadSummary"></div>
+      <ol class="next-steps" aria-label="What happens next">
+        <li><span id="nsTime">They usually respond within <b>15–30 minutes on WhatsApp</b>.</span></li>
+        <li><span>You’ll also receive a <b>WhatsApp confirmation</b> from Servora with your request details.</span></li>
+        <li><span>Pay only when the job is done — your money sits safely in <b>escrow</b> until you confirm.</span></li>
+      </ol>
+      <div class="lead-ref" id="leadRef"></div>
       <button class="btn btn-primary" id="mDone">Done</button>
     </div>
   </div>
@@ -1118,6 +1341,9 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <div class="pstat"><b id="pfResp">~12 min</b><span>Responds</span></div>
     </div>
     <p class="bio" id="pfBio"></p>
+    <!-- DYNAMIC: portfolio photos from pro.portfolio (URLs written by the API) -->
+    <div class="skills-label">Past work</div>
+    <div class="pf-gallery" id="pfGallery"></div>
     <div class="skills-label">Services offered</div>
     <div class="skills" id="pfSkills"></div>
     <div class="rev"><span id="pfRev"></span><b id="pfRevWho"></b></div>
@@ -1138,18 +1364,50 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <p class="sub">Create your professional profile. Verification takes ~48 hours — then your profile goes live and the leads start.</p>
       <div class="row2">
         <div>
-          <label>Full name</label>
-          <input type="text" id="rName" placeholder="e.g. Emeka Obi">
+          <label for="rName">Full name</label>
+          <input type="text" id="rName" placeholder="e.g. Emeka Obi" required aria-required="true" aria-describedby="rNameErr" autocomplete="name">
+          <p class="ferr" id="rNameErr" aria-live="polite"></p>
         </div>
         <div>
-          <label>WhatsApp number</label>
-          <input type="tel" id="rPhone" placeholder="080X XXX XXXX">
+          <label for="rPhone">WhatsApp number</label>
+          <input type="tel" id="rPhone" inputmode="tel" placeholder="080X XXX XXXX" required aria-required="true" aria-describedby="rPhoneErr" autocomplete="tel">
+          <p class="ferr" id="rPhoneErr" aria-live="polite"></p>
         </div>
       </div>
+      <label for="rEmail">Email <span class="lbl-soft">(optional — lets you sign in with email too)</span></label>
+      <input type="email" id="rEmail" inputmode="email" placeholder="you@example.com" aria-describedby="rEmailErr" autocomplete="email">
+      <p class="ferr" id="rEmailErr" aria-live="polite"></p>
       <label>Your trade</label>
       <select id="rTrade"></select>
-      <label>State you work in</label>
-      <select id="rState"></select>
+      <div class="row2">
+        <div>
+          <label>State you work in</label>
+          <select id="rState"></select>
+        </div>
+        <div>
+          <label>LGA / Area</label>
+          <input type="text" id="rLga" placeholder="e.g. Ikeja">
+        </div>
+      </div>
+      <label for="rPw">Create a password <span class="lbl-soft">(optional — for signing in to view your leads)</span></label>
+      <input type="password" id="rPw" autocomplete="new-password" placeholder="Leave empty to use demo password servora123">
+      <label for="rId">Upload ID — NIN slip, driver’s licence or voter’s card <span class="lbl-soft">(max 5MB)</span></label>
+      <input type="file" id="rId" accept="image/*,.pdf" aria-describedby="rIdErr">
+      <p class="ferr" id="rIdErr" aria-live="polite"></p>
+      <!-- Portfolio / past work — OPTIONAL. Files are previewed locally;
+           only metadata is sent for now (simulated upload, like the ID). -->
+      <div class="pf-sec">
+        <div class="pf-title">Show your past work <span class="pf-rec">Recommended</span></div>
+        <p class="pf-help">Upload 2–5 clear photos of jobs you’ve done before (max 5MB each). Professionals who show their work get <b>more bookings</b>.</p>
+        <p class="ferr" id="pfErr" aria-live="polite"></p>
+        <label class="pf-drop" id="pfDrop" for="rPortfolio">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <span id="pfDropText">Add photos of your work</span>
+        </label>
+        <input type="file" id="rPortfolio" accept="image/*" multiple hidden>
+        <div class="pf-grid" id="pfGrid"></div>
+        <div class="pf-count" id="pfCount"></div>
+      </div>
       <div class="note">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
         <span><b>4-stage verification:</b> NIN/ID check, skill assessment, two guarantor references and address confirmation. Have your NIN and guarantor contacts ready.</span>
@@ -1165,21 +1423,190 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   </div>
 </div>
 
+<!-- ============ PORTFOLIO LIGHTBOX ============ -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Portfolio photo">
+  <button class="lb-x" id="lbClose" aria-label="Close photo">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous photo">‹</button>
+  <img id="lbImg" alt="">
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Next photo">›</button>
+  <span class="lb-count" id="lbCount"></span>
+</div>
+
+<!-- ============ SUPPORT LAUNCHER ============ -->
+<button class="help-fab" id="helpFab" data-support aria-label="Open Servora support chat">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 21l2-5.6A8.5 8.5 0 1 1 21 11.5z"/></svg>
+  <span>Help</span>
+</button>
+
+<!-- ============ SUPPORT MODAL (chat + contact) ============
+     The assistant answers from a local knowledge base of Servora's own
+     policies (instant, works offline). To use a real LLM instead, POST the
+     transcript to /api/support/chat and render the reply — see askAgent(). -->
+<div class="modal-bg" id="supportBg">
+  <div class="modal sup-modal" role="dialog" aria-modal="true" aria-label="Servora support">
+    <button class="close" id="supportClose" aria-label="Close">✕</button>
+    <div class="sup-head">
+      <div class="sup-avatar" aria-hidden="true">S</div>
+      <div>
+        <h3>Servora Support</h3>
+        <span class="sup-status"><i></i> Typically replies instantly · 24/7</span>
+      </div>
+    </div>
+    <div class="sup-tabs" role="tablist">
+      <button role="tab" id="tabChat" aria-selected="true" class="on" data-sup-tab="chat">💬 Chat</button>
+      <button role="tab" id="tabContact" aria-selected="false" data-sup-tab="contact">📩 Contact us</button>
+    </div>
+
+    <!-- CHAT PANEL -->
+    <div class="sup-panel" id="panelChat" role="tabpanel" aria-labelledby="tabChat">
+      <div class="chat-log" id="chatLog" role="log" aria-live="polite" aria-label="Conversation"></div>
+      <div class="chat-chips" id="chatChips"></div>
+      <form class="chat-input" id="chatForm">
+        <label for="chatText" class="sr-only">Type your message</label>
+        <input type="text" id="chatText" placeholder="Ask anything — or type “talk to human”" autocomplete="off">
+        <button type="submit" class="chat-send" aria-label="Send message">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- CONTACT PANEL -->
+    <div class="sup-panel" id="panelContact" role="tabpanel" aria-labelledby="tabContact" hidden>
+      <a class="sup-channel wa" href="https://wa.me/2348000000000?text=Hi%20Servora%20support%2C%20I%20need%20help%20with..." target="_blank" rel="noopener">
+        <span class="ch-ico" aria-hidden="true">💬</span>
+        <span class="ch-txt"><b>Chat on WhatsApp</b><span>Fastest — we reply in ~5 minutes, 8am–9pm daily</span></span>
+        <span class="ch-go" aria-hidden="true">→</span>
+      </a>
+      <a class="sup-channel em" href="mailto:support@servora.ng" target="_blank" rel="noopener">
+        <span class="ch-ico" aria-hidden="true">✉️</span>
+        <span class="ch-txt"><b>support@servora.ng</b><span>Email us directly — reply within 24 hours</span></span>
+        <span class="ch-go" aria-hidden="true">→</span>
+      </a>
+      <div class="sup-or"><span>or send us a message</span></div>
+      <form id="supportForm" novalidate>
+        <div class="row2">
+          <div>
+            <label for="sName">Your name</label>
+            <input type="text" id="sName" required aria-required="true" aria-describedby="sNameErr" placeholder="e.g. Ayo" autocomplete="name">
+            <p class="ferr" id="sNameErr" aria-live="polite"></p>
+          </div>
+          <div>
+            <label for="sEmail">Email</label>
+            <input type="email" id="sEmail" inputmode="email" required aria-required="true" aria-describedby="sEmailErr" placeholder="you@example.com" autocomplete="email">
+            <p class="ferr" id="sEmailErr" aria-live="polite"></p>
+          </div>
+        </div>
+        <label for="sTopic">Topic</label>
+        <select id="sTopic">
+          <option>A booking or quote</option>
+          <option>Payment or refund</option>
+          <option>A problem with a pro</option>
+          <option>My professional account</option>
+          <option>Something else</option>
+        </select>
+        <label for="sMsg">Message</label>
+        <textarea id="sMsg" rows="4" required aria-required="true" aria-describedby="sMsgErr" placeholder="Tell us what happened — the more detail, the faster we can help."></textarea>
+        <p class="ferr" id="sMsgErr" aria-live="polite"></p>
+        <button type="submit" class="btn btn-gold" id="sSubmit">Send message →</button>
+        <p class="de-msg" id="sSent" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PRO LOGIN ============
+     Demo auth: POST /api/auth/login with WhatsApp number (or email)
+     + password. Pros without a stored password use the shared demo
+     password. FUTURE: bcrypt hashes + WhatsApp OTP, real JWT. -->
+<div class="modal-bg" id="loginBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Professional sign in">
+    <button class="close" id="loginClose" aria-label="Close">✕</button>
+    <form id="loginForm" novalidate>
+      <h3>Pro sign in</h3>
+      <p class="sub">Sign in to see your leads. New here? <button type="button" class="linkish" data-post-pro="Starter">Create your free profile</button></p>
+      <label for="lgId">WhatsApp number or email</label>
+      <input type="text" id="lgId" name="identifier" inputmode="tel" autocomplete="username" placeholder="080X XXX XXXX" required aria-required="true" aria-describedby="lgIdErr">
+      <p class="ferr" id="lgIdErr" aria-live="polite"></p>
+      <label for="lgPw">Password</label>
+      <input type="password" id="lgPw" name="password" autocomplete="current-password" placeholder="Your password" required aria-required="true" aria-describedby="lgPwErr">
+      <p class="ferr" id="lgPwErr" aria-live="polite"></p>
+      <div class="note">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span><b>Demo mode:</b> pros who didn’t set a password sign in with <b>servora123</b>. Seed pros use 0801&nbsp;000&nbsp;00XX (XX = profile number).</span>
+      </div>
+      <button type="submit" class="btn btn-gold" id="lgSubmit">Sign in →</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ PRO DASHBOARD ============
+     Profile summary + stats + inline profile editing + lead inbox with
+     search & filters. Data: GET /api/pros/:id/leads;
+     profile updates: PATCH /api/pros/:id (demo bearer token). -->
+<div class="modal-bg" id="leadsBg">
+  <div class="modal pmodal dash-modal" role="dialog" aria-modal="true">
+    <button class="close" id="leadsClose" aria-label="Close">✕</button>
+    <h3>My dashboard</h3>
+    <div class="dash-id" id="dashWho"></div>
+    <div class="dash-stats" id="dashStats"></div>
+    <details class="dash-edit" id="dashEdit">
+      <summary>✏️ Edit my profile</summary>
+      <div class="de-body">
+        <label for="eBio">Bio — what should customers know?</label>
+        <textarea id="eBio" rows="3" maxlength="300" placeholder="e.g. 10 years on the tools, neat work, no stories."></textarea>
+        <div class="row2">
+          <div>
+            <label for="eResp">Response time (minutes)</label>
+            <input type="number" id="eResp" min="1" max="720" inputmode="numeric">
+          </div>
+          <div>
+            <label for="ePrice">Starting price (₦)</label>
+            <input type="number" id="ePrice" min="0" step="500" inputmode="numeric" placeholder="e.g. 8000">
+          </div>
+        </div>
+        <label>Past work photos <span class="lbl-soft">(up to 5, max 5MB each)</span></label>
+        <div class="dpf-grid" id="dpfGrid"></div>
+        <div class="dpf-empty" id="dpfEmpty">No portfolio photos yet — add a few to win more bookings.</div>
+        <label class="pf-drop" id="dpfDrop" for="dpfInput" role="button" tabindex="0">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <span id="dpfDropText">Add photos</span>
+        </label>
+        <input type="file" id="dpfInput" accept="image/*" multiple hidden>
+        <p class="ferr" id="dpfErr" aria-live="polite"></p>
+        <button type="button" class="btn btn-primary btn-sm" id="dashSave" style="width:100%;margin-top:14px">Save changes</button>
+        <p class="de-msg" id="dashSaveMsg" aria-live="polite"></p>
+      </div>
+    </details>
+    <div class="dash-tools">
+      <div class="dash-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="leadSearch" placeholder="Search by customer or request…" aria-label="Search leads">
+      </div>
+      <div class="fchips" id="leadChips" role="group" aria-label="Filter leads">
+        <button type="button" data-f="all" class="on">All leads</button>
+        <button type="button" data-f="direct">Direct contact</button>
+        <button type="button" data-f="job">Job posts</button>
+        <button type="button" data-f="today">Today</button>
+      </div>
+      <div class="lead-count" id="leadCount" aria-live="polite"></div>
+    </div>
+    <div class="leads-list" id="leadsList"></div>
+  </div>
+</div>
+
 <script>
 /* ================================================================
-   DATA LAYER — frontend-only seed data (demo mode)
+   DATA LAYER
    ----------------------------------------------------------------
-   When the backend is ready, replace the bodies of the ServoraAPI
-   methods (below the seed arrays) with real fetch() calls. The UI
-   only ever renders through ServoraAPI — never directly from the
-   seed arrays — so nothing else needs to change.
-
-   Planned endpoints:
+   The UI renders exclusively through ServoraAPI (further below),
+   which now calls the real REST API served from /backend:
      GET  /api/services                     → service categories
      GET  /api/pros?category=&state=&sort=  → verified pro profiles
      GET  /api/pros/featured                → Elite subscribers first
      POST /api/leads                        → customer job requests
      POST /api/pros/register                → professional sign-ups
+   The seed arrays below are the OFFLINE FALLBACK so the page still
+   works when opened straight from disk with no server running.
    ================================================================ */
 
 /* All 36 Nigerian states + FCT — powers every location selector */
@@ -1235,7 +1662,24 @@ pros.forEach((p,i)=>{
   p.state=stateOfCity[p.city];
   p.tier=p.b.includes('f')?'elite':p.b.includes('t')?'pro':'starter';
 });
-const proById=id=>pros.find(p=>p.id===id);
+/* Pro lookup — covers bundled seeds AND pros fetched live from the API
+   (backend-registered pros have UUID string ids, seeds have numbers). */
+const proCache={};
+const cachePros=list=>{list.forEach(p=>proCache[String(p.id)]=p);return list};
+const proById=id=>proCache[String(id)]||pros.find(p=>String(p.id)===String(id));
+
+/* Adapter: API record (backend/data/db.json shape) → internal card shape */
+const mapApiPro=a=>({id:a.id,n:a.name,cat:a.category,area:a.area||a.lga||a.state,city:a.city||a.state,state:a.state,lga:a.lga||null,r:a.rating,j:a.jobsDone||0,price:a.priceFrom,pl:a.priceLabel||'Quote on request',resp:a.responseMins||20,c:a.avatarColor||'#0e7a4a',b:(a.badges&&a.badges.length)?a.badges:['v'],tier:a.tier||'starter',bio:a.bio||'',rev:a.review?a.review.text:null,who:a.review?a.review.by:null,skills:a.skills||null,portfolio:a.portfolio||[]});
+
+/* Thin fetch wrapper — returns null on any failure so callers can fall
+   back to bundled seed data (page must work from file:// too). */
+async function apiFetch(path,opts){
+  try{
+    const r=await fetch(path,Object.assign({headers:{'Content-Type':'application/json'}},opts));
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return await r.json();
+  }catch(e){return null}
+}
 
 /* Services offered per trade — shown on profile modals.
    FUTURE: each pro stores their own `skills` array at registration;
@@ -1252,43 +1696,108 @@ const categorySkills={
 };
 
 /* ================================================================
-   ServoraAPI — swap each method body for a real fetch() later.
+   ServoraAPI — now backed by the real REST API (see /backend).
+   Every method tries the live endpoint first and falls back to the
+   bundled seed data when no server is reachable (e.g. opening
+   index.html straight from disk), so the page always works.
+   Run the API with:  cd backend && npm start   (Node + Express)
+   or the dev bridge: serve.ps1 (same contract, same db.json).
    ================================================================ */
 const ServoraAPI={
-  /* FUTURE: return (await fetch('/api/services')).json() */
+  /* GET /api/services — taxonomy is bundled too for instant render */
   async getServices(){return services},
 
-  /* FUTURE: fetch(`/api/pros?category=${category}&state=${state}&sort=${sort}`)
-     Ranking rule the backend must keep: sort key first, then
-     subscription tier (Elite > Pro > Starter) as tiebreak. */
+  /* GET /api/pros?category=&state=&sort= */
   async getPros({category=null,state=null,sort='rating'}={}){
+    const qs=new URLSearchParams();
+    if(category)qs.set('category',category);
+    if(state)qs.set('state',state);
+    qs.set('sort',sort);
+    const live=await apiFetch('/api/pros?'+qs);
+    if(live&&live.pros)return{pros:cachePros(live.pros.map(mapApiPro)),stateCovered:!!live.stateCovered};
+    /* offline fallback — bundled seeds, same ranking rules as the API */
     let list=pros.slice();
     if(category)list=list.filter(p=>p.cat===category);
     const inState=state?list.filter(p=>p.state===state):list;
-    const stateCovered=inState.length>0;
-    if(state&&stateCovered)list=inState;
+    const stateCovered=Boolean(state)&&inState.length>0;
+    if(stateCovered)list=inState;
     const tierRank={elite:0,pro:1,starter:2};
     const by={rating:(a,b)=>b.r-a.r,resp:(a,b)=>a.resp-b.resp,price:(a,b)=>a.price-b.price,jobs:(a,b)=>b.j-a.j};
     list.sort((a,b)=>by[sort](a,b)||tierRank[a.tier]-tierRank[b.tier]);
-    return{pros:list,stateCovered};
+    return{pros:cachePros(list),stateCovered};
   },
 
-  /* FUTURE: fetch('/api/pros/featured') — paid placement:
-     Elite subscribers first, then Pro, ranked by rating. */
+  /* GET /api/pros/featured — Elite paid placement first */
   async getFeaturedPros(){
+    const live=await apiFetch('/api/pros/featured');
+    if(live&&live.pros)return cachePros(live.pros.map(mapApiPro));
     const tierRank={elite:0,pro:1,starter:2};
-    return pros.filter(p=>p.tier!=='starter')
-      .sort((a,b)=>tierRank[a.tier]-tierRank[b.tier]||b.r-a.r).slice(0,8);
+    return cachePros(pros.filter(p=>p.tier!=='starter')
+      .sort((a,b)=>tierRank[a.tier]-tierRank[b.tier]||b.r-a.r).slice(0,8));
   },
 
-  /* FUTURE: POST /api/leads — customer stays account-free;
-     the lead is routed to matching pros by category + state. */
-  async submitLead(lead){console.log('[demo] lead captured →',lead);return{ok:true}},
+  /* POST /api/leads — customer stays account-free */
+  async submitLead(lead){
+    const live=await apiFetch('/api/leads',{method:'POST',body:JSON.stringify(lead)});
+    if(live)return live;
+    console.log('[offline] lead captured →',lead);
+    return{ok:true,offline:true};
+  },
 
-  /* FUTURE: POST /api/pros/register — creates a profile in
-     'pending_verification'; it enters listings automatically
-     once the 4-stage verification passes. */
-  async registerPro(application){console.log('[demo] pro application →',application);return{ok:true,status:'pending_verification'}}
+  /* POST /api/pros/register — profile enters listings once verified
+     (demo mode auto-verifies so it appears immediately) */
+  async registerPro(application){
+    /* Parses the body on 4xx too, so rejections (duplicate phone/email)
+       surface as {ok:false}. Only a truly unreachable server falls back
+       to the offline path — never a server that said "no". */
+    try{
+      const r=await fetch('/api/pros/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(application)});
+      return await r.json();
+    }catch(e){
+      console.log('[offline] pro application →',application);
+      return{ok:true,offline:true,status:'pending_verification'};
+    }
+  },
+
+  /* GET /api/pros/:id/leads — a professional's lead inbox
+     (needs the API; returns null offline so the UI can say so) */
+  async getProLeads(proId){
+    return apiFetch('/api/pros/'+encodeURIComponent(proId)+'/leads');
+  },
+
+  /* POST /api/auth/login — demo auth: WhatsApp number or email +
+     password (shared demo password when none was set at signup).
+     Parses the body even on 401 so the friendly error reaches the UI;
+     returns null only when the server is unreachable.
+     FUTURE: WhatsApp OTP + hashed passwords, real JWTs. */
+  async login(credentials){
+    try{
+      const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(credentials)});
+      return await r.json();
+    }catch(e){return null}
+  },
+
+  /* POST /api/support — a support message from the contact form.
+     FUTURE: forward to the support inbox / helpdesk. */
+  async submitSupport(msg){
+    const live=await apiFetch('/api/support',{method:'POST',body:JSON.stringify(msg)});
+    if(live)return live;
+    console.log('[offline] support message →',msg);
+    return{ok:true,offline:true};
+  },
+
+  /* PATCH /api/pros/:id — update editable profile fields (bio,
+     responseMins, priceFrom). Demo bearer token authorises the write. */
+  async updatePro(id,patch,token){
+    try{
+      const r=await fetch('/api/pros/'+encodeURIComponent(id),{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},
+        body:JSON.stringify(patch)
+      });
+      return await r.json();
+    }catch(e){return null}
+  }
 };
 const testimonials=[
  {q:"My AC guy vanished mid-repair last year. The Servora technician came same day, quoted ₦18,000 upfront, and the app held my money until the unit was blowing cold. <em>This is how it should always work.</em>",n:"Adaeze O.",r:"Homeowner · Lekki Phase 1, Lagos",c:"#0e7a4a"},
@@ -1313,6 +1822,32 @@ const bookings=[
 const singular={"Electricians":"an electrician","Plumbers":"a plumber","Cleaners":"a cleaner","AC Technicians":"an AC technician","Car Mechanics":"a car mechanic","Tutors":"a tutor","Makeup Artists":"a makeup artist","Photographers":"a photographer"};
 const badgeMap={v:'<span class="badge v">✓ ID Verified</span>',t:'<span class="badge t">Top Rated</span>',f:'<span class="badge f">★ Featured</span>'};
 const initials=n=>n.split(' ').map(w=>w[0]).join('').slice(0,2);
+
+/* Location display: always "LGA, State" in title case — fixes duplicates
+   like "Ikeja, Ikeja" from registrations that stored the LGA in both
+   fields, and lower-case user input like "ikeja". Short all-caps words
+   (GRA, VI, VGC) and roman numerals (Wuse II) are preserved. */
+const titleCase=s=>String(s||'').trim().replace(/\s+/g,' ').split(' ').map(w=>{
+  if(/^[A-Z0-9]{2,4}$/.test(w))return w;                            /* acronyms: GRA, VI, VGC */
+  if(/^(i{1,3}|iv|v|vi{0,3}|ix|x)$/i.test(w))return w.toUpperCase(); /* roman numerals: II, IV */
+  return w.split('-').map(x=>x?x[0].toUpperCase()+x.slice(1).toLowerCase():x).join('-');
+}).join(' ');
+const stateDisplay=s=>s==='FCT Abuja'?'Abuja':String(s||'');
+/* Portfolio photos for a pro. Accepts the current shape (array of URL
+   strings) and tolerates the older metadata-only shape ({fileName,…}),
+   which has no image to show. */
+const proPhotos=p=>(Array.isArray(p&&p.portfolio)?p.portfolio:[])
+  .map(x=>typeof x==='string'?x:(x&&(x.url||x.dataUrl))||null)
+  .filter(Boolean);
+
+const proLocation=p=>{
+  /* prefer the recognizable area name (Victoria Island) over the raw
+     administrative LGA (Eti-Osa); registered pros store the same value in both */
+  const place=titleCase(p.area||p.lga||'');
+  const st=stateDisplay(p.state);
+  if(!place||place.toLowerCase()===st.toLowerCase())return st||place;
+  return `${place}, ${st}`;
+};
 
 /* ============ THEME ============ */
 document.getElementById('themeBtn').onclick=()=>{
@@ -1346,11 +1881,12 @@ function proCard(p){
  return `<div class="pro" data-profile="${p.id}">
    <div class="top">
      <div class="avatar" style="background:${p.c}">${initials(p.n)}</div>
-     <div><h4>${p.n}</h4><div class="trade">${p.cat.replace(/s$/,'')} · ${p.area}, ${p.city}</div></div>
+     <div><h4>${p.n}</h4><div class="trade">${p.cat.replace(/s$/,'')} · ${proLocation(p)}</div></div>
    </div>
-   <div class="rating"><span class="s">★ ${p.r.toFixed(1)}</span><span class="n">(${p.j} jobs)</span></div>
+   <div class="rating"><span class="s">${p.r?'★ '+Number(p.r).toFixed(1):'✦ New'}</span><span class="n">(${p.j||0} jobs)</span></div>
    <div class="badges">${p.b.map(b=>badgeMap[b]).join('')}</div>
    <div class="resp"><span class="dot"></span>Responds in ~${p.resp} min</div>
+   ${(sh=>sh.length?`<div class="pro-shots">${sh.slice(0,2).map((s,i)=>`<img src="${esc(s)}" alt="${esc(p.n)} — past work ${i+1}" decoding="async">`).join('')}</div>`:'')(proPhotos(p))}
    <div class="statline"><span>Starting price</span><b>${p.pl}</b></div>
    <div class="cta-row">
      <button class="btn btn-ghost btn-sm" data-profile="${p.id}">Profile</button>
@@ -1602,23 +2138,26 @@ setTimeout(showTicker,4500);setInterval(showTicker,14000);
 
 /* ============ CONTACT / POST-JOB MODAL ============ */
 const modalBg=document.getElementById('modalBg'),modal=document.getElementById('modal');
-let modalPro=null;
+let modalPro=null,modalService=null;
 function openPostJob(hint){
-  modalPro=null;
+  modalPro=null;modalService=hint||null;
   document.getElementById('modalTitle').textContent=hint?`Book ${singular[hint]||hint} — free`:'Post a job — free';
   document.getElementById('modalSub').textContent='Takes 60 seconds. Vetted pros reply with quotes — usually within 15 minutes. No account needed.';
-  document.getElementById('successMsg').innerHTML='Vetted pros near you are reviewing your job right now. Expect your first quotes within <b>15 minutes</b> — we’ll ping you on WhatsApp.';
+  document.getElementById('successMsg').innerHTML='Your request has been sent to <b>vetted pros near you</b>.';
+  document.getElementById('nsTime').innerHTML='First replies usually land within <b>15–30 minutes on WhatsApp</b>.';
   showModal();
 }
 function openContact(id){
-  const p=proById(id);modalPro=p;
+  const p=proById(id);modalPro=p;modalService=p.cat;
   document.getElementById('modalTitle').textContent=`Contact ${p.n.split(' ')[0]} — free`;
-  document.getElementById('modalSub').textContent=`${p.n} (${p.cat.replace(/s$/,'')}, ${p.area}) typically responds in ~${p.resp} minutes. No account needed.`;
-  document.getElementById('successMsg').innerHTML=`Your message is on its way to <b>${p.n.split(' ')[0]}</b> — expect a reply within <b>~${p.resp} minutes</b> on WhatsApp. Your number was shared with this pro only.`;
+  document.getElementById('modalSub').textContent=`${p.n} (${p.cat.replace(/s$/,'')}, ${proLocation(p)}) typically responds in ~${p.resp} minutes. No account needed.`;
+  document.getElementById('successMsg').innerHTML=`Your request has been sent to <b>${p.n.split(' ')[0]}</b> directly.`;
+  document.getElementById('nsTime').innerHTML=`${p.n.split(' ')[0]} usually replies within <b>~${p.resp} minutes on WhatsApp</b>.`;
   showModal();
 }
 function showModal(){
   modal.classList.remove('done');
+  resetLeadValidation();
   modalBg.classList.add('open');document.body.style.overflow='hidden';
   setSugOpen(false);
   closeProfile();
@@ -1627,20 +2166,77 @@ function closeModal(){modalBg.classList.remove('open');document.body.style.overf
 document.getElementById('modalClose').onclick=closeModal;
 document.getElementById('mDone').onclick=closeModal;
 modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
-document.getElementById('mSubmit').onclick=()=>{
-  /* FUTURE: this payload posts to /api/leads and is routed to matching pros */
-  ServoraAPI.submitLead({
+/* ============ LEAD FORM VALIDATION ============
+   Shared by "Post a job" and "Contact a Pro" (same form).
+   Real-time with ~400ms debounce; errors are announced to screen
+   readers via aria-live regions and inputs toggle aria-invalid. */
+const LEAD_DEBOUNCE=400;
+const leadValidators={
+  mDesc:v=>v.trim().length>=5?'':'Please tell us a little about the job — at least 5 characters.',
+  mArea:v=>v.trim().length>=3?'':'Where should the pro come to? e.g. Lekki Phase 1.',
+  mName:v=>/^[A-Za-zÀ-ſ][A-Za-zÀ-ſ' -]{1,}$/.test(v.trim())?'':'Please enter your first name (letters only).',
+  mPhone:v=>/^(\+234|0)[789][01]\d{8}$/.test(v.replace(/[\s()./-]/g,''))?'':'That number doesn’t look right — try 0803 123 4567 or +234 803 123 4567.'
+};
+const leadTimers={};
+function setFieldState(id,msg){
+  const el=document.getElementById(id),err=document.getElementById(id+'Err');
+  el.setAttribute('aria-invalid',msg?'true':'false');
+  el.classList.toggle('invalid',!!msg);
+  el.classList.toggle('valid',!msg&&el.value.trim()!=='');
+  err.textContent=msg;
+}
+function validateLeadField(id){
+  const msg=leadValidators[id](document.getElementById(id).value);
+  setFieldState(id,msg);
+  return !msg;
+}
+function resetLeadValidation(){
+  Object.keys(leadValidators).forEach(id=>{
+    clearTimeout(leadTimers[id]);
+    const el=document.getElementById(id);
+    el.classList.remove('invalid','valid');
+    el.setAttribute('aria-invalid','false');
+    document.getElementById(id+'Err').textContent='';
+  });
+}
+Object.keys(leadValidators).forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('input',()=>{
+    clearTimeout(leadTimers[id]);
+    leadTimers[id]=setTimeout(()=>validateLeadField(id),LEAD_DEBOUNCE);
+  });
+  /* on blur: validate immediately, but stay quiet for untouched empty fields */
+  el.addEventListener('blur',()=>{
+    clearTimeout(leadTimers[id]);
+    if(el.value.trim()!==''||el.classList.contains('invalid'))validateLeadField(id);
+  });
+});
+document.getElementById('leadForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  /* validate everything; block submission while any field is invalid */
+  const bad=Object.keys(leadValidators).filter(id=>!validateLeadField(id));
+  if(bad.length){document.getElementById(bad[0]).focus();return}
+  const desc=document.getElementById('mDesc').value,area=document.getElementById('mArea').value,
+        when=document.getElementById('mWhen').value;
+  /* request summary shown on the confirmation screen */
+  document.getElementById('leadSummary').textContent=`${modalService?modalService.replace(/s$/,'')+' · ':''}${desc.length>60?desc.slice(0,57)+'…':desc} · ${area} · ${when}`;
+  document.getElementById('leadRef').textContent='';
+  modal.classList.add('done');
+  const res=await ServoraAPI.submitLead({
     type:modalPro?'direct_contact':'job_post',
     proId:modalPro?modalPro.id:null,
-    description:document.getElementById('mDesc').value,
-    area:document.getElementById('mArea').value,
+    service:modalService,
+    description:desc,
+    area,
     name:document.getElementById('mName').value,
     phone:document.getElementById('mPhone').value,
-    when:document.getElementById('mWhen').value,
+    when,
     state:citySel.value
   });
-  modal.classList.add('done');
-};
+  /* reference number from the API (locally generated when offline) */
+  const ref=(res&&res.id?String(res.id).replace(/-/g,''):Math.random().toString(36).slice(2)).slice(0,8).toUpperCase();
+  document.getElementById('leadRef').textContent='Request reference: SRV-'+ref;
+});
 
 /* ============ PROFILE MODAL ============ */
 const profileBg=document.getElementById('profileBg');
@@ -1650,19 +2246,59 @@ function openProfile(id){
   document.getElementById('pfAvatar').textContent=initials(p.n);
   document.getElementById('pfAvatar').style.background=p.c;
   document.getElementById('pfName').textContent=p.n;
-  document.getElementById('pfTrade').textContent=`${p.cat.replace(/s$/,'')} · ${p.area}, ${p.city}`;
+  document.getElementById('pfTrade').textContent=`${p.cat.replace(/s$/,'')} · ${proLocation(p)}`;
   document.getElementById('pfBadges').innerHTML=p.b.map(b=>badgeMap[b]).join('');
-  document.getElementById('pfRating').textContent=p.r.toFixed(1)+'★';
-  document.getElementById('pfJobs').textContent=p.j;
+  document.getElementById('pfRating').textContent=p.r?Number(p.r).toFixed(1)+'★':'New';
+  document.getElementById('pfJobs').textContent=p.j||0;
   document.getElementById('pfResp').textContent='~'+p.resp+' min';
   document.getElementById('pfBio').textContent=p.bio;
+  /* portfolio: real photos the pro uploaded (URLs served from /uploads) */
+  const shots=proPhotos(p);
+  const gal=document.getElementById('pfGallery');
+  gal.className=shots.length?'pf-gallery':'pf-none';
+  gal.innerHTML=shots.length
+    /* decoding="async" (not loading="lazy") — these are few, small and
+       only render on demand, and lazy needs IntersectionObserver, which
+       some embedded webviews don't run */
+    ?shots.slice(0,PF_MAX).map((src,i)=>`<button type="button" class="shot" data-lb="${i}" aria-label="View photo ${i+1} of ${shots.length}"><img src="${esc(src)}" alt="${esc(p.n)} — past work ${i+1}" decoding="async"></button>`).join('')
+    :'📷 No portfolio photos uploaded yet.';
+  lbShots=shots;
   /* per-pro skills once registration stores them; category fallback for seeds */
   document.getElementById('pfSkills').innerHTML=(p.skills||categorySkills[p.cat]||[]).map(s=>`<span class="skill-chip">${s}</span>`).join('');
-  document.getElementById('pfRev').textContent=p.rev;
-  document.getElementById('pfRevWho').textContent='— '+p.who+' · verified booking';
+  document.querySelector('#profileBg .rev').style.display=p.rev?'':'none';
+  document.getElementById('pfRev').textContent=p.rev||'';
+  document.getElementById('pfRevWho').textContent=p.rev?('— '+p.who+' · verified booking'):'';
   document.getElementById('pfPrice').textContent=p.pl;
   profileBg.classList.add('open');document.body.style.overflow='hidden';
 }
+/* ---- portfolio lightbox ---- */
+let lbShots=[],lbIndex=0;
+const lightbox=document.getElementById('lightbox');
+function openLightbox(i){
+  if(!lbShots.length)return;
+  lbIndex=(i+lbShots.length)%lbShots.length;
+  document.getElementById('lbImg').src=lbShots[lbIndex];
+  document.getElementById('lbCount').textContent=`${lbIndex+1} / ${lbShots.length}`;
+  const multi=lbShots.length>1;
+  document.getElementById('lbPrev').style.display=multi?'':'none';
+  document.getElementById('lbNext').style.display=multi?'':'none';
+  lightbox.classList.add('open');
+}
+function closeLightbox(){lightbox.classList.remove('open')}
+document.getElementById('lbClose').onclick=closeLightbox;
+document.getElementById('lbPrev').onclick=e=>{e.stopPropagation();openLightbox(lbIndex-1)};
+document.getElementById('lbNext').onclick=e=>{e.stopPropagation();openLightbox(lbIndex+1)};
+lightbox.addEventListener('click',e=>{if(e.target===lightbox)closeLightbox()});
+document.getElementById('pfGallery').addEventListener('click',e=>{
+  const s=e.target.closest('[data-lb]');
+  if(s)openLightbox(+s.dataset.lb);
+});
+addEventListener('keydown',e=>{
+  if(!lightbox.classList.contains('open'))return;
+  if(e.key==='ArrowRight')openLightbox(lbIndex+1);
+  else if(e.key==='ArrowLeft')openLightbox(lbIndex-1);
+});
+
 function closeProfile(){profileBg.classList.remove('open');if(!modalBg.classList.contains('open'))document.body.style.overflow=''}
 document.getElementById('profileClose').onclick=closeProfile;
 profileBg.addEventListener('click',e=>{if(e.target===profileBg)closeProfile()});
@@ -1675,29 +2311,590 @@ const regBg=document.getElementById('regBg'),regModal=document.getElementById('r
 let regPlan='Pro';
 fillStateSelect(document.getElementById('rState'));
 document.getElementById('rTrade').innerHTML=services.map(s=>`<option>${s.name}</option>`).join('');
+
+/* Portfolio / past work — OPTIONAL, max 5 images, local previews only.
+   Like the ID, the upload is simulated: metadata goes to the API. */
+const PF_MAX=5;
+const MAX_FILE_MB=5,MAX_FILE_BYTES=MAX_FILE_MB*1024*1024;
+/* pfFiles holds {name,size,dataUrl} — the dataUrl is what actually
+   reaches the server, which writes it to /uploads and stores the URL. */
+let pfFiles=[];
+
+/* Downscale before upload: a 5MB phone photo becomes ~200–400KB, so
+   uploads are fast on Nigerian mobile data and db.json stays small.
+   Returns a JPEG data URL (PNGs with transparency are flattened). */
+function downscaleImage(file,maxDim=1200,quality=.82){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{
+      const scale=Math.min(1,maxDim/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+      const ctx=c.getContext('2d');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('unreadable image'))};
+    img.src=url;
+  });
+}
+
+/* ID upload — same 5MB ceiling; blocks submission until it's fixed */
+function validateIdFile(){
+  const el=document.getElementById('rId'),err=document.getElementById('rIdErr'),f=el.files[0];
+  let msg='';
+  if(f&&f.size>MAX_FILE_BYTES)msg=`File is too large. Maximum allowed size is ${MAX_FILE_MB}MB. (“${f.name}” is ${(f.size/1024/1024).toFixed(1)}MB.)`;
+  err.textContent=msg;
+  el.setAttribute('aria-invalid',msg?'true':'false');
+  el.classList.toggle('invalid',!!msg);
+  return !msg;
+}
+document.getElementById('rId').addEventListener('change',validateIdFile);
+const pfInput=document.getElementById('rPortfolio'),pfGrid=document.getElementById('pfGrid'),
+      pfDrop=document.getElementById('pfDrop'),pfCount=document.getElementById('pfCount'),
+      pfDropText=document.getElementById('pfDropText');
+function renderPortfolio(){
+  pfGrid.innerHTML=pfFiles.map((f,i)=>`<div class="pf-thumb"><img src="${f.dataUrl}" alt="Work photo ${i+1}: ${esc(f.name)}"><button type="button" class="rm" data-pf-rm="${i}" aria-label="Remove photo ${i+1}">✕</button></div>`).join('');
+  const n=pfFiles.length;
+  pfCount.textContent=n?`${n}/${PF_MAX} photos uploaded${n>=PF_MAX?' — maximum reached':''}`:'';
+  pfDrop.classList.toggle('full',n>=PF_MAX);
+  pfDropText.textContent=n?'Add more photos':'Add photos of your work';
+}
+/* Reject anything over MAX_FILE_MB before it ever reaches the form,
+   then downscale the survivors so the upload stays light. */
+async function addPortfolioFiles(fileList){
+  const tooBig=[],skipped=[],err=document.getElementById('pfErr');
+  const queue=[];
+  [...fileList].filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    if(f.size>MAX_FILE_BYTES){tooBig.push(f.name);return}
+    if(pfFiles.length+queue.length>=PF_MAX){skipped.push(f.name);return}
+    if(!pfFiles.some(x=>x.name===f.name&&x.size===f.size))queue.push(f);
+  });
+  if(tooBig.length){
+    err.textContent=tooBig.length===1
+      ?`“${tooBig[0]}” is too large. Maximum allowed size is ${MAX_FILE_MB}MB per photo.`
+      :`${tooBig.length} photos are too large. Maximum allowed size is ${MAX_FILE_MB}MB per photo.`;
+  }else if(skipped.length){
+    err.textContent=`Only ${PF_MAX} photos allowed — ${skipped.length} not added.`;
+  }else err.textContent='';
+  for(const f of queue){
+    try{
+      const dataUrl=await downscaleImage(f);
+      pfFiles.push({name:f.name,size:f.size,dataUrl});
+      renderPortfolio();
+    }catch(e){err.textContent=`Couldn’t read “${f.name}” — try another photo.`}
+  }
+  renderPortfolio();
+}
+pfInput.addEventListener('change',()=>{addPortfolioFiles(pfInput.files);pfInput.value=''});
+/* drag & drop photos straight onto the button */
+pfDrop.addEventListener('dragover',e=>{e.preventDefault();if(pfFiles.length<PF_MAX)pfDrop.classList.add('drag')});
+pfDrop.addEventListener('dragleave',()=>pfDrop.classList.remove('drag'));
+pfDrop.addEventListener('drop',e=>{e.preventDefault();pfDrop.classList.remove('drag');if(e.dataTransfer)addPortfolioFiles(e.dataTransfer.files)});
+/* keyboard access: the styled label behaves like a button */
+pfDrop.setAttribute('tabindex','0');
+pfDrop.setAttribute('role','button');
+pfDrop.setAttribute('aria-label','Add photos of your work (up to 5)');
+pfDrop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pfInput.click()}});
+pfGrid.addEventListener('click',e=>{
+  const rm=e.target.closest('[data-pf-rm]');
+  if(rm){pfFiles.splice(+rm.dataset.pfRm,1);renderPortfolio()}
+});
+
 function openRegister(plan){
   regPlan=plan;
   document.getElementById('regTitle').textContent=`Join Servora — ${plan} plan`;
+  /* photos are kept in memory until the form is actually submitted,
+     so accidentally closing the modal doesn't lose the selection */
+  renderPortfolio();
+  resetRegValidation();
   regModal.classList.remove('done');
+  closeLogin();   /* e.g. arriving from the login modal's signup link */
   regBg.classList.add('open');document.body.style.overflow='hidden';
 }
 function closeRegister(){regBg.classList.remove('open');if(!modalBg.classList.contains('open'))document.body.style.overflow=''}
 document.getElementById('regClose').onclick=closeRegister;
 document.getElementById('rDone').onclick=closeRegister;
 regBg.addEventListener('click',e=>{if(e.target===regBg)closeRegister()});
-document.getElementById('rSubmit').onclick=()=>{
+/* ============ REGISTRATION VALIDATION ============
+   Field rules mirror the server's; the server stays authoritative for
+   duplicates (it owns the data) and its message is shown inline. */
+const regValidators={
+  rName:v=>/^[A-Za-zÀ-ſ][A-Za-zÀ-ſ' -]{2,}$/.test(v.trim())?'':'Please enter your full name.',
+  rPhone:v=>/^(\+234|0)[789][01]\d{8}$/.test(v.replace(/[\s()./-]/g,''))?'':'Enter a valid Nigerian number — e.g. 0803 123 4567.',
+  rEmail:v=>!v.trim()||/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())?'':'That email doesn’t look right.'
+};
+const regTimers={};
+function setRegError(id,msg){
+  const el=document.getElementById(id);
+  el.setAttribute('aria-invalid',msg?'true':'false');
+  el.classList.toggle('invalid',!!msg);
+  el.classList.toggle('valid',!msg&&el.value.trim()!=='');
+  document.getElementById(id+'Err').textContent=msg;
+}
+function validateRegField(id){
+  const msg=regValidators[id](document.getElementById(id).value);
+  setRegError(id,msg);
+  return !msg;
+}
+function resetRegValidation(){
+  Object.keys(regValidators).forEach(id=>{
+    clearTimeout(regTimers[id]);
+    const el=document.getElementById(id);
+    el.classList.remove('invalid','valid');
+    el.setAttribute('aria-invalid','false');
+    document.getElementById(id+'Err').textContent='';
+  });
+  document.getElementById('rIdErr').textContent='';
+  document.getElementById('pfErr').textContent='';
+  document.getElementById('rId').classList.remove('invalid');
+}
+Object.keys(regValidators).forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('input',()=>{clearTimeout(regTimers[id]);regTimers[id]=setTimeout(()=>validateRegField(id),400)});
+  el.addEventListener('blur',()=>{clearTimeout(regTimers[id]);if(el.value.trim()||el.classList.contains('invalid'))validateRegField(id)});
+});
+
+document.getElementById('rSubmit').onclick=async()=>{
+  /* 1. fields */
+  const badFields=Object.keys(regValidators).filter(id=>!validateRegField(id));
+  /* 2. file sizes — block until within the limit */
+  const idOk=validateIdFile();
+  const oversizePhotos=pfFiles.some(f=>f.size>MAX_FILE_BYTES);
+  if(oversizePhotos)document.getElementById('pfErr').textContent=`Some photos are over ${MAX_FILE_MB}MB. Remove them to continue.`;
+  if(badFields.length||!idOk||oversizePhotos){
+    const focusId=badFields[0]||(!idOk?'rId':'rPortfolio');
+    document.getElementById(focusId).focus();
+    return;
+  }
+  const idFile=document.getElementById('rId').files[0]||null;
   const app={
     name:document.getElementById('rName').value,
     phone:document.getElementById('rPhone').value,
+    email:document.getElementById('rEmail').value.trim()||null,
     trade:document.getElementById('rTrade').value,
     state:document.getElementById('rState').value,
-    plan:regPlan
+    lga:document.getElementById('rLga').value,
+    plan:regPlan,
+    /* DEMO: plain-text password (or null → shared demo password) */
+    password:document.getElementById('rPw').value.trim()||null,
+    /* ID + portfolio uploads simulated for v1 — only file metadata is sent */
+    idFileName:idFile?idFile.name:null,
+    idFileSizeKB:idFile?Math.round(idFile.size/1024):null,
+    /* real image data — the server writes these to /uploads */
+    portfolio:pfFiles.map(f=>f.dataUrl)
   };
-  ServoraAPI.registerPro(app);
-  document.getElementById('regSuccessMsg').innerHTML=`Once verification passes (~48 hours), your profile appears automatically in <b>${app.trade}</b> listings for <b>${app.state}</b>. Our team will WhatsApp you — have your NIN and two guarantor contacts ready.`;
+  const btn=document.getElementById('rSubmit');
+  btn.disabled=true;btn.textContent='Submitting…';
+  const res=await ServoraAPI.registerPro(app);
+  btn.disabled=false;btn.textContent='Apply — go live in ~48 hours';
+  /* 3. duplicate phone/email → show the server's message on the field */
+  if(res&&res.ok===false){
+    const field=res.field==='email'?'rEmail':'rPhone';
+    setRegError(field,res.error||'That account already exists.');
+    document.getElementById(field).focus();
+    return;
+  }
+  document.getElementById('regSuccessMsg').innerHTML=(res&&res.status==='verified')
+    ?`You’re verified and <b>live on Servora right now</b> — search <b>${app.trade}</b> in <b>${app.state}</b> and you’ll find yourself. (Demo mode auto-verifies; production takes ~48 hours.)`
+    :`Once verification passes (~48 hours), your profile appears automatically in <b>${app.trade}</b> listings for <b>${app.state}</b>. Our team will WhatsApp you — have your NIN and two guarantor contacts ready.`;
   regModal.classList.add('done');
+  /* application sent — clear the temporary uploads + credentials for a fresh form */
+  pfFiles=[];renderPortfolio();
+  document.getElementById('rId').value='';
+  document.getElementById('rPw').value='';
+  document.getElementById('rEmail').value='';
+  resetRegValidation();
+  /* new pro may already be live — refresh any open listings */
+  if(resultsSec.classList.contains('open'))renderResults();
 };
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeProfile();closeRegister()}});
+/* ============ PRO SESSION + LOGIN ============
+   Demo auth: the session (token + public pro profile) lives in
+   localStorage. FUTURE: httpOnly cookie/JWT + WhatsApp OTP. */
+let proSession=null;
+try{proSession=JSON.parse(localStorage.getItem('servora-pro')||'null')}catch(e){}
+function setProSession(s){
+  proSession=s;
+  if(s)localStorage.setItem('servora-pro',JSON.stringify(s));
+  else localStorage.removeItem('servora-pro');
+  updateProUI();
+}
+function updateProUI(){
+  document.querySelectorAll('[data-login-label]').forEach(el=>el.textContent=proSession?'My Leads':'Pro Login');
+}
+const loginBg=document.getElementById('loginBg');
+function openLogin(){
+  document.getElementById('lgIdErr').textContent='';
+  document.getElementById('lgPwErr').textContent='';
+  loginBg.classList.add('open');document.body.style.overflow='hidden';
+  document.getElementById('lgId').focus();
+}
+function closeLogin(){loginBg.classList.remove('open');if(!leadsBg.classList.contains('open'))document.body.style.overflow=''}
+document.getElementById('loginClose').onclick=closeLogin;
+loginBg.addEventListener('click',e=>{if(e.target===loginBg)closeLogin()});
+document.getElementById('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const idEl=document.getElementById('lgId'),pwEl=document.getElementById('lgPw');
+  const idErr=document.getElementById('lgIdErr'),pwErr=document.getElementById('lgPwErr');
+  idErr.textContent='';pwErr.textContent='';
+  if(!idEl.value.trim()){idErr.textContent='Enter your registered WhatsApp number or email.';idEl.focus();return}
+  if(!pwEl.value){pwErr.textContent='Enter your password.';pwEl.focus();return}
+  const btn=document.getElementById('lgSubmit');
+  btn.disabled=true;btn.textContent='Checking…';
+  const res=await ServoraAPI.login({identifier:idEl.value.trim(),password:pwEl.value});
+  btn.disabled=false;btn.textContent='Sign in →';
+  if(!res){pwErr.textContent='Sign-in needs the API server — start it and try again.';return}
+  if(!res.ok){pwErr.textContent=res.error||'Sign-in failed — check your details.';return}
+  setProSession(res);
+  pwEl.value='';
+  closeLogin();
+  openLeadsDash();   /* straight to the inbox — no profile picking */
+});
+
+/* ============ PRO LEADS INBOX ============ */
+const leadsBg=document.getElementById('leadsBg'),leadsList=document.getElementById('leadsList'),dashWho=document.getElementById('dashWho'),dashStats=document.getElementById('dashStats');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const waLink=ph=>'https://wa.me/'+String(ph||'').replace(/\D/g,'').replace(/^0/,'234');
+const timeAgo=iso=>{
+  const m=Math.max(1,Math.round((Date.now()-new Date(iso).getTime())/60000));
+  return m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago';
+};
+let dashLeads=[],dashFilter='all',dashQuery='';
+const isToday=iso=>{const d=new Date(iso),n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate()};
+const isThisMonth=iso=>{const d=new Date(iso),n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()};
+
+function openLeadsDash(){
+  if(!proSession){openLogin();return}   /* not signed in → login first */
+  const p=proSession.pro;
+  dashWho.innerHTML=`
+    <div class="avatar" style="background:${esc(p.avatarColor||'#0e7a4a')}">${esc(initials(p.name))}</div>
+    <div class="who"><b>${esc(p.name)}</b><span>${esc(p.category.replace(/s$/,''))} · ${esc(stateDisplay(p.state))}${p.rating?' · ★ '+Number(p.rating).toFixed(1):' · ✦ New'}</span></div>
+    <button type="button" class="lo" id="dashLogout">Log out</button>`;
+  document.getElementById('dashLogout').onclick=()=>{setProSession(null);closeLeadsDash()};
+  /* seed the edit form from the session's profile */
+  document.getElementById('eBio').value=p.bio||'';
+  document.getElementById('eResp').value=p.responseMins||'';
+  document.getElementById('ePrice').value=p.priceFrom||'';
+  document.getElementById('dashSaveMsg').textContent='';
+  dashPhotos=proPhotos(p);dpfErr.textContent='';renderDashPhotos();
+  dashFilter='all';dashQuery='';
+  document.getElementById('leadSearch').value='';
+  document.querySelectorAll('#leadChips button').forEach(b=>b.classList.toggle('on',b.dataset.f==='all'));
+  leadsBg.classList.add('open');document.body.style.overflow='hidden';
+  leadsBg.querySelector('.modal').scrollTop=0;
+  loadLeads(p.id);
+}
+async function loadLeads(proId){
+  dashStats.innerHTML='';
+  leadsList.innerHTML='<div class="leads-empty">Loading your leads…</div>';
+  const data=await ServoraAPI.getProLeads(proId);
+  if(!data){
+    leadsList.innerHTML='<div class="leads-empty">The lead inbox needs the API — start the server and try again.</div>';
+    return;
+  }
+  dashLeads=data.leads;
+  renderDashStats();
+  renderLeads();
+}
+function renderDashStats(){
+  const total=dashLeads.length;
+  const thisMonth=dashLeads.filter(l=>isThisMonth(l.createdAt)).length;
+  const withPhone=dashLeads.filter(l=>l.phone).length;
+  const responseRate=total?Math.round(withPhone/total*100):0;  /* leads we can reach = contactable */
+  const avgResp=proSession.pro.responseMins||'—';
+  dashStats.innerHTML=`
+    <div class="dash-stat"><b>${total}</b><span>Total leads</span></div>
+    <div class="dash-stat"><b>${thisMonth}</b><span>This month</span></div>
+    <div class="dash-stat"><b>${responseRate}%</b><span>Response rate</span></div>
+    <div class="dash-stat"><b>~${avgResp}m</b><span>Avg response</span></div>
+    <div class="dash-stat"><b>${dashLeads.filter(l=>l.type==='direct_contact').length}</b><span>Direct</span></div>
+    <div class="dash-stat"><b>${dashLeads.filter(l=>l.type!=='direct_contact').length}</b><span>Job posts</span></div>`;
+}
+function renderLeads(){
+  let list=dashLeads.slice();
+  if(dashFilter==='direct')list=list.filter(l=>l.type==='direct_contact');
+  else if(dashFilter==='job')list=list.filter(l=>l.type!=='direct_contact');
+  else if(dashFilter==='today')list=list.filter(l=>isToday(l.createdAt));
+  if(dashQuery){
+    const q=dashQuery.toLowerCase();
+    list=list.filter(l=>[l.name,l.description,l.service,l.area].filter(Boolean).some(f=>String(f).toLowerCase().includes(q)));
+  }
+  const totalShown=list.length;
+  document.getElementById('leadCount').textContent=dashLeads.length?`Showing ${totalShown} of ${dashLeads.length} lead${dashLeads.length===1?'':'s'}`:'';
+  if(!dashLeads.length){
+    leadsList.innerHTML='<div class="leads-empty">No leads yet.<br>New leads appear here the moment a customer contacts you directly or posts a job matching your trade and state.</div>';
+    return;
+  }
+  leadsList.innerHTML=totalShown?list.map(l=>`
+   <div class="lead-card">
+     <div class="lc-top">
+       <span class="lead-type ${l.type==='direct_contact'?'':'job'}">${l.type==='direct_contact'?'Direct contact':'Job post'}</span>
+       <time>${timeAgo(l.createdAt)}</time>
+     </div>
+     <div class="lc-desc">${esc(l.description||l.service||'Service request')}</div>
+     <div class="lc-meta">📍 ${esc([l.area,l.state].filter(Boolean).join(', '))||'Location not given'}${l.when?' · '+esc(l.when):''}</div>
+     <div class="lc-meta">👤 ${esc(l.name||'Customer')} · ${esc(l.phone||'no number left')}</div>
+     ${l.phone?`<div class="lc-cta"><a href="${waLink(l.phone)}" target="_blank" rel="noopener">💬 Reply on WhatsApp</a><a href="tel:${esc(l.phone)}">📞 Call</a></div>`:''}
+   </div>`).join(''):'<div class="leads-empty">No leads match your search or filter.<br>Try “All leads” or a different search term.</div>';
+}
+/* search + filter — update the list in real time */
+document.getElementById('leadSearch').addEventListener('input',e=>{dashQuery=e.target.value.trim();renderLeads()});
+document.getElementById('leadChips').addEventListener('click',e=>{
+  const b=e.target.closest('[data-f]');if(!b)return;
+  dashFilter=b.dataset.f;
+  document.querySelectorAll('#leadChips button').forEach(x=>x.classList.toggle('on',x===b));
+  renderLeads();
+});
+/* ---- dashboard portfolio manager ----
+   dashPhotos mixes existing "/uploads/…" URLs with new data URLs; the
+   API takes the whole array as the desired final state, so add/remove/
+   replace is one call. */
+let dashPhotos=[];
+const dpfGrid=document.getElementById('dpfGrid'),dpfInput=document.getElementById('dpfInput'),
+      dpfDrop=document.getElementById('dpfDrop'),dpfErr=document.getElementById('dpfErr');
+function renderDashPhotos(){
+  dpfGrid.innerHTML=dashPhotos.map((src,i)=>`<div class="dpf-thumb"><img src="${esc(src)}" alt="Work photo ${i+1}"><button type="button" class="rm" data-dpf-rm="${i}" aria-label="Remove photo ${i+1}">✕</button></div>`).join('');
+  document.getElementById('dpfEmpty').style.display=dashPhotos.length?'none':'';
+  dpfDrop.classList.toggle('full',dashPhotos.length>=PF_MAX);
+  document.getElementById('dpfDropText').textContent=dashPhotos.length?`Add more (${dashPhotos.length}/${PF_MAX})`:'Add photos';
+}
+async function addDashPhotos(fileList){
+  const tooBig=[],queue=[];
+  [...fileList].filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    if(f.size>MAX_FILE_BYTES){tooBig.push(f.name);return}
+    if(dashPhotos.length+queue.length<PF_MAX)queue.push(f);
+  });
+  dpfErr.textContent=tooBig.length
+    ?(tooBig.length===1?`“${tooBig[0]}” is too large. Maximum allowed size is ${MAX_FILE_MB}MB.`
+                       :`${tooBig.length} photos are too large. Maximum allowed size is ${MAX_FILE_MB}MB each.`)
+    :'';
+  for(const f of queue){
+    try{dashPhotos.push(await downscaleImage(f));renderDashPhotos()}
+    catch(e){dpfErr.textContent=`Couldn’t read “${f.name}” — try another photo.`}
+  }
+  renderDashPhotos();
+}
+dpfInput.addEventListener('change',()=>{addDashPhotos(dpfInput.files);dpfInput.value=''});
+dpfDrop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();dpfInput.click()}});
+dpfGrid.addEventListener('click',e=>{
+  const rm=e.target.closest('[data-dpf-rm]');
+  if(rm){dashPhotos.splice(+rm.dataset.dpfRm,1);dpfErr.textContent='';renderDashPhotos()}
+});
+
+/* inline profile update → PATCH /api/pros/:id */
+document.getElementById('dashSave').onclick=async()=>{
+  const msg=document.getElementById('dashSaveMsg');
+  const bio=document.getElementById('eBio').value.trim();
+  const responseMins=parseInt(document.getElementById('eResp').value,10);
+  const priceFrom=parseInt(document.getElementById('ePrice').value,10);
+  if(responseMins&&(responseMins<1||responseMins>720)){msg.className='de-msg err';msg.textContent='Response time should be 1–720 minutes.';return}
+  const btn=document.getElementById('dashSave');btn.disabled=true;btn.textContent='Saving…';
+  const res=await ServoraAPI.updatePro(proSession.pro.id,{
+    bio:bio||null,
+    responseMins:Number.isFinite(responseMins)?responseMins:undefined,
+    priceFrom:Number.isFinite(priceFrom)?priceFrom:undefined,
+    /* full desired state: kept URLs + new data URLs; omissions = deletions */
+    portfolio:dashPhotos
+  },proSession.token);
+  btn.disabled=false;btn.textContent='Save changes';
+  if(!res||!res.ok){msg.className='de-msg err';msg.textContent=(res&&res.error)||'Couldn’t save — is the server running?';return}
+  /* keep the session profile in sync so stats/summary reflect the change */
+  Object.assign(proSession.pro,res.pro);
+  setProSession(proSession);
+  /* server returns canonical /uploads URLs — re-sync so the grid stops
+     holding heavy data URLs and shows exactly what customers see */
+  dashPhotos=proPhotos(mapApiPro(res.pro));
+  renderDashPhotos();
+  proCache[String(proSession.pro.id)]=Object.assign(proCache[String(proSession.pro.id)]||{},mapApiPro(res.pro));
+  msg.className='de-msg';msg.textContent='✓ Saved. Your public profile is updated.';
+  renderDashStats();
+  document.querySelector('#dashWho .who span').innerHTML=`${esc(proSession.pro.category.replace(/s$/,''))} · ${esc(stateDisplay(proSession.pro.state))}${proSession.pro.rating?' · ★ '+Number(proSession.pro.rating).toFixed(1):' · ✦ New'}`;
+};
+function closeLeadsDash(){leadsBg.classList.remove('open');document.body.style.overflow=''}
+document.getElementById('leadsClose').onclick=closeLeadsDash;
+leadsBg.addEventListener('click',e=>{if(e.target===leadsBg)closeLeadsDash()});
+updateProUI();
+
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  /* the lightbox sits above the profile — close just that one first */
+  if(lightbox.classList.contains('open')){closeLightbox();return}
+  closeModal();closeProfile();closeRegister();closeLeadsDash();closeLogin();closeSupport();
+});
+
+/* ============ SUPPORT CHAT ============
+   The agent answers from Servora's own policies via intent matching —
+   instant, offline-capable, and it can never invent a policy.
+   To swap in a real LLM: in askAgent(), POST {message, history} to
+   /api/support/chat and return the model's reply instead. Keep the
+   HUMAN_INTENT check client-side so handoff always works. */
+const WA_SUPPORT='https://wa.me/2348000000000?text=Hi%20Servora%20support%2C%20I%20need%20help%20with...';
+const KB=[
+  {k:['hello','hi','hey','good morning','good afternoon','good evening','how far'],
+   a:'Hi 👋 I’m the Servora assistant. I can help with bookings, prices, escrow, verification or your pro account. What do you need?'},
+  {k:['free','cost','fee','charge','how much','price','pricing','expensive'],
+   a:'For customers Servora is <b>100% free</b> — no signup, no booking fees. You pay only the price your pro quotes, and only when the job is done.<br><br>Typical starting prices: electricians from <b>₦8,000</b>, plumbers <b>₦7,500</b>, cleaners <b>₦12,000</b>, AC techs <b>₦10,000</b>.'},
+  {k:['escrow','safe','payment','pay','money','secure','protect'],
+   a:'Your money is <b>escrow-protected</b>. When you accept a quote, payment goes into a secure holding account — not to the pro. It’s released only when <b>you</b> tap “job done”. If there’s a dispute, our team steps in within 24 hours.'},
+  {k:['verify','verified','vetted','trust','background','check','scam','safe pro','id'],
+   a:'Every pro passes a <b>4-stage check</b> before going live: NIN/government ID, a practical skill test, two guarantor references and address confirmation. Pros who drop below 4.2★ are removed from the platform.'},
+  {k:['state','states','city','location','area','cover','coverage','where','lagos','abuja','ibadan','kano'],
+   a:'We cover <b>all 36 states + FCT Abuja</b>. Coverage is deepest in Lagos, the South West (Oyo, Ogun, Osun), Abuja and Port Harcourt.<br><br>If your state is still thin, post the job anyway — we’ll alert you the moment a verified pro joins, plus <b>₦2,000 off</b> your first booking.'},
+  {k:['book','booking','how do i','how does it work','hire','request','quote','find'],
+   a:'It takes about 60 seconds:<br>1. Search your service and state, or post the job<br>2. Vetted pros reply with <b>fixed quotes</b> — usually in 15–30 minutes<br>3. Pick who you trust, then pay only when the job is done<br><br>No account needed. Want me to <a href="#services" data-sup-close>show you the services</a>?'},
+  {k:['refund','guarantee','wrong','bad','poor','complain','complaint','not satisfied','not happy','unhappy','damage','redo','re-do','mistake','dispute'],
+   a:'Our <b>Job-Done Guarantee</b> covers every booking. Report an issue within <b>7 days</b> and we’ll send the pro back free of charge, send a different pro, or refund you. About 97% of jobs are right first time — when they’re not, you never hold the bill.'},
+  {k:['cancel','reschedule','change time'],
+   a:'You can cancel free of charge any time <b>before the job starts</b> — nothing leaves escrow until you confirm the work is done. To reschedule, just message your pro on WhatsApp from your booking.'},
+  {k:['become a pro','join','register','sign up','signup','work','apply','professional account'],
+   a:'Joining is <b>free</b>. Tap “Become a Pro”, upload your ID and trade details, and most pros are verified within 48 hours. You keep the Starter plan free forever and pay commission <b>only when a customer actually pays you</b> — no job, no fee.<br><br>Want to <a href="#for-pros" data-sup-close>see the plans</a>?'},
+  {k:['commission','subscription','plan','starter','elite','earn','payout','lead'],
+   a:'Plans are for professionals only:<br>• <b>Starter</b> — free, 15% commission, 5 leads/month<br>• <b>Pro</b> — ₦7,500/mo, 10% commission, unlimited leads + priority placement<br>• <b>Elite</b> — ₦25,000/mo, 5% commission, featured placement + instant payouts<br><br>Commission applies <b>only on completed paid jobs</b>.'},
+  {k:['login','log in','password','sign in','forgot','account','my leads','dashboard'],
+   a:'Pros sign in with their registered <b>WhatsApp number and password</b> via “Pro Login” in the menu — that opens your leads dashboard.<br><br>Forgot your password? Tell me and I’ll connect you to a human who can reset it.'},
+  {k:['advert','advertise','ads','sponsor','media kit','partnership','brand'],
+   a:'We offer banner placements, category sponsorships and email features to 200,000+ Nigerian homeowners monthly. Email <b>ads@servora.ng</b> and the team will send the media kit.'},
+  {k:['thank','thanks','nice','great','awesome','helpful','ok','okay'],
+   a:'Anytime 😊 Anything else I can help with? If you’d rather speak to a person, just type <b>“talk to human”</b>.'}
+];
+const HUMAN_INTENT=['human','agent','person','real person','someone','staff','representative','talk to human','speak to','call me','support team','operator'];
+const CHIPS=['Is Servora free?','How does escrow work?','Which states do you cover?','How do I become a pro?','Talk to human'];
+const supportBg=document.getElementById('supportBg'),chatLog=document.getElementById('chatLog'),chatChips=document.getElementById('chatChips');
+let chatStarted=false;
+
+function addMsg(html,who){
+  const d=document.createElement('div');
+  d.className='msg '+who;
+  d.innerHTML=html;
+  chatLog.appendChild(d);
+  chatLog.scrollTop=chatLog.scrollHeight;
+  return d;
+}
+function showTyping(){
+  const t=document.createElement('div');
+  t.className='typing';t.id='typing';
+  t.innerHTML='<i></i><i></i><i></i>';
+  chatLog.appendChild(t);chatLog.scrollTop=chatLog.scrollHeight;
+}
+function hideTyping(){document.getElementById('typing')?.remove()}
+function renderChips(){
+  chatChips.innerHTML=CHIPS.map(c=>`<button type="button" data-chip="${esc(c)}">${esc(c)}</button>`).join('');
+}
+/* Intent match: score each entry by how many of its keywords appear. */
+function askAgent(text){
+  const q=' '+text.toLowerCase().trim()+' ';
+  if(HUMAN_INTENT.some(h=>q.includes(h)))return{human:true};
+  let best=null,bestScore=0;
+  KB.forEach(entry=>{
+    const score=entry.k.reduce((s,kw)=>s+(q.includes(kw)?kw.length:0),0);
+    if(score>bestScore){bestScore=score;best=entry}
+  });
+  if(best)return{a:best.a};
+  return{a:'I’m not certain about that one — I’d rather connect you to a human than guess.<br><br>Type <b>“talk to human”</b> and I’ll hand you over, or ask me about <b>prices</b>, <b>escrow</b>, <b>verification</b>, <b>coverage</b> or <b>becoming a pro</b>.'};
+}
+function humanHandoff(){
+  addMsg(`Of course — <b>a human agent will assist you</b> 🙋‍♀️<br>Our support team is online <b>8am–9pm daily</b> and typically replies on WhatsApp within <b>5 minutes</b>. Pick whichever is easiest:
+    <span class="handoff">
+      <a href="${WA_SUPPORT}" target="_blank" rel="noopener">💬 Continue on WhatsApp <span style="margin-left:auto;opacity:.6">~5 min</span></a>
+      <a href="mailto:support@servora.ng" target="_blank" rel="noopener">✉️ Email support@servora.ng <span style="margin-left:auto;opacity:.6">~24 h</span></a>
+      <a href="#" data-sup-tab="contact">📩 Send a message here <span style="margin-left:auto;opacity:.6">form</span></a>
+    </span>`,'bot');
+}
+function sendChat(text){
+  if(!text.trim())return;
+  addMsg(esc(text),'me');
+  chatChips.innerHTML='';
+  showTyping();
+  const res=askAgent(text);
+  /* small delay so the conversation feels human, not instant-robotic */
+  setTimeout(()=>{
+    hideTyping();
+    if(res.human)humanHandoff();
+    else addMsg(res.a,'bot');
+    renderChips();
+  },560+Math.random()*380);
+}
+function openSupport(tab){
+  supportBg.classList.add('open');document.body.style.overflow='hidden';
+  switchSupTab(tab||'chat');
+  if(!chatStarted){
+    chatStarted=true;
+    setTimeout(()=>{
+      addMsg('👋 Hi, I’m the <b>Servora assistant</b>. I can answer questions about bookings, prices, escrow, verification and pro accounts — instantly.<br><br>Need a person instead? Just type <b>“talk to human”</b>.','bot');
+      renderChips();
+    },260);
+  }
+}
+function closeSupport(){supportBg.classList.remove('open');document.body.style.overflow=''}
+function switchSupTab(tab){
+  document.querySelectorAll('.sup-tabs button').forEach(b=>{
+    const on=b.dataset.supTab===tab;
+    b.classList.toggle('on',on);b.setAttribute('aria-selected',on);
+  });
+  document.getElementById('panelChat').hidden=tab!=='chat';
+  document.getElementById('panelContact').hidden=tab!=='contact';
+  if(tab==='chat')setTimeout(()=>{chatLog.scrollTop=chatLog.scrollHeight},20);
+}
+document.getElementById('supportClose').onclick=closeSupport;
+supportBg.addEventListener('click',e=>{if(e.target===supportBg)closeSupport()});
+document.getElementById('chatForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const i=document.getElementById('chatText');
+  sendChat(i.value);i.value='';
+});
+supportBg.addEventListener('click',e=>{
+  const chip=e.target.closest('[data-chip]');
+  if(chip){sendChat(chip.dataset.chip);return}
+  const tab=e.target.closest('[data-sup-tab]');
+  if(tab){e.preventDefault();switchSupTab(tab.dataset.supTab);return}
+  if(e.target.closest('[data-sup-close]'))closeSupport();
+});
+
+/* support message form → POST /api/support */
+const supValidators={
+  sName:v=>v.trim().length>=2?'':'Please tell us your name.',
+  sEmail:v=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())?'':'Enter a valid email so we can reply.',
+  sMsg:v=>v.trim().length>=10?'':'A little more detail helps us help you (10+ characters).'
+};
+const supTimers={};
+function validateSup(id){
+  const el=document.getElementById(id),msg=supValidators[id](el.value);
+  el.setAttribute('aria-invalid',msg?'true':'false');
+  el.classList.toggle('invalid',!!msg);
+  el.classList.toggle('valid',!msg&&el.value.trim()!=='');
+  document.getElementById(id+'Err').textContent=msg;
+  return !msg;
+}
+Object.keys(supValidators).forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('input',()=>{clearTimeout(supTimers[id]);supTimers[id]=setTimeout(()=>validateSup(id),400)});
+  el.addEventListener('blur',()=>{clearTimeout(supTimers[id]);if(el.value.trim()||el.classList.contains('invalid'))validateSup(id)});
+});
+document.getElementById('supportForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const bad=Object.keys(supValidators).filter(id=>!validateSup(id));
+  if(bad.length){document.getElementById(bad[0]).focus();return}
+  const btn=document.getElementById('sSubmit'),sent=document.getElementById('sSent');
+  btn.disabled=true;btn.textContent='Sending…';
+  const res=await ServoraAPI.submitSupport({
+    name:document.getElementById('sName').value.trim(),
+    email:document.getElementById('sEmail').value.trim(),
+    topic:document.getElementById('sTopic').value,
+    message:document.getElementById('sMsg').value.trim()
+  });
+  btn.disabled=false;btn.textContent='Send message →';
+  if(!res||!res.ok){
+    sent.className='de-msg err';
+    sent.innerHTML='Couldn’t send — please <a href="mailto:support@servora.ng" style="color:inherit;text-decoration:underline">email us directly</a>.';
+    return;
+  }
+  sent.className='de-msg';
+  sent.innerHTML=`✓ Message sent — we’ll reply to <b>${esc(document.getElementById('sEmail').value.trim())}</b> within 24 hours.${res.ref?'<br>Reference: '+esc(res.ref):''}`;
+  document.getElementById('supportForm').reset();
+  Object.keys(supValidators).forEach(id=>document.getElementById(id).classList.remove('valid','invalid'));
+});
 
 /* ============ GLOBAL CLICK DELEGATION ============ */
 document.addEventListener('click',e=>{
@@ -1709,10 +2906,14 @@ document.addEventListener('click',e=>{
   if(post){openPostJob();return}
   const postPro=e.target.closest('[data-post-pro]');
   if(postPro){openRegister(postPro.dataset.postPro);return}
+  const leadsBtn=e.target.closest('[data-leads]');
+  if(leadsBtn){e.preventDefault();openLeadsDash();return}
+  const supBtn=e.target.closest('[data-support]');
+  if(supBtn){e.preventDefault();openSupport(supBtn.dataset.support||'chat');return}
   const contact=e.target.closest('[data-contact]');
-  if(contact){openContact(+contact.dataset.contact);return}
+  if(contact){openContact(contact.dataset.contact);return}
   const profile=e.target.closest('[data-profile]');
-  if(profile){openProfile(+profile.dataset.profile);return}
+  if(profile){openProfile(profile.dataset.profile);return}
 });
 </script>
 </body>
