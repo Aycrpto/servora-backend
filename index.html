@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Servora — Book Trusted Professionals in Minutes | Nigeria</title>
-<meta name="description" content="Nigeria's most trusted services marketplace. Browse & contact vetted electricians, plumbers, cleaners, AC technicians, mechanics, tutors, makeup artists & photographers — free, no signup. Escrow-protected payments.">
+<title>Servora | Book Trusted Professionals in Minutes</title>
+<meta name="description" content="Nigeria's most trusted services marketplace. Browse and contact vetted electricians, plumbers, cleaners, AC technicians, mechanics, tutors, makeup artists and photographers. Free to use, no signup, escrow-protected payments.">
 <meta name="theme-color" content="#07341f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E7A4A'/%3E%3Cpath d='M10 20c1.5 2 4 3 6.5 2.5 2.2-.4 3.5-2 3-3.8-.5-1.9-2.8-2.2-5-2.7-2.2-.5-4.2-1.2-4.5-3.2-.3-2 1.5-3.6 4-3.8 2.3-.2 4.3.7 5.5 2.3' stroke='%23F2B84B' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <script>
@@ -121,9 +121,34 @@ section{position:relative}
 .search input{width:100%}
 .search input::placeholder{color:var(--faint)}
 .search .divider{width:1px;background:var(--line);margin:8px 0}
-.search .city{flex:0 0 auto;display:flex;align-items:center;padding:10px 6px 10px 12px}
+.search .city{flex:0 0 auto;display:flex;align-items:center;padding:6px 6px 6px 8px;position:relative}
 .search select{font-weight:600;color:var(--ink2);cursor:pointer;padding-right:4px}
 .search select option{color:#0b1f17}
+/* ---- searchable state selector ---- */
+.state-trigger{display:flex;align-items:center;gap:8px;font-family:inherit;font-size:15px;font-weight:600;color:var(--ink2);padding:10px 12px;border-radius:12px;min-height:44px;white-space:nowrap;transition:background .2s,color .2s}
+.state-trigger:hover{background:var(--soft);color:var(--green)}
+.state-trigger .pin{color:var(--faint);flex:none;transition:color .2s}
+.state-trigger:hover .pin{color:var(--green)}
+.state-trigger .chev{color:var(--faint);flex:none;transition:transform .28s cubic-bezier(.22,.61,.36,1)}
+.city.open .state-trigger{background:var(--soft);color:var(--green)}
+.city.open .state-trigger .pin{color:var(--green)}
+.city.open .state-trigger .chev{transform:rotate(180deg);color:var(--green)}
+.state-pop{position:absolute;top:calc(100% + 10px);right:0;width:280px;background:var(--card);border:1px solid var(--line2);border-radius:16px;box-shadow:var(--shadow-2);z-index:45;padding:8px;opacity:0;transform:translateY(-8px) scale(.97);transform-origin:top right;pointer-events:none;transition:opacity .2s ease,transform .22s cubic-bezier(.22,.61,.36,1)}
+.city.open .state-pop{opacity:1;transform:none;pointer-events:auto}
+.sp-search{display:flex;align-items:center;gap:8px;padding:0 11px;border:1.5px solid var(--line);border-radius:11px;background:var(--soft);margin-bottom:6px;transition:border-color .2s,background .2s}
+.sp-search:focus-within{border-color:var(--green);background:var(--card)}
+.sp-search svg{color:var(--faint);flex:none}
+.sp-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:inherit;font-size:16px;color:var(--ink);padding:10px 0;min-height:42px}
+.sp-list{max-height:262px;overflow-y:auto;overscroll-behavior:contain}
+.sp-list::-webkit-scrollbar{width:7px}
+.sp-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+.sp-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:10px 12px 5px}
+.sp-opt{display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px;border-radius:10px;font-size:14.5px;font-weight:500;color:var(--ink2);text-align:left;min-height:42px;transition:background .15s,color .15s}
+.sp-opt:hover,.sp-opt.active{background:var(--soft);color:var(--green)}
+.sp-opt.sel{color:var(--green);font-weight:700;background:var(--chip-green-bg)}
+.sp-opt .tick{margin-left:auto;flex:none;opacity:0;transition:opacity .15s}
+.sp-opt.sel .tick{opacity:1}
+.sp-none{padding:18px 12px;text-align:center;font-size:13px;color:var(--muted);line-height:1.5}
 .search .btn{flex:none}
 .combo-toggle{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--faint);transition:background .2s,color .2s;min-height:36px}
 .combo-toggle:hover{background:var(--soft);color:var(--green)}
@@ -230,34 +255,50 @@ section{position:relative}
 
 /* ============ CATEGORIES ============ */
 .cats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
-.cat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:30px 26px 24px;transition:transform .25s,box-shadow .25s,border-color .25s;cursor:pointer;position:relative;overflow:hidden;text-align:left;min-width:0;display:flex;flex-direction:column}
-.cat::after{content:"";position:absolute;inset:auto -30% -55% auto;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(22,196,122,.13),transparent 70%);opacity:0;transition:opacity .3s}
-.cat:hover{transform:translateY(-6px);box-shadow:var(--shadow-2);border-color:color-mix(in srgb,var(--green) 35%,var(--line))}
-.cat:hover::after{opacity:1}
-.cat .ico{width:58px;height:58px;border-radius:16px;background:var(--chip-green-bg);display:grid;place-items:center;color:var(--green);margin-bottom:20px;transition:transform .3s,background .3s,color .3s}
-.cat:hover .ico{transform:scale(1.06) rotate(-4deg);background:var(--green);color:#fff}
-[data-theme="dark"] .cat:hover .ico{color:#04150d}
-.cat h3{font-size:18px;font-weight:700;margin-bottom:6px;overflow-wrap:break-word;letter-spacing:-.01em}
-.cat-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:16px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.cat-stats{font-size:12px;color:var(--faint);margin-top:auto;margin-bottom:10px}
+/* one shared easing keeps every card micro-interaction feeling like one system */
+.cat{--ease:cubic-bezier(.22,.61,.36,1);background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);transition:transform .35s var(--ease),box-shadow .35s var(--ease),border-color .35s var(--ease);cursor:pointer;position:relative;overflow:hidden;text-align:left;min-width:0;display:flex;flex-direction:column;will-change:transform}
+.cat:hover{transform:translateY(-7px) scale(1.02);border-color:color-mix(in srgb,var(--green) 38%,var(--line));box-shadow:0 22px 44px -14px rgba(12,138,82,.30),0 6px 16px -6px rgba(11,31,23,.10)}
+[data-theme="dark"] .cat:hover{box-shadow:0 24px 48px -14px rgba(0,0,0,.6),0 0 0 1px rgba(22,196,122,.14)}
+.cat:active{transform:translateY(-2px) scale(.995);transition-duration:.1s}
+/* real photo hero */
+.cat-media{position:relative;aspect-ratio:16/10;overflow:hidden;background:linear-gradient(135deg,var(--chip-green-bg),var(--soft))}
+.cat-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease)}
+.cat:hover .cat-media img{transform:scale(1.07)}
+/* gradient scrim anchors the icon badge and deepens on hover */
+.cat-media::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(6,32,21,.34),rgba(6,32,21,0) 46%);opacity:.85;transition:opacity .35s var(--ease)}
+.cat:hover .cat-media::after{opacity:1}
+.cat-ico{position:absolute;left:14px;bottom:12px;z-index:2;width:42px;height:42px;border-radius:12px;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:center;color:var(--green);box-shadow:0 6px 16px -4px rgba(6,32,21,.45);transition:transform .4s var(--ease),background .3s var(--ease),color .3s var(--ease)}
+.cat-ico svg{width:22px;height:22px}
+.cat:hover .cat-ico{transform:scale(1.08) rotate(-5deg);background:var(--green);color:#fff}
+[data-theme="dark"] .cat:hover .cat-ico{color:#04150d}
+.cat-body{display:flex;flex-direction:column;flex:1;padding:22px 22px 22px}
+.cat h3{font-size:18.5px;font-weight:700;margin-bottom:7px;overflow-wrap:break-word;letter-spacing:-.02em;transition:color .25s var(--ease)}
+.cat:hover h3{color:var(--green)}
+.cat-desc{font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cat-stats{font-size:11.5px;color:var(--faint);margin-top:auto;margin-bottom:11px;letter-spacing:.01em}
 .cat-stats .st{color:var(--gold-deep);font-weight:700}
 [data-theme="dark"] .cat-stats .st{color:var(--gold-hi)}
-.cat-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px dashed var(--line);padding-top:14px}
-.cat .from{font-size:13px;color:var(--muted)}
-.cat .from b{color:var(--green);font-weight:800;font-size:15px}
-.cat .go{flex:none;width:34px;height:34px;border-radius:50%;background:var(--chip-green-bg);color:var(--green);display:grid;place-items:center;transition:transform .25s,background .25s,color .25s}
-.cat:hover .go{background:var(--green);color:#fff;transform:translateX(4px)}
+.cat-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px dashed var(--line);padding-top:15px;transition:border-color .35s var(--ease)}
+.cat:hover .cat-foot{border-color:color-mix(in srgb,var(--green) 28%,var(--line))}
+.cat .from{font-size:12.5px;color:var(--muted)}
+.cat .from b{color:var(--green);font-weight:800;font-size:15.5px;letter-spacing:-.01em}
+.cat .go{flex:none;width:34px;height:34px;border-radius:50%;background:var(--chip-green-bg);color:var(--green);display:grid;place-items:center;transition:transform .35s var(--ease),background .3s var(--ease),color .3s var(--ease),box-shadow .3s var(--ease)}
+.cat:hover .go{background:var(--green);color:#fff;transform:translateX(5px);box-shadow:0 6px 14px -4px rgba(12,138,82,.55)}
 [data-theme="dark"] .cat:hover .go{color:#04150d}
-.cat .pop{position:absolute;top:14px;right:14px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--chip-gold-bg);color:var(--gold-deep);padding:4px 9px;border-radius:999px}
+.cat .pop{position:absolute;top:12px;right:12px;z-index:2;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--card);color:var(--gold-deep);padding:5px 10px;border-radius:999px;box-shadow:0 4px 12px -2px rgba(6,32,21,.4)}
 [data-theme="dark"] .cat .pop{color:var(--gold-hi)}
 /* touch devices: replace hover lift with press feedback */
 @media(hover:none){
   .cat:hover,.pro:hover,.step:hover,.tier:hover{transform:none;box-shadow:none}
-  .cat:hover .ico,.cat:hover .go{transform:none;background:var(--chip-green-bg);color:var(--green)}
+  .cat:hover{border-color:var(--line)}
+  .cat:hover h3{color:var(--ink)}
+  .cat:hover .cat-media img{transform:none}
+  .cat:hover .cat-foot{border-color:var(--line)}
+  .cat:hover .cat-ico,.cat:hover .go{transform:none;background:var(--chip-green-bg);color:var(--green);box-shadow:0 6px 16px -4px rgba(6,32,21,.45)}
   .tier.hot:hover{transform:scale(1.03)}
   .cat:active,.pro:active{transform:scale(.975);border-color:var(--green)}
-  .cat:active .ico,.cat:active .go{background:var(--green);color:#fff}
-  [data-theme="dark"] .cat:active .ico,[data-theme="dark"] .cat:active .go{color:#04150d}
+  .cat:active .cat-ico,.cat:active .go{background:var(--green);color:#fff}
+  [data-theme="dark"] .cat:active .cat-ico,[data-theme="dark"] .cat:active .go{color:#04150d}
 }
 
 /* ============ PROBLEM ============ */
@@ -518,6 +559,18 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .dash-edit[open] summary::after{transform:rotate(180deg)}
 .dash-edit .de-body{padding:0 15px 15px}
 .dash-edit label{font-size:12px;margin-top:11px}
+/* payout card */
+.pay-badge{margin-left:auto;margin-right:8px;font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:3px 9px;border-radius:999px;background:var(--gold-soft);color:var(--gold-deep)}
+[data-theme="dark"] .pay-badge{color:var(--gold-hi)}
+.pay-badge.set{background:var(--chip-green-bg);color:var(--green)}
+.dash-edit summary:has(.pay-badge)::after{margin-left:0}
+.pay-note{font-size:12px;color:var(--muted);line-height:1.5;margin:2px 0 6px}
+.pay-current{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:6px;font-size:13px;display:none}
+.pay-current.show{display:block}
+.pay-current b{display:block;font-size:13.5px;color:var(--ink)}
+.pay-current span{font-size:12px;color:var(--muted)}
+.pay-current .tick{color:var(--green);font-weight:700}
+#payBank{width:100%}
 .de-msg{font-size:12px;margin-top:9px;text-align:center;color:var(--green);font-weight:700}
 .de-msg.err{color:#c2452f}
 .de-msg:empty{display:none}
@@ -587,6 +640,82 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .pmodal .rev b{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:8px;font-weight:600}
 .pmodal .price-line{display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line);margin-top:16px;padding-top:14px;font-size:14px;color:var(--muted)}
 .pmodal .price-line b{font-size:19px;color:var(--ink);font-family:var(--serif)}
+.pf-actions{display:flex;gap:10px;margin-top:16px}
+.pf-actions .btn{flex:1;min-width:0}
+
+/* ============ CHECKOUT / ESCROW PAYMENT ============ */
+.co-pro{display:flex;align-items:center;gap:11px;background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:10px 12px;margin-bottom:16px}
+.co-pro .avatar{width:38px;height:38px;font-size:14px;flex:none}
+.co-pro .who b{font-size:14px;display:block;line-height:1.2}
+.co-pro .who span{font-size:12px;color:var(--muted)}
+.co-summary{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--chip-green-bg);border-radius:12px;padding:12px 15px;margin:18px 0 6px;font-size:13.5px;color:var(--ink2)}
+.co-summary b{font-size:19px;font-family:var(--serif);color:var(--green)}
+.co-summary:empty{display:none}
+.co-secure{font-size:11.5px;color:var(--faint);text-align:center;margin-top:10px}
+/* payment-return confirming screen */
+.pay-return{text-align:center;padding:14px 6px}
+.pay-return .spin{width:52px;height:52px;margin:8px auto 20px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--green);animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pay-return .big{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;margin:4px auto 20px}
+.pay-return .big.ok{background:var(--chip-green-bg);color:var(--green)}
+.pay-return .big.warn{background:var(--gold-soft);color:var(--gold-deep)}
+[data-theme="dark"] .pay-return .big.warn{color:var(--gold-hi)}
+.pay-return h3{font-family:var(--serif);font-size:24px;font-weight:600;margin-bottom:8px}
+.pay-return p{font-size:14.5px;color:var(--muted);line-height:1.6;margin-bottom:8px}
+.pay-return .amt{font-size:15px;color:var(--ink);font-weight:600}
+.pay-return .btn{width:100%;margin-top:18px}
+.pay-return .pr-alt{font-size:13px;color:var(--muted);margin-top:14px}
+.pay-return .pr-alt button{color:var(--green);font-weight:700;text-decoration:underline}
+/* my bookings (customer) */
+.bk-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;max-height:56vh;overflow-y:auto;overscroll-behavior:contain}
+.bk-card{background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:13px 15px}
+.bk-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.bk-top b{font-size:14.5px}
+.bk-status{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;background:var(--soft);border:1px solid var(--line);color:var(--muted)}
+.bk-status.ok{background:var(--chip-green-bg);color:var(--green);border-color:transparent}
+.bk-status.done{background:var(--chip-green-bg);color:var(--green);border-color:transparent}
+.bk-status.warn{background:var(--gold-soft);color:var(--gold-deep);border-color:transparent}
+[data-theme="dark"] .bk-status.warn{color:var(--gold-hi)}
+.bk-meta{font-size:12.5px;color:var(--muted);margin-top:5px}
+.bk-act{margin-top:11px}
+.bk-act .btn{width:100%}
+.bk-confirm-q{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:8px}
+.bk-confirm-row{display:flex;gap:8px}
+.bk-confirm-row .btn{flex:1}
+.bk-done-note{font-size:12.5px;color:var(--green);font-weight:600;margin-top:11px;display:flex;align-items:center;gap:6px;line-height:1.45}
+.bk-done-note.warn{color:var(--gold-deep)}
+[data-theme="dark"] .bk-done-note.warn{color:var(--gold-hi)}
+.bk-prompt{font-size:12.5px;color:var(--ink2);margin-bottom:8px;line-height:1.45}
+/* pro "my jobs" */
+.jobs-list{display:flex;flex-direction:column;gap:9px;margin-top:8px;max-height:44vh;overflow-y:auto;overscroll-behavior:contain}
+.job-card{background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:12px 14px}
+.job-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:5px}
+.job-top b{font-size:14px}
+.job-meta{font-size:12px;color:var(--muted);margin-bottom:2px}
+.job-cust{font-size:11.5px;color:var(--faint)}
+.job-act{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.job-act .btn{flex:1;min-width:120px;padding:9px 8px}
+.job-note{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.45}
+.job-note.warn{color:var(--gold-deep)}
+[data-theme="dark"] .job-note.warn{color:var(--gold-hi)}
+.job-note.ok{color:var(--green);font-weight:600}
+.job-msg{font-size:12px;margin-top:7px}
+.job-msg:empty{display:none}
+.job-msg.err{color:#c2452f}
+/* support disputes console */
+.dc-card{background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:13px 15px}
+.dc-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.dc-top b{font-size:13.5px}
+.dc-meta{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+.dc-ev{font-size:12px;color:var(--ink2);background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 10px;margin-top:8px}
+.dc-ev img{max-width:52px;border-radius:6px;margin:4px 4px 0 0;vertical-align:middle}
+.dc-act{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.dc-act .btn{flex:1;min-width:110px;padding:8px}
+.dc-resolved{font-size:12px;font-weight:600;color:var(--green);margin-top:10px}
+.dc-msg{font-size:12px;margin-top:8px}.dc-msg:empty{display:none}.dc-msg.err{color:#c2452f}
+.bk-msg{font-size:12px;margin-top:8px}
+.bk-msg:empty{display:none}
+.bk-msg.err{color:#c2452f}
 
 /* ============ SUPPORT CHAT ============ */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -685,8 +814,11 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   .search .divider{display:none}
   .search .field{border:1.5px solid var(--line);border-radius:12px;width:100%;min-height:52px}
   .combo-toggle{width:44px;height:44px;min-height:44px}
-  .search .city{border:1.5px solid var(--line);border-radius:12px;width:100%;justify-content:flex-start;min-height:52px}
+  .search .city{border:1.5px solid var(--line);border-radius:12px;width:100%;justify-content:flex-start;min-height:52px;padding:2px}
   .search select{width:100%}
+  .state-trigger{width:100%;min-height:48px}
+  .state-trigger .chev{margin-left:auto}
+  .state-pop{width:100%;left:0;right:auto;transform-origin:top center}
   .search .btn{width:100%}
   .hero-in{gap:32px;padding:40px 0 56px}
   .eyebrow{font-size:12px;margin-bottom:18px;padding:7px 13px}
@@ -709,9 +841,10 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   .mob-bar{display:flex}
   .foot-grid{grid-template-columns:1fr 1fr}
   .cats{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  .cat{padding:20px 16px 16px;border-radius:18px}
-  .cat .ico{width:48px;height:48px;border-radius:13px;margin-bottom:14px}
-  .cat .ico svg{width:24px;height:24px}
+  .cat{border-radius:18px}
+  .cat-body{padding:15px 15px 15px}
+  .cat-ico{width:38px;height:38px;border-radius:11px;left:11px;bottom:11px}
+  .cat-ico svg{width:20px;height:20px}
   .cat h3{font-size:15.5px}
   .cat-desc{font-size:11.5px;margin-bottom:12px}
   .cat-stats{font-size:10.5px;margin-bottom:8px}
@@ -766,7 +899,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 <body>
 
 <!-- ============ ANNOUNCEMENT ============ -->
-<div class="annc">🇳🇬 <b>100% free for customers</b> — no signup, no booking fees · Now covering <b>all 36 states + FCT Abuja</b></div>
+<div class="annc">🇳🇬 <b>Always free for customers.</b> No signup, no booking fees · Now live in <b>all 36 states + FCT Abuja</b></div>
 
 <!-- ============ NAV ============ -->
 <nav class="nav" id="nav">
@@ -781,6 +914,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <a href="#pros" data-spy="pros">Top Pros</a>
       <a href="#for-pros" data-spy="for-pros">For Professionals</a>
       <a href="#faq" data-spy="faq">FAQ</a>
+      <a href="#" data-mybookings style="display:none">My bookings</a>
       <a href="#" data-leads data-login-label>Pro Login</a>
     </div>
     <div class="nav-cta">
@@ -800,8 +934,9 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   <a href="#pros">Top Pros</a>
   <a href="#for-pros">For Professionals</a>
   <a href="#faq">FAQ</a>
+  <a href="#" data-mybookings style="display:none">My bookings</a>
   <a href="#" data-leads data-login-label>Pro Login</a>
-  <button class="btn btn-primary" data-post>Book a Pro — free</button>
+  <button class="btn btn-primary" data-post>Book a Pro, free</button>
   <a href="#for-pros" class="btn btn-ghost">Become a Pro</a>
 </div>
 
@@ -811,7 +946,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <div>
       <div class="eyebrow"><span class="stars">★★★★★</span> 4.8 from 12,400+ verified reviews</div>
       <h1>Book a vetted <span class="rotator" id="rotator">electrician</span><br>in 3 minutes. Not 3 days.</h1>
-      <p class="hero-sub">Browse <b>ID-verified, background-checked professionals</b> near you and contact them directly — <b>free, no signup, no booking fees.</b> Upfront prices, escrow-protected payments, and a guarantee the job gets done.</p>
+      <p class="hero-sub">Browse <b>ID-verified, background-checked professionals</b> near you and message them directly. Fixed prices upfront, payments protected by escrow, and a guarantee the job gets done. <b>Free to use. No signup.</b></p>
       <form class="search" id="searchForm" autocomplete="off">
         <div class="field">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -821,16 +956,30 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
           </button>
         </div>
         <div class="divider"></div>
-        <div class="city">
-          <!-- DYNAMIC: options populated from NIGERIAN_STATES (all 36 states + FCT) -->
-          <select id="citySelect" aria-label="State"></select>
+        <div class="city" id="cityWrap">
+          <!-- The native select stays as the source of truth (visually hidden) so
+               every citySel.value read and 'change' listener keeps working. The
+               searchable panel below is a nicer UI layered on top of it. -->
+          <select id="citySelect" aria-label="State" class="sr-only" tabindex="-1"></select>
+          <button type="button" class="state-trigger" id="stateTrigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose state">
+            <svg class="pin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>
+            <span id="stateLabel">Lagos</span>
+            <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="state-pop" id="statePop">
+            <div class="sp-search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" id="stateSearch" placeholder="Search states…" aria-label="Search states" autocomplete="off">
+            </div>
+            <div class="sp-list" id="stateList" role="listbox" aria-label="States"></div>
+          </div>
         </div>
         <button type="submit" class="btn btn-gold">Find Pros</button>
         <!-- DYNAMIC: combobox options come from the service taxonomy (ServoraAPI.getServices()) -->
         <div class="suggest" id="suggest" role="listbox" aria-label="Service suggestions"></div>
       </form>
       <div class="hero-chips">
-        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg> Free for customers — always</span>
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg> Always free for customers</span>
         <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg> No signup needed</span>
         <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg> Escrow-protected payments</span>
       </div>
@@ -905,8 +1054,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   <div class="wrap">
     <div class="sec-head rv">
       <span class="kicker">8 services · 3 cities · always free to browse</span>
-      <h2>Whatever breaks, whoever you need — <em>we have a pro for it.</em></h2>
-      <p>Every professional is ID-verified, skill-tested and reviewed by real customers. Browse and contact them free — no account, no fees, no wahala.</p>
+      <h2>Whatever breaks, whoever you need. <em>We have a pro for it.</em></h2>
+      <p>Every professional is ID-verified, skill-tested and reviewed by real customers. Browsing and messaging them costs nothing, and no account is required.</p>
     </div>
     <!-- DYNAMIC: service categories render from ServoraAPI.getServices() (future: GET /api/services) -->
     <div class="cats" id="cats"></div>
@@ -939,7 +1088,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       </div>
     </div>
     <div class="fix">
-      <div class="fix-head rv"><h3>Servora fixes the <em>trust problem</em> — not just the tap.</h3></div>
+      <div class="fix-head rv"><h3>Servora fixes the <em>trust problem</em>, not just the tap.</h3></div>
       <div class="fix-item rv d1">
         <div class="fi"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
         <h4>Verified, not vouched-for</h4>
@@ -968,27 +1117,27 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 <section class="sec" id="how">
   <div class="wrap">
     <div class="sec-head rv">
-      <span class="kicker">How it works — for customers</span>
+      <span class="kicker">How it works for customers</span>
       <h2>From “it’s broken” to <em>“it’s handled”</em> in three steps.</h2>
     </div>
-    <div class="flow-note rv">💡 <b>No account. No booking fee. Ever.</b> You only pay your pro’s quoted price — and only when the job is done.</div>
+    <div class="flow-note rv">💡 <b>No account. No booking fee. Ever.</b> You pay your pro’s quoted price, and only once the job is done.</div>
     <div class="steps">
       <div class="step rv d1">
         <div class="num">01</div>
-        <h3>Browse or post — free</h3>
-        <p>Search vetted pros and contact them directly, or post your job and let quotes come to you. <b>No registration, no forms committee.</b></p>
+        <h3>Browse or post, free</h3>
+        <p>Search vetted pros and message them directly, or post your job and let the quotes come to you. <b>No registration. No forms committee.</b></p>
         <span class="time">⏱ 60 seconds</span>
       </div>
       <div class="step rv d2">
         <div class="num">02</div>
         <h3>Compare real quotes</h3>
-        <p>See <b>fixed prices</b>, real ratings, photos of past work and response times — then choose who you trust. Chat before you commit.</p>
+        <p>Compare <b>fixed prices</b>, real ratings, photos of past work and response times. Chat with anyone before you commit.</p>
         <span class="time">⏱ First replies in ~15 min</span>
       </div>
       <div class="step rv d3">
         <div class="num">03</div>
         <h3>Pay only when it’s done</h3>
-        <p>Your payment sits in <b>secure escrow</b> — released to the pro only when you tap “job done.” Servora never charges you a kobo on top.</p>
+        <p>Your payment sits in <b>secure escrow</b> and reaches your pro only when you tap “job done.” Servora never charges you a kobo on top.</p>
         <span class="time">🛡 100% protected</span>
       </div>
     </div>
@@ -1002,7 +1151,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <div class="sec-headL">
         <span class="kicker">★ Featured professionals</span>
         <h2>The pros your neighbours keep rebooking.</h2>
-        <p>Hand-picked, top-rated, and usually booked by Friday. Contacting them is free — move fast.</p>
+        <p>Hand-picked, top-rated, and usually booked by Friday. Messaging them is free, so move fast.</p>
       </div>
       <div class="pros-nav">
         <button class="icon-btn" id="prosPrev" aria-label="Previous"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
@@ -1057,16 +1206,16 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 <section class="sec pro-sec cv" id="for-pros">
   <div class="wrap">
     <div class="sec-head rv">
-      <span class="kicker">For professionals — customers never pay</span>
+      <span class="kicker">For professionals · customers never pay</span>
       <h2>Your skills deserve more than <em>word of mouth.</em></h2>
-      <p>Joining is free. Subscriptions buy you visibility and leads — and commission applies <b>only when you actually get paid</b> for a completed job.</p>
+      <p>Joining is free. Subscriptions buy visibility and leads, and commission applies <b>only when you get paid</b> for a completed job.</p>
     </div>
     <div class="free-banner rv">
       <div>
         <h4>👋 Just looking to hire someone?</h4>
-        <p><b>Servora is 100% free for customers.</b> No signup, no booking fees, no subscription — browse pros, compare quotes, and pay only your pro’s price when the job is done. These plans below are for professionals only.</p>
+        <p><b>Servora is always free for customers.</b> No signup, no booking fees, no subscription. Browse pros, compare quotes, and pay only your pro’s price once the job is done. The plans below are for professionals only.</p>
       </div>
-      <button class="btn btn-primary" data-browse-all>Browse pros — free</button>
+      <button class="btn btn-primary" data-browse-all>Browse pros, free</button>
     </div>
     <div class="toggle rv">
       <span id="lblMonthly" class="on">Monthly</span>
@@ -1104,7 +1253,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
           <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>“Pro” badge that wins more quotes</li>
           <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Job analytics &amp; quote templates</li>
         </ul>
-        <button class="btn btn-gold" data-post-pro="Pro">Go Pro — earn more</button>
+        <button class="btn btn-gold" data-post-pro="Pro">Go Pro, earn more</button>
         <div class="lead-note">Pays for itself with one extra job a month</div>
       </div>
       <div class="tier rv d3">
@@ -1146,31 +1295,31 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <div class="faq-list rv">
       <details class="faq" open>
         <summary>Is Servora really free for customers? <span class="pm">+</span></summary>
-        <div class="body"><b>Yes — completely.</b> Browsing, searching, contacting pros and getting quotes costs nothing, and you don’t even need to create an account. You pay only your pro’s quoted price, only when the job is done. Servora earns from the professional side: a small commission on completed paid jobs, plus optional subscriptions pros buy for extra visibility.</div>
+        <div class="body"><b>Yes, completely.</b> Browsing, searching, messaging pros and getting quotes all cost nothing, and you never need an account. You pay only your pro’s quoted price, and only once the job is done. Servora earns from the professional side: a small commission on completed paid jobs, plus optional subscriptions pros buy for extra visibility.</div>
       </details>
       <details class="faq">
         <summary>Do I need to register to book someone? <span class="pm">+</span></summary>
-        <div class="body"><b>No.</b> Just tell us the job and drop a phone number so pros can reach you with quotes. That’s it — no password, no profile, no email verification marathon. Your number is shared only with the pros you choose to contact.</div>
+        <div class="body"><b>No.</b> Just tell us the job and leave a phone number so pros can reach you with quotes. That’s it. No password, no profile, no email verification marathon. Your number is shared only with the pros you choose to contact.</div>
       </details>
       <details class="faq">
         <summary>How does Servora vet its professionals? <span class="pm">+</span></summary>
-        <div class="body">Every pro passes a <b>4-stage check</b> before their profile goes live: NIN/government ID verification, a practical skill assessment in their trade, two guarantor references, and an address confirmation. After that, their rating is earned job by job — and pros who fall below 4.2★ are removed from the platform.</div>
+        <div class="body">Every pro passes a <b>4-stage check</b> before their profile goes live: NIN/government ID verification, a practical skill assessment in their trade, two guarantor references, and an address confirmation. After that, their rating is earned job by job, and pros who fall below 4.2★ are removed from the platform.</div>
       </details>
       <details class="faq">
         <summary>What does “escrow-protected” actually mean? <span class="pm">+</span></summary>
-        <div class="body">When you accept a quote, your payment goes into a <b>secure holding account</b> — not to the pro. The pro sees the job is funded (so they show up), but the money is only released when <b>you</b> confirm the work is complete. If there’s a dispute, our resolution team steps in within 24 hours.</div>
+        <div class="body">When you accept a quote, your payment goes into a <b>secure holding account</b> rather than to the pro. They can see the job is funded, so they show up, but the money is released only when <b>you</b> confirm the work is complete. If there’s a dispute, our resolution team steps in within 24 hours.</div>
       </details>
       <details class="faq">
         <summary>What happens if the job goes wrong? <span class="pm">+</span></summary>
-        <div class="body">Our <b>Job-Done Guarantee</b> covers every booking: report an issue within 7 days and we’ll send the pro back to fix it free of charge, send a different pro, or refund you. Around 97% of jobs are done right the first time — but when they’re not, you’re never the one holding the bill.</div>
+        <div class="body">Our <b>Job-Done Guarantee</b> covers every booking: report an issue within 7 days and we’ll send the pro back to fix it free of charge, send a different pro, or refund you. Around 97% of jobs are done right the first time. When they’re not, you’re never the one holding the bill.</div>
       </details>
       <details class="faq">
         <summary>Which parts of Nigeria do you cover? <span class="pm">+</span></summary>
-        <div class="body">Servora covers <b>all 36 states and FCT Abuja</b>. Coverage is deepest in <b>Lagos and the South West</b> (Oyo, Ogun, Osun), plus Abuja and Port Harcourt — and new pros are verified nationwide every day. If your state has few pros yet, post your job anyway: we’ll notify you the moment a verified pro near you joins, and you’ll get ₦2,000 off that first booking.</div>
+        <div class="body">Servora covers <b>all 36 states and FCT Abuja</b>. Coverage is deepest in <b>Lagos and the South West</b> (Oyo, Ogun, Osun), plus Abuja and Port Harcourt, and new pros are verified nationwide every day. If your state has few pros yet, post your job anyway: we’ll notify you the moment a verified pro near you joins, and you’ll get ₦2,000 off that first booking.</div>
       </details>
       <details class="faq">
         <summary>I’m a professional. How do I join and what does it cost? <span class="pm">+</span></summary>
-        <div class="body">Tap <b>“Become a Pro,”</b> upload your ID and trade details, and complete verification — most pros are approved within 48 hours. <b>Joining is free</b> on the Starter plan. You pay commission only when a customer actually pays you through Servora — no job, no fee. Upgrade to Pro (₦7,500/mo) or Elite (₦25,000/mo) for priority placement, unlimited leads and lower commission. Active pros average <b>3–5 jobs per week</b>.</div>
+        <div class="body">Tap <b>“Become a Pro,”</b> upload your ID and trade details, and complete verification. Most pros are approved within 48 hours. <b>Joining is free</b> on the Starter plan, and you pay commission only when a customer pays you through Servora. No job, no fee. Upgrade to Pro (₦7,500/mo) or Elite (₦25,000/mo) for priority placement, unlimited leads and lower commission. Active pros average <b>3–5 jobs per week</b>.</div>
       </details>
     </div>
   </div>
@@ -1182,8 +1331,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <h2>The next time something breaks, you’ll already know <em>exactly who to call.</em></h2>
     <p>Join 86,000+ Nigerians who stopped gambling on “I know one guy.” Free to browse. Free to contact. Pay only when the job is done.</p>
     <div class="row">
-      <button class="btn btn-gold" data-browse-all style="padding:16px 34px;font-size:16px">Browse vetted pros — free</button>
-      <button class="btn btn-light" data-post style="padding:16px 34px;font-size:16px">Post a job — get 3 quotes</button>
+      <button class="btn btn-gold" data-browse-all style="padding:16px 34px;font-size:16px">Browse vetted pros, free</button>
+      <button class="btn btn-light" data-post style="padding:16px 34px;font-size:16px">Post a job, get 3 quotes</button>
     </div>
     <div class="tiny">No signup · No booking fees · Escrow-protected · Cancel anytime before the job starts</div>
   </div>
@@ -1198,7 +1347,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
           <span class="logo-mark"><svg viewBox="0 0 32 32" fill="none"><path d="M10 20c1.5 2 4 3 6.5 2.5 2.2-.4 3.5-2 3-3.8-.5-1.9-2.8-2.2-5-2.7-2.2-.5-4.2-1.2-4.5-3.2-.3-2 1.5-3.6 4-3.8 2.3-.2 4.3.7 5.5 2.3" stroke="#F2B84B" stroke-width="2.6" stroke-linecap="round"/></svg></span>
           <em>Servora<span class="dot">.</span></em>
         </a>
-        <p>Nigeria’s trusted services marketplace. Free for customers — vetted professionals, upfront prices and escrow-protected payments for every job your home or business throws at you.</p>
+        <p>Nigeria’s trusted services marketplace. Always free for customers: vetted professionals, upfront prices and escrow-protected payments for every job your home or business throws at you.</p>
         <div class="socials" style="margin-top:20px">
           <a href="#" aria-label="Instagram"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.6" cy="6.4" r="1.2" fill="currentColor" stroke="none"/></svg></a>
           <a href="#" aria-label="X"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1.6 2H8l4.4 5.9L18.9 2zm-1.1 18h1.7L7.1 3.9H5.3L17.8 20z"/></svg></a>
@@ -1243,6 +1392,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
           <li><a href="#faq">FAQ</a></li>
           <li><button data-support>💬 Support chat</button></li>
           <li><button data-support="contact">Contact support</button></li>
+          <li><button data-disputes-console>Support console</button></li>
         </ul>
       </div>
     </div>
@@ -1256,7 +1406,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 <!-- ============ MOBILE ACTION BAR ============ -->
 <div class="mob-bar" id="mobBar">
   <button class="btn btn-ghost" data-browse-all>Browse pros</button>
-  <button class="btn btn-gold" data-post>Post a job — free</button>
+  <button class="btn btn-gold" data-post>Post a job, free</button>
 </div>
 
 <!-- ============ LIVE TICKER ============ -->
@@ -1274,8 +1424,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <!-- Semantic form: real-time debounced validation, labels bound via
          for/id, errors announced to screen readers through aria-live -->
     <form class="form-view" id="leadForm" novalidate>
-      <h3 id="modalTitle">Post a job — free</h3>
-      <p class="sub" id="modalSub">Takes 60 seconds. Vetted pros reply with quotes — usually within 15 minutes.</p>
+      <h3 id="modalTitle">Post a job, free</h3>
+      <p class="sub" id="modalSub">Takes 60 seconds. Vetted pros reply with quotes, usually within 15 minutes.</p>
       <label for="mDesc">What do you need done?</label>
       <input type="text" id="mDesc" name="description" placeholder="e.g. AC not cooling, needs gas refill" required aria-required="true" aria-describedby="mDescErr" autocomplete="off">
       <p class="ferr" id="mDescErr" aria-live="polite"></p>
@@ -1299,7 +1449,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <option>As soon as possible</option>
         <option>Today</option>
         <option>Tomorrow</option>
-        <option>This week — I’m flexible</option>
+        <option>This week, I’m flexible</option>
       </select>
       <div class="note">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -1315,7 +1465,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <ol class="next-steps" aria-label="What happens next">
         <li><span id="nsTime">They usually respond within <b>15–30 minutes on WhatsApp</b>.</span></li>
         <li><span>You’ll also receive a <b>WhatsApp confirmation</b> from Servora with your request details.</span></li>
-        <li><span>Pay only when the job is done — your money sits safely in <b>escrow</b> until you confirm.</span></li>
+        <li><span>Pay only when the job is done. Your money sits safely in <b>escrow</b> until you confirm.</span></li>
       </ol>
       <div class="lead-ref" id="leadRef"></div>
       <button class="btn btn-primary" id="mDone">Done</button>
@@ -1348,7 +1498,92 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <div class="skills" id="pfSkills"></div>
     <div class="rev"><span id="pfRev"></span><b id="pfRevWho"></b></div>
     <div class="price-line"><span>Starting price</span><b id="pfPrice">₦8,000</b></div>
-    <button class="btn btn-gold" id="pfContact">Contact — free, no signup</button>
+    <div class="pf-actions">
+      <button class="btn btn-ghost" id="pfContact">Message first</button>
+      <button class="btn btn-gold" id="pfBook">Book &amp; pay</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CHECKOUT (escrow payment) MODAL ============
+     Creates a booking, initializes a Paystack payment (Model A), then
+     redirects to Paystack. On return, ?servora_pay=<ref> triggers the
+     confirming screen further below. -->
+<div class="modal-bg" id="checkoutBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="coTitle">
+    <button class="close" id="checkoutClose" aria-label="Close">✕</button>
+    <div class="form-view">
+      <h3 id="coTitle">Book &amp; pay</h3>
+      <p class="sub">Your payment is held in <b>escrow</b> and released to your pro only when you confirm the job is done.</p>
+      <div class="co-pro" id="coPro"></div>
+      <label for="coDesc">What do you need done?</label>
+      <input type="text" id="coDesc" placeholder="e.g. Fix the socket in the kitchen" autocomplete="off">
+      <p class="ferr" id="coDescErr" aria-live="polite"></p>
+      <label for="coAmount">Agreed price (₦)</label>
+      <input type="number" id="coAmount" inputmode="numeric" min="100" step="500" placeholder="e.g. 8000">
+      <p class="ferr" id="coAmountErr" aria-live="polite"></p>
+      <div class="row2">
+        <div>
+          <label for="coName">Your name</label>
+          <input type="text" id="coName" placeholder="e.g. Ayo" autocomplete="name">
+        </div>
+        <div>
+          <label for="coPhone">Phone</label>
+          <input type="tel" id="coPhone" inputmode="tel" placeholder="080X XXX XXXX" autocomplete="tel">
+        </div>
+      </div>
+      <label for="coEmail">Email <span class="lbl-soft">(for your payment receipt)</span></label>
+      <input type="email" id="coEmail" inputmode="email" placeholder="you@example.com" autocomplete="email">
+      <p class="ferr" id="coEmailErr" aria-live="polite"></p>
+      <div class="co-summary" id="coSummary"></div>
+      <button class="btn btn-gold" id="coPay">Pay securely →</button>
+      <p class="co-secure">🔒 Payments secured by Paystack · escrow-protected</p>
+      <p class="de-msg" id="coMsg" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAYMENT RETURN (confirming) MODAL ============ -->
+<div class="modal-bg" id="payReturnBg">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="pay-return" id="payReturnBody"></div>
+  </div>
+</div>
+
+<!-- ============ MY BOOKINGS MODAL (customer, no account) ============
+     Bookings are remembered client-side (localStorage) after payment, so a
+     no-account customer can return and confirm the job. Confirming moves the
+     booking to 'confirmed' (the gate the release flow checks). -->
+<div class="modal-bg" id="myBookingsBg">
+  <div class="modal pmodal" role="dialog" aria-modal="true">
+    <button class="close" id="myBookingsClose" aria-label="Close">✕</button>
+    <h3>My bookings</h3>
+    <p class="sub">Confirm a job once it’s fully done, and we’ll release your escrow payment to the pro.</p>
+    <div class="bk-list" id="myBookingsList"></div>
+  </div>
+</div>
+
+<!-- ============ SUPPORT DISPUTES CONSOLE (admin, key-gated) ============ -->
+<div class="modal-bg" id="disputesBg">
+  <div class="modal pmodal" role="dialog" aria-modal="true">
+    <button class="close" id="disputesClose" aria-label="Close">✕</button>
+    <h3>Support console</h3>
+    <p class="sub">Review disputes and disburse held funds. Requires the Servora admin key.</p>
+    <div id="disputesAuth">
+      <label for="dcKey">Admin key</label>
+      <input type="password" id="dcKey" placeholder="x-admin-key" autocomplete="off">
+      <button type="button" class="btn btn-primary btn-sm" id="dcLogin" style="width:100%;margin-top:12px">Open console</button>
+      <p class="ferr" id="dcErr" aria-live="polite"></p>
+    </div>
+    <div id="disputesPanel" hidden>
+      <div class="fchips" id="dcFilter" role="group" aria-label="Filter disputes" style="margin:4px 0 12px">
+        <button type="button" data-df="" class="on">All</button>
+        <button type="button" data-df="open">Open</button>
+        <button type="button" data-df="evidence_requested">Awaiting evidence</button>
+        <button type="button" data-df="resolved">Resolved</button>
+      </div>
+      <div class="bk-list" id="disputesList"></div>
+    </div>
   </div>
 </div>
 
@@ -1360,8 +1595,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   <div class="modal" id="regModal" role="dialog" aria-modal="true">
     <button class="close" id="regClose" aria-label="Close">✕</button>
     <div class="form-view">
-      <h3 id="regTitle">Join Servora — Pro plan</h3>
-      <p class="sub">Create your professional profile. Verification takes ~48 hours — then your profile goes live and the leads start.</p>
+      <h3 id="regTitle">Join Servora, Pro plan</h3>
+      <p class="sub">Create your professional profile. Verification takes about 48 hours, then your profile goes live and the leads start.</p>
       <div class="row2">
         <div>
           <label for="rName">Full name</label>
@@ -1374,7 +1609,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
           <p class="ferr" id="rPhoneErr" aria-live="polite"></p>
         </div>
       </div>
-      <label for="rEmail">Email <span class="lbl-soft">(optional — lets you sign in with email too)</span></label>
+      <label for="rEmail">Email <span class="lbl-soft">(optional, lets you sign in with email too)</span></label>
       <input type="email" id="rEmail" inputmode="email" placeholder="you@example.com" aria-describedby="rEmailErr" autocomplete="email">
       <p class="ferr" id="rEmailErr" aria-live="polite"></p>
       <label>Your trade</label>
@@ -1389,9 +1624,9 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
           <input type="text" id="rLga" placeholder="e.g. Ikeja">
         </div>
       </div>
-      <label for="rPw">Create a password <span class="lbl-soft">(optional — for signing in to view your leads)</span></label>
+      <label for="rPw">Create a password <span class="lbl-soft">(optional, for signing in to view your leads)</span></label>
       <input type="password" id="rPw" autocomplete="new-password" placeholder="Leave empty to use demo password servora123">
-      <label for="rId">Upload ID — NIN slip, driver’s licence or voter’s card <span class="lbl-soft">(max 5MB)</span></label>
+      <label for="rId">Upload ID: NIN slip, driver’s licence or voter’s card <span class="lbl-soft">(max 5MB)</span></label>
       <input type="file" id="rId" accept="image/*,.pdf" aria-describedby="rIdErr">
       <p class="ferr" id="rIdErr" aria-live="polite"></p>
       <!-- Portfolio / past work — OPTIONAL. Files are previewed locally;
@@ -1412,7 +1647,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
         <span><b>4-stage verification:</b> NIN/ID check, skill assessment, two guarantor references and address confirmation. Have your NIN and guarantor contacts ready.</span>
       </div>
-      <button class="btn btn-gold" id="rSubmit">Apply — go live in ~48 hours</button>
+      <button class="btn btn-gold" id="rSubmit">Apply, go live in 48 hours</button>
     </div>
     <div class="success">
       <div class="big"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
@@ -1463,7 +1698,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <div class="chat-chips" id="chatChips"></div>
       <form class="chat-input" id="chatForm">
         <label for="chatText" class="sr-only">Type your message</label>
-        <input type="text" id="chatText" placeholder="Ask anything — or type “talk to human”" autocomplete="off">
+        <input type="text" id="chatText" placeholder="Ask anything, or type “talk to human”" autocomplete="off">
         <button type="submit" class="chat-send" aria-label="Send message">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         </button>
@@ -1474,12 +1709,12 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <div class="sup-panel" id="panelContact" role="tabpanel" aria-labelledby="tabContact" hidden>
       <a class="sup-channel wa" href="https://wa.me/2348000000000?text=Hi%20Servora%20support%2C%20I%20need%20help%20with..." target="_blank" rel="noopener">
         <span class="ch-ico" aria-hidden="true">💬</span>
-        <span class="ch-txt"><b>Chat on WhatsApp</b><span>Fastest — we reply in ~5 minutes, 8am–9pm daily</span></span>
+        <span class="ch-txt"><b>Chat on WhatsApp</b><span>Fastest reply, about 5 minutes, 8am–9pm daily</span></span>
         <span class="ch-go" aria-hidden="true">→</span>
       </a>
       <a class="sup-channel em" href="mailto:support@servora.ng" target="_blank" rel="noopener">
         <span class="ch-ico" aria-hidden="true">✉️</span>
-        <span class="ch-txt"><b>support@servora.ng</b><span>Email us directly — reply within 24 hours</span></span>
+        <span class="ch-txt"><b>support@servora.ng</b><span>Email us directly, reply within 24 hours</span></span>
         <span class="ch-go" aria-hidden="true">→</span>
       </a>
       <div class="sup-or"><span>or send us a message</span></div>
@@ -1505,7 +1740,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
           <option>Something else</option>
         </select>
         <label for="sMsg">Message</label>
-        <textarea id="sMsg" rows="4" required aria-required="true" aria-describedby="sMsgErr" placeholder="Tell us what happened — the more detail, the faster we can help."></textarea>
+        <textarea id="sMsg" rows="4" required aria-required="true" aria-describedby="sMsgErr" placeholder="Tell us what happened. The more detail, the faster we can help."></textarea>
         <p class="ferr" id="sMsgErr" aria-live="polite"></p>
         <button type="submit" class="btn btn-gold" id="sSubmit">Send message →</button>
         <p class="de-msg" id="sSent" aria-live="polite"></p>
@@ -1552,7 +1787,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <details class="dash-edit" id="dashEdit">
       <summary>✏️ Edit my profile</summary>
       <div class="de-body">
-        <label for="eBio">Bio — what should customers know?</label>
+        <label for="eBio">Bio: what should customers know?</label>
         <textarea id="eBio" rows="3" maxlength="300" placeholder="e.g. 10 years on the tools, neat work, no stories."></textarea>
         <div class="row2">
           <div>
@@ -1566,7 +1801,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         </div>
         <label>Past work photos <span class="lbl-soft">(up to 5, max 5MB each)</span></label>
         <div class="dpf-grid" id="dpfGrid"></div>
-        <div class="dpf-empty" id="dpfEmpty">No portfolio photos yet — add a few to win more bookings.</div>
+        <div class="dpf-empty" id="dpfEmpty">No portfolio photos yet. Add a few to win more bookings.</div>
         <label class="pf-drop" id="dpfDrop" for="dpfInput" role="button" tabindex="0">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
           <span id="dpfDropText">Add photos</span>
@@ -1575,6 +1810,27 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <p class="ferr" id="dpfErr" aria-live="polite"></p>
         <button type="button" class="btn btn-primary btn-sm" id="dashSave" style="width:100%;margin-top:14px">Save changes</button>
         <p class="de-msg" id="dashSaveMsg" aria-live="polite"></p>
+      </div>
+    </details>
+    <details class="dash-edit" id="dashPayout">
+      <summary>💳 Payout account <span class="pay-badge" id="payoutBadge">Not set up</span></summary>
+      <div class="de-body">
+        <p class="pay-note">Add the bank account where Servora sends your earnings. We verify it with your bank before saving, and only your payouts are affected.</p>
+        <div class="pay-current" id="payoutCurrent"></div>
+        <label for="payBank">Bank</label>
+        <select id="payBank"><option value="">Loading banks…</option></select>
+        <label for="payAcct">Account number</label>
+        <input type="text" id="payAcct" inputmode="numeric" maxlength="10" placeholder="10-digit account number" autocomplete="off">
+        <p class="ferr" id="payErr" aria-live="polite"></p>
+        <button type="button" class="btn btn-primary btn-sm" id="payoutSave" style="width:100%;margin-top:14px">Verify &amp; save account</button>
+        <p class="de-msg" id="payoutMsg" aria-live="polite"></p>
+      </div>
+    </details>
+    <details class="dash-edit" id="dashJobs">
+      <summary>🧰 My jobs <span class="pay-badge" id="jobsBadge" style="display:none"></span></summary>
+      <div class="de-body">
+        <p class="pay-note">Paid bookings. Start a job, mark it complete, and the customer confirms to release your payment.</p>
+        <div class="jobs-list" id="jobsList"></div>
       </div>
     </details>
     <div class="dash-tools">
@@ -1615,37 +1871,37 @@ const POPULAR_STATES=["Lagos","FCT Abuja","Rivers","Oyo","Ogun"];
 
 /* Service taxonomy (fairly static — future: GET /api/services) */
 const services=[
- {name:"Electricians",from:"₦8,000",jobs:"14,200 jobs done",desc:"Wiring, sockets, fans & inverter installs",rating:4.8,pop:"Most booked",kw:["wiring","socket","light","fuse","generator","fan","power","electric","dstv"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg>'},
- {name:"Plumbers",from:"₦7,500",jobs:"11,800 jobs done",desc:"Leaks, pipes, pumps & bathroom fittings",rating:4.7,kw:["pipe","leak","tap","toilet","water","drain","bathroom","sink"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>'},
- {name:"Cleaners",from:"₦12,000",jobs:"18,400 jobs done",desc:"Deep cleaning, fumigation & housekeeping",rating:4.9,pop:"Popular",kw:["clean","deep clean","fumigation","laundry","housekeeping","wash"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.7 4.6L18 9.3l-4.3 1.7L12 15.6l-1.7-4.6L6 9.3l4.3-1.7L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/><path d="M5 16l.6 1.6L7.2 18l-1.6.6L5 20.2 4.4 18.6 2.8 18l1.6-.4L5 16z"/></svg>'},
- {name:"AC Technicians",from:"₦10,000",jobs:"9,600 jobs done",desc:"Servicing, gas refills & installations",rating:4.8,kw:["ac","air","cooling","gas","refill","aircon","split unit"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M12 12 4 7m8 5 8-5m-8 5-8 5m8-5 8 5M8 4l4 2 4-2M8 20l4-2 4 2"/></svg>'},
- {name:"Car Mechanics",from:"₦15,000",jobs:"7,900 jobs done",desc:"Diagnostics, repairs & home service",rating:4.7,kw:["car","engine","brake","mechanic","vehicle","service","battery"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 5.9L3 18l3 3 5.8-5.7a4.5 4.5 0 0 0 5.9-6l-3 3-2.8-.7-.7-2.8 3.5-2.5z"/></svg>'},
- {name:"Tutors",from:"₦5,000/hr",jobs:"6,200 sessions",desc:"Maths, sciences, English & exam prep",rating:4.9,kw:["tutor","lesson","maths","english","exam","jamb","waec","teacher"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4a2 2 0 0 0-2-2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M20 17v5H6.5a2.5 2.5 0 0 1 0-5"/></svg>'},
- {name:"Makeup Artists",from:"₦20,000",jobs:"5,400 bookings",desc:"Bridal glam, gele & event makeup",rating:4.9,kw:["makeup","glam","bridal","gele","beauty"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 4 4L7.5 20.5 3 21l.5-4.5L15 5z"/><path d="m13 7 4 4"/></svg>'},
- {name:"Photographers",from:"₦35,000",jobs:"4,800 shoots",desc:"Weddings, events & studio portraits",rating:4.8,kw:["photo","camera","wedding","event","shoot","portrait","video"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>'}
+ {name:"Electricians",from:"₦8,000",jobs:"14,200 jobs done",desc:"Wiring, sockets, fans & inverter installs",img:"images/services/electrician.jpg",rating:4.8,pop:"Most booked",kw:["wiring","socket","light","fuse","generator","fan","power","electric","dstv"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg>'},
+ {name:"Plumbers",from:"₦7,500",jobs:"11,800 jobs done",desc:"Leaks, pipes, pumps & bathroom fittings",img:"images/services/plumber.jpg",rating:4.7,kw:["pipe","leak","tap","toilet","water","drain","bathroom","sink"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>'},
+ {name:"Cleaners",from:"₦12,000",jobs:"18,400 jobs done",desc:"Deep cleaning, fumigation & housekeeping",img:"images/services/cleaner.jpg",rating:4.9,pop:"Popular",kw:["clean","deep clean","fumigation","laundry","housekeeping","wash"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.7 4.6L18 9.3l-4.3 1.7L12 15.6l-1.7-4.6L6 9.3l4.3-1.7L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/><path d="M5 16l.6 1.6L7.2 18l-1.6.6L5 20.2 4.4 18.6 2.8 18l1.6-.4L5 16z"/></svg>'},
+ {name:"AC Technicians",from:"₦10,000",jobs:"9,600 jobs done",desc:"Servicing, gas refills & installations",img:"images/services/ac Technician.jpg",rating:4.8,kw:["ac","air","cooling","gas","refill","aircon","split unit"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M12 12 4 7m8 5 8-5m-8 5-8 5m8-5 8 5M8 4l4 2 4-2M8 20l4-2 4 2"/></svg>'},
+ {name:"Car Mechanics",from:"₦15,000",jobs:"7,900 jobs done",desc:"Diagnostics, repairs & home service",img:"images/services/Car mechanics.jpg",rating:4.7,kw:["car","engine","brake","mechanic","vehicle","service","battery"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 5.9L3 18l3 3 5.8-5.7a4.5 4.5 0 0 0 5.9-6l-3 3-2.8-.7-.7-2.8 3.5-2.5z"/></svg>'},
+ {name:"Tutors",from:"₦5,000/hr",jobs:"6,200 sessions",desc:"Maths, sciences, English & exam prep",img:"images/services/Tutors.jpg",rating:4.9,kw:["tutor","lesson","maths","english","exam","jamb","waec","teacher"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4a2 2 0 0 0-2-2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M20 17v5H6.5a2.5 2.5 0 0 1 0-5"/></svg>'},
+ {name:"Makeup Artists",from:"₦20,000",jobs:"5,400 bookings",desc:"Bridal glam, gele & event makeup",img:"images/services/Makeup artists.jpg",rating:4.9,kw:["makeup","glam","bridal","gele","beauty"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 4 4L7.5 20.5 3 21l.5-4.5L15 5z"/><path d="m13 7 4 4"/></svg>'},
+ {name:"Photographers",from:"₦35,000",jobs:"4,800 shoots",desc:"Weddings, events & studio portraits",img:"images/services/photographers.jpg",rating:4.8,kw:["photo","camera","wedding","event","shoot","portrait","video"],icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>'}
 ];
 const pros=[
  {n:"Emeka Obi",cat:"Electricians",area:"Yaba",city:"Lagos",r:4.9,j:214,price:8000,pl:"₦8,000",resp:12,c:"#0e7a4a",b:["v","t"],bio:"11 years on the tools. Rewiring, DB boards, socket & lighting installs, generator changeovers. Neat work, no stories.",rev:"“Fixed a fault three other electricians couldn’t find. Charged exactly what he quoted.”",who:"Kelechi U. · Yaba"},
  {n:"Sani Danladi",cat:"Electricians",area:"Garki",city:"Abuja",r:4.8,j:156,price:8500,pl:"₦8,500",resp:18,c:"#2f6ec2",b:["v"],bio:"Certified electrician specialising in solar/inverter installs and full-house wiring for new builds.",rev:"“Installed our inverter same day. Explained everything before touching a wire.”",who:"Amina S. · Garki"},
- {n:"Osaze Igbinedion",cat:"Plumbers",area:"Surulere",city:"Lagos",r:4.7,j:134,price:7000,pl:"₦7,000",resp:20,c:"#12876f",b:["v"],bio:"Leak detection, pipe replacement, pumps and water heaters. I bring my own materials receipt — you pay what the market pays.",rev:"“Found the hidden leak in 20 minutes. No wall wahala.”",who:"Bode F. · Surulere"},
+ {n:"Osaze Igbinedion",cat:"Plumbers",area:"Surulere",city:"Lagos",r:4.7,j:134,price:7000,pl:"₦7,000",resp:20,c:"#12876f",b:["v"],bio:"Leak detection, pipe replacement, pumps and water heaters. I bring my own materials receipt, so you pay what the market pays.",rev:"“Found the hidden leak in 20 minutes. No wall wahala.”",who:"Bode F. · Surulere"},
  {n:"Ibrahim Kabiru",cat:"Plumbers",area:"Gwarinpa",city:"Abuja",r:4.8,j:167,price:7500,pl:"₦7,500",resp:15,c:"#4655c4",b:["v","t"],bio:"Residential & commercial plumbing. Toilets, tanks, boreholes connections. 3–4 jobs a week on Servora since 2025.",rev:"“Came same day, fixed the pressure issue, price didn’t move. Rebooked him twice.”",who:"Ngozi E. · Gwarinpa"},
- {n:"Blessing Eze",cat:"Cleaners",area:"Lekki",city:"Lagos",r:4.9,j:312,price:12000,pl:"₦12,000",resp:10,c:"#c2452f",b:["v","f"],bio:"Deep cleaning, post-construction cleaning and fumigation with a 3-person team. We leave before you notice we came — except everything shines.",rev:"“So good I set up a bi-weekly booking. My landlady begged for her number.”",who:"Ngozi E. · Gwarinpa"},
- {n:"Mary Johnson",cat:"Cleaners",area:"Wuse",city:"Abuja",r:4.8,j:198,price:11000,pl:"₦11,000",resp:14,c:"#7a3fa0",b:["v","t"],bio:"Home & office cleaning, laundry and organisation. Fully equipped — you provide nothing but the door key.",rev:"“The flat smelled like a hotel after. Booked monthly now.”",who:"Tayo A. · Wuse II"},
- {n:"Tunde Bakare",cat:"AC Technicians",area:"Wuse",city:"Abuja",r:4.8,j:189,price:10000,pl:"₦10,000",resp:11,c:"#0e7a4a",b:["v","t"],bio:"Split units, standing ACs, cold rooms. Gas refills with pressure test included — I don’t guess, I measure.",rev:"“Quoted ₦18k upfront, unit blowing cold same afternoon. Zero stories.”",who:"Adaeze O. · Lekki"},
+ {n:"Blessing Eze",cat:"Cleaners",area:"Lekki",city:"Lagos",r:4.9,j:312,price:12000,pl:"₦12,000",resp:10,c:"#c2452f",b:["v","f"],bio:"Deep cleaning, post-construction cleaning and fumigation with a 3-person team. We leave before you notice we came, except everything shines.",rev:"“So good I set up a bi-weekly booking. My landlady begged for her number.”",who:"Ngozi E. · Gwarinpa"},
+ {n:"Mary Johnson",cat:"Cleaners",area:"Wuse",city:"Abuja",r:4.8,j:198,price:11000,pl:"₦11,000",resp:14,c:"#7a3fa0",b:["v","t"],bio:"Home & office cleaning, laundry and organisation. Fully equipped, so you provide nothing but the door key.",rev:"“The flat smelled like a hotel after. Booked monthly now.”",who:"Tayo A. · Wuse II"},
+ {n:"Tunde Bakare",cat:"AC Technicians",area:"Wuse",city:"Abuja",r:4.8,j:189,price:10000,pl:"₦10,000",resp:11,c:"#0e7a4a",b:["v","t"],bio:"Split units, standing ACs, cold rooms. Gas refills with pressure test included. I don’t guess, I measure.",rev:"“Quoted ₦18k upfront, unit blowing cold same afternoon. Zero stories.”",who:"Adaeze O. · Lekki"},
  {n:"Chuks Okafor",cat:"AC Technicians",area:"Ajah",city:"Lagos",r:4.9,j:142,price:10500,pl:"₦10,500",resp:9,c:"#b0731a",b:["v","f"],bio:"Fastest responder in Lagos East. Installation, servicing, gas refill. 6-month workmanship warranty on every job.",rev:"“Replied in 5 minutes, arrived in an hour. My new AC guy, permanently.”",who:"Seyi K. · Ajah"},
  {n:"Segun Adeleke",cat:"Car Mechanics",area:"Ikeja",city:"Lagos",r:4.7,j:143,price:15000,pl:"₦15,000",resp:25,c:"#2f6ec2",b:["v"],bio:"Toyota/Honda/Kia specialist. Diagnostics with a scanner, not by ear. Home & office service available.",rev:"“Diagnosed in 10 minutes what my old mechanic ‘managed’ for months.”",who:"Femi D. · Ikeja GRA"},
- {n:"Godwin Peters",cat:"Car Mechanics",area:"Trans Amadi",city:"Port Harcourt",r:4.8,j:117,price:14000,pl:"₦14,000",resp:22,c:"#12876f",b:["v","t"],bio:"Full-service auto repair — engine, brakes, suspension, AC. Genuine parts with receipts, always.",rev:"“Honest pricing, real parts. My whole street uses him now.”",who:"Ibiso W. · Trans Amadi"},
+ {n:"Godwin Peters",cat:"Car Mechanics",area:"Trans Amadi",city:"Port Harcourt",r:4.8,j:117,price:14000,pl:"₦14,000",resp:22,c:"#12876f",b:["v","t"],bio:"Full-service auto repair: engine, brakes, suspension, AC. Genuine parts with receipts, always.",rev:"“Honest pricing, real parts. My whole street uses him now.”",who:"Ibiso W. · Trans Amadi"},
  {n:"Hauwa Bello",cat:"Tutors",area:"Maitama",city:"Abuja",r:4.9,j:220,price:5000,pl:"₦5,000/hr",resp:30,c:"#b0731a",b:["v","t"],bio:"Maths & Sciences, JSS to A-levels. WAEC/JAMB prep with past-question drilling. 92% of my students improved by two grades.",rev:"“My son went from F9 to B2 in one term. She’s magic.”",who:"Mrs. Okon · Maitama"},
  {n:"Adanna Okeke",cat:"Tutors",area:"Ikoyi",city:"Lagos",r:5.0,j:89,price:6000,pl:"₦6,000/hr",resp:26,c:"#7a3fa0",b:["v","f"],bio:"English, Literature & Phonics specialist. British curriculum experience. Patient with kids, ruthless with results.",rev:"“Our daughter now reads two years above her level. Worth every naira.”",who:"The Balogun family · Ikoyi"},
- {n:"Funke Adeyemi",cat:"Makeup Artists",area:"Victoria Island",city:"Lagos",r:5.0,j:98,price:20000,pl:"₦20,000",resp:35,c:"#b0731a",b:["v","f"],bio:"Bridal glam, gele artistry & photoshoot makeup. Featured in BellaNaija Weddings. Books out 3 weeks ahead — plan early.",rev:"“I cried when I saw my bridal look. Then fixed my face — because Funke made it cry-proof.”",who:"Tolu A. · bride, VI"},
+ {n:"Funke Adeyemi",cat:"Makeup Artists",area:"Victoria Island",city:"Lagos",r:5.0,j:98,price:20000,pl:"₦20,000",resp:35,c:"#b0731a",b:["v","f"],bio:"Bridal glam, gele artistry & photoshoot makeup. Featured in BellaNaija Weddings. Books out 3 weeks ahead, so plan early.",rev:"“I cried when I saw my bridal look. Then fixed my face, because Funke made it cry-proof.”",who:"Tolu A. · bride, VI"},
  {n:"Zainab Musa",cat:"Makeup Artists",area:"Jabi",city:"Abuja",r:4.9,j:76,price:18000,pl:"₦18,000",resp:28,c:"#c2452f",b:["v","t"],bio:"Soft glam & editorial looks. Home service across Abuja. Hypoallergenic kit available on request.",rev:"“Flawless from morning church to evening reception. Not one touch-up needed.”",who:"Hadiza M. · Jabi"},
- {n:"Chioma Nwosu",cat:"Photographers",area:"GRA",city:"Port Harcourt",r:5.0,j:76,price:35000,pl:"₦35,000",resp:40,c:"#7a3fa0",b:["v","f"],bio:"Weddings, birthdays & corporate events. 48-hour preview delivery. Two shooters on every wedding — no missed moments.",rev:"“Previews landed before the party even ended. Unreal quality.”",who:"Emeka & Ada · GRA"},
- {n:"Damilare Oni",cat:"Photographers",area:"Lekki",city:"Lagos",r:4.9,j:112,price:40000,pl:"₦40,000",resp:33,c:"#0e7a4a",b:["v","t"],bio:"Portraits, events & brand shoots. Studio in Lekki or on location. Shot 40+ weddings in 2025 alone.",rev:"“He showed up early. In this Lagos? Early. And the photos — chef’s kiss.”",who:"Tunde A. · Surulere"},
+ {n:"Chioma Nwosu",cat:"Photographers",area:"GRA",city:"Port Harcourt",r:5.0,j:76,price:35000,pl:"₦35,000",resp:40,c:"#7a3fa0",b:["v","f"],bio:"Weddings, birthdays & corporate events. 48-hour preview delivery. Two shooters on every wedding, so no missed moments.",rev:"“Previews landed before the party even ended. Unreal quality.”",who:"Emeka & Ada · GRA"},
+ {n:"Damilare Oni",cat:"Photographers",area:"Lekki",city:"Lagos",r:4.9,j:112,price:40000,pl:"₦40,000",resp:33,c:"#0e7a4a",b:["v","t"],bio:"Portraits, events & brand shoots. Studio in Lekki or on location. Shot 40+ weddings in 2025 alone.",rev:"“He showed up early. In this Lagos? Early. And the photos? Chef’s kiss.”",who:"Tunde A. · Surulere"},
  /* South-West expansion seeds (Oyo, Ogun, Osun) */
  {n:"Kunle Ajayi",cat:"Electricians",area:"Bodija",city:"Ibadan",r:4.8,j:121,price:7500,pl:"₦7,500",resp:16,c:"#12876f",b:["v","t"],bio:"Residential wiring, DB upgrades and inverter installs across Ibadan. 9 years on the tools, zero shortcuts.",rev:"“Traced a fault the estate electrician gave up on. Neat, honest work.”",who:"Mrs. Adebisi · Bodija"},
  {n:"Folake Ogunleye",cat:"Cleaners",area:"Ring Road",city:"Ibadan",r:4.9,j:164,price:10000,pl:"₦10,000",resp:13,c:"#c2452f",b:["v","t"],bio:"Deep cleaning and post-construction cleaning with a 2-person team. Ibadan homes and offices, same-week slots.",rev:"“The kitchen looked newer than when we moved in. Booked her monthly.”",who:"Damola K. · Ring Road"},
  {n:"Peter Adewale",cat:"Plumbers",area:"Oke-Ilewo",city:"Abeokuta",r:4.7,j:88,price:6500,pl:"₦6,500",resp:21,c:"#2f6ec2",b:["v"],bio:"Pipes, pumps, tanks and borehole connections across Abeokuta. Materials receipts always included.",rev:"“Fixed our pressure problem in one visit. Fair price, no stories.”",who:"Chief Sowunmi · Oke-Ilewo"},
- {n:"Ronke Fashola",cat:"Makeup Artists",area:"Osogbo",city:"Osogbo",r:4.9,j:59,price:15000,pl:"₦15,000",resp:24,c:"#7a3fa0",b:["v","t"],bio:"Bridal and event glam across Osun. Gele artistry included. Travels with full kit — you just sit down.",rev:"“My gele alone collected compliments all day. Worth every naira.”",who:"Yetunde A. · Osogbo"}
+ {n:"Ronke Fashola",cat:"Makeup Artists",area:"Osogbo",city:"Osogbo",r:4.9,j:59,price:15000,pl:"₦15,000",resp:24,c:"#7a3fa0",b:["v","t"],bio:"Bridal and event glam across Osun. Gele artistry included. Travels with a full kit, so you just sit down.",rev:"“My gele alone collected compliments all day. Worth every naira.”",who:"Yetunde A. · Osogbo"}
 ];
 
 /* Enrich seed pros with the fields the backend will store natively.
@@ -1777,6 +2033,85 @@ const ServoraAPI={
     }catch(e){return null}
   },
 
+  /* ---- PAYMENTS (escrow checkout) ---- */
+  /* POST /api/bookings — create the agreed job + price that drives payment. */
+  async createBooking(payload){
+    try{
+      const r=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      return await r.json();
+    }catch(e){return null}
+  },
+  /* POST /api/payments/initialize — start a Paystack payment for a booking.
+     Parses the body on errors too, so 503/409/422 messages reach the UI. */
+  async initializePayment(payload){
+    try{
+      const r=await fetch('/api/payments/initialize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      return await r.json();
+    }catch(e){return null}
+  },
+  /* GET /api/payments/status/:ref — poll on return from checkout. */
+  async getPaymentStatus(reference){
+    return apiFetch('/api/payments/status/'+encodeURIComponent(reference));
+  },
+
+  /* ---- PRO PAYOUT ONBOARDING ---- */
+  /* GET /api/payments/banks — Nigerian bank list for the picker. */
+  async getBanks(){
+    return apiFetch('/api/payments/banks');
+  },
+  /* GET /api/pros/:id/payout — the pro's saved payout status (masked). */
+  async getPayoutAccount(id,token){
+    try{
+      const r=await fetch('/api/pros/'+encodeURIComponent(id)+'/payout',{headers:{Authorization:'Bearer '+(token||'')}});
+      return await r.json();
+    }catch(e){return null}
+  },
+  /* POST /api/pros/:id/payout — verify with the bank + save the recipient.
+     Parses the body on errors so 422/503 messages reach the UI. */
+  async setPayoutAccount(id,payload,token){
+    try{
+      const r=await fetch('/api/pros/'+encodeURIComponent(id)+'/payout',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},body:JSON.stringify(payload)});
+      return await r.json();
+    }catch(e){return null}
+  },
+
+  /* ---- BOOKINGS (customer) ---- */
+  /* GET /api/bookings/:id — current status of a booking. */
+  async getBooking(id){
+    return apiFetch('/api/bookings/'+encodeURIComponent(id));
+  },
+  /* POST /api/bookings/:id/confirm — customer confirms the job is done,
+     which is the gate the fund-release flow checks. */
+  async confirmBooking(id){
+    try{
+      const r=await fetch('/api/bookings/'+encodeURIComponent(id)+'/confirm',{method:'POST',headers:{'Content-Type':'application/json'}});
+      return await r.json();
+    }catch(e){return null}
+  },
+
+  /* ---- PRO JOB ACTIONS (start / complete / dispute) ---- */
+  async getProBookings(id,token){
+    return apiFetch('/api/pros/'+encodeURIComponent(id)+'/bookings',{headers:{Authorization:'Bearer '+(token||'')}});
+  },
+  /* POST /api/bookings/:id/{start|complete|dispute} — pro token authorises. */
+  async proBookingAction(id,action,token,body){
+    try{
+      const r=await fetch('/api/bookings/'+encodeURIComponent(id)+'/'+action,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},body:body?JSON.stringify(body):undefined});
+      return await r.json();
+    }catch(e){return null}
+  },
+
+  /* ---- SUPPORT / DISPUTES (admin) ---- */
+  async getDisputes(status,key){
+    return apiFetch('/api/disputes'+(status?'?status='+encodeURIComponent(status):''),{headers:{'x-admin-key':key||''}});
+  },
+  async disputeAction(id,action,key,body){
+    try{
+      const r=await fetch('/api/disputes/'+encodeURIComponent(id)+'/'+action,{method:'POST',headers:{'Content-Type':'application/json','x-admin-key':key||''},body:body?JSON.stringify(body):undefined});
+      return await r.json();
+    }catch(e){return null}
+  },
+
   /* POST /api/support — a support message from the contact form.
      FUTURE: forward to the support inbox / helpdesk. */
   async submitSupport(msg){
@@ -1803,7 +2138,7 @@ const testimonials=[
  {q:"My AC guy vanished mid-repair last year. The Servora technician came same day, quoted ₦18,000 upfront, and the app held my money until the unit was blowing cold. <em>This is how it should always work.</em>",n:"Adaeze O.",r:"Homeowner · Lekki Phase 1, Lagos",c:"#0e7a4a"},
  {q:"I didn't even create an account. Typed the job, dropped my number, and had <em>three quotes before my food delivery arrived.</em>",n:"Tunde A.",r:"Customer · Surulere, Lagos",c:"#b0731a"},
  {q:"As a plumber, Servora changed everything. I used to sit at home waiting for referrals. Now I get 3–4 jobs a week and the money enters my account <em>the same day</em>. The Pro plan paid for itself in one job.",n:"Ibrahim K.",r:"Pro on Servora since 2025 · Abuja",c:"#4655c4"},
- {q:"The cleaner was so good I set up a bi-weekly booking. My landlady begged for her number — I sent her the app instead. <em>My small revenge.</em>",n:"Ngozi E.",r:"Customer · Gwarinpa, Abuja",c:"#c2452f"}
+ {q:"The cleaner was so good I set up a bi-weekly booking. My landlady begged for her number, so I sent her the app instead. <em>My small revenge.</em>",n:"Ngozi E.",r:"Customer · Gwarinpa, Abuja",c:"#c2452f"}
 ];
 /* Ticker feed — [name, area, action, city, avatar color, category].
    FUTURE: stream real completed bookings (GET /api/bookings/recent). */
@@ -1860,14 +2195,19 @@ document.getElementById('themeBtn').onclick=()=>{
 ServoraAPI.getServices().then(list=>{
   document.getElementById('cats').innerHTML=list.map((s,i)=>`
  <button class="cat rv d${(i%4)+1}" data-browse="${s.name}">
-   ${s.pop?`<span class="pop">${s.pop}</span>`:''}
-   <div class="ico">${s.icon}</div>
-   <h3>${s.name}</h3>
-   <p class="cat-desc">${s.desc}</p>
-   <div class="cat-stats"><span class="st">★ ${s.rating}</span> · ${s.jobs}</div>
-   <div class="cat-foot">
-     <span class="from">from <b>${s.from}</b></span>
-     <span class="go" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+   <div class="cat-media">
+     ${s.img?`<img src="${encodeURI(s.img)}" alt="${s.name} on Servora" loading="lazy" decoding="async" onerror="this.remove()">`:''}
+     ${s.pop?`<span class="pop">${s.pop}</span>`:''}
+     <span class="cat-ico" aria-hidden="true">${s.icon}</span>
+   </div>
+   <div class="cat-body">
+     <h3>${s.name}</h3>
+     <p class="cat-desc">${s.desc}</p>
+     <div class="cat-stats"><span class="st">★ ${s.rating}</span> · ${s.jobs}</div>
+     <div class="cat-foot">
+       <span class="from">from <b>${s.from}</b></span>
+       <span class="go" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+     </div>
    </div>
  </button>`).join('');
   /* late-rendered cards must join the scroll-reveal observer */
@@ -1886,7 +2226,7 @@ function proCard(p){
    <div class="rating"><span class="s">${p.r?'★ '+Number(p.r).toFixed(1):'✦ New'}</span><span class="n">(${p.j||0} jobs)</span></div>
    <div class="badges">${p.b.map(b=>badgeMap[b]).join('')}</div>
    <div class="resp"><span class="dot"></span>Responds in ~${p.resp} min</div>
-   ${(sh=>sh.length?`<div class="pro-shots">${sh.slice(0,2).map((s,i)=>`<img src="${esc(s)}" alt="${esc(p.n)} — past work ${i+1}" decoding="async">`).join('')}</div>`:'')(proPhotos(p))}
+   ${(sh=>sh.length?`<div class="pro-shots">${sh.slice(0,2).map((s,i)=>`<img src="${esc(s)}" alt="${esc(p.n)}, past work ${i+1}" decoding="async">`).join('')}</div>`:'')(proPhotos(p))}
    <div class="statline"><span>Starting price</span><b>${p.pl}</b></div>
    <div class="cta-row">
      <button class="btn btn-ghost btn-sm" data-profile="${p.id}">Profile</button>
@@ -1917,6 +2257,90 @@ function fillStateSelect(sel,def='Lagos'){
   sel.value=def;
 }
 fillStateSelect(citySel);
+
+/* ============ SEARCHABLE STATE SELECTOR ============
+   A custom panel over the (now hidden) native #citySelect. The select
+   stays the single source of truth: picking an option writes to it and
+   fires 'change', so renderResults() and the lead payload need no
+   changes and the field still works if this script never runs. */
+(function initStateCombo(){
+  const wrap=document.getElementById('cityWrap'),trigger=document.getElementById('stateTrigger'),
+        pop=document.getElementById('statePop'),search=document.getElementById('stateSearch'),
+        list=document.getElementById('stateList'),label=document.getElementById('stateLabel');
+  let active=-1;
+  const TICK='<svg class="tick" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  const opt=s=>{
+    const sel=s===citySel.value;
+    return `<button type="button" class="sp-opt${sel?' sel':''}" role="option" aria-selected="${sel}" data-state="${esc(s)}">${esc(s)}${TICK}</button>`;
+  };
+  function render(q=''){
+    const query=q.trim().toLowerCase();
+    if(!query){
+      list.innerHTML='<div class="sp-label">Popular</div>'+POPULAR_STATES.map(opt).join('')+
+                     '<div class="sp-label">All states (A–Z)</div>'+NIGERIAN_STATES.map(opt).join('');
+    }else{
+      /* rank prefix matches above mid-word ones, so "riv" offers
+         Rivers before Cross River */
+      const hits=NIGERIAN_STATES.filter(s=>s.toLowerCase().includes(query))
+        .sort((a,b)=>(b.toLowerCase().startsWith(query)-a.toLowerCase().startsWith(query))||a.localeCompare(b));
+      list.innerHTML=hits.length?hits.map(opt).join('')
+        :`<div class="sp-none">No state matches “${esc(q.trim())}”.<br>Servora covers all 36 states + FCT.</div>`;
+    }
+    active=-1;
+  }
+  const opts=()=>[...list.querySelectorAll('.sp-opt')];
+  function setActive(i){
+    const o=opts();if(!o.length)return;
+    active=(i+o.length)%o.length;
+    o.forEach((b,bi)=>b.classList.toggle('active',bi===active));
+    o[active].scrollIntoView({block:'nearest'});
+  }
+  function open(){
+    render();
+    wrap.classList.add('open');
+    trigger.setAttribute('aria-expanded','true');
+    search.value='';
+    setTimeout(()=>search.focus(),60);
+    /* keep the panel on screen when it opens near the fold */
+    setTimeout(()=>{
+      const gap=Math.ceil(pop.getBoundingClientRect().bottom-innerHeight);
+      if(gap>0)scrollBy({top:gap+16,behavior:'smooth'});
+    },80);
+  }
+  function close(){
+    wrap.classList.remove('open');
+    trigger.setAttribute('aria-expanded','false');
+    active=-1;
+  }
+  function choose(state){
+    citySel.value=state;                                   /* source of truth */
+    label.textContent=state;
+    citySel.dispatchEvent(new Event('change',{bubbles:true})); /* existing listeners */
+    close();
+    trigger.focus();
+  }
+  label.textContent=citySel.value;
+  trigger.addEventListener('click',e=>{e.stopPropagation();wrap.classList.contains('open')?close():open()});
+  search.addEventListener('input',()=>render(search.value));
+  list.addEventListener('click',e=>{
+    const b=e.target.closest('[data-state]');
+    if(b)choose(b.dataset.state);
+  });
+  search.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'){e.preventDefault();setActive(active+1)}
+    else if(e.key==='ArrowUp'){e.preventDefault();setActive(active-1)}
+    else if(e.key==='Enter'){
+      e.preventDefault();
+      const o=opts();
+      if(o.length)choose((active>=0?o[active]:o[0]).dataset.state);
+    }else if(e.key==='Escape'){e.preventDefault();close();trigger.focus()}
+  });
+  /* clicking anywhere outside closes it */
+  document.addEventListener('click',e=>{if(!e.target.closest('#cityWrap'))close()});
+  /* keep the label in sync if anything else sets the value */
+  citySel.addEventListener('change',()=>{label.textContent=citySel.value});
+})();
+
 /* Match free text to a service: name substring, keyword prefix,
    or exact keyword token (avoids "spaceship" matching kw "ac") */
 function matchService(q){
@@ -1935,8 +2359,8 @@ async function renderResults(){
   const avg=Math.round(list.reduce((s,p)=>s+p.resp,0)/(list.length||1));
   document.getElementById('resultsSub').textContent=stateCovered
     ?`All ID-verified · avg. response ~${avg} min · contact free, no signup`
-    :`No ${(currentCat||'pros').toLowerCase()} in ${state} yet — showing top pros nationwide · new pros are verified daily`;
-  resultsGrid.innerHTML=list.length?list.map(proCard).join(''):'<div class="none">No pros found — try another service.</div>';
+    :`No ${(currentCat||'pros').toLowerCase()} in ${state} yet. Showing top pros nationwide · new pros are verified daily`;
+  resultsGrid.innerHTML=list.length?list.map(proCard).join(''):'<div class="none">No pros found. Try another service.</div>';
 }
 function openResults(cat){
   currentCat=cat;
@@ -1967,7 +2391,7 @@ function renderSug(list,label){
   const cur=input.value.trim().toLowerCase();
   sug.innerHTML=list.length
     ?`<div class="sug-label">${label}</div><div class="sug-list">`+list.map((s,i)=>{const sel=s.name.toLowerCase()===cur;return `<button type="button" id="sug-opt-${i}" role="option" aria-selected="${sel}" class="${sel?'sel':''}" data-browse="${s.name}">${s.icon.replace('width="26" height="26"','width="18" height="18"')} ${s.name}<span class="tag">${sel?'✓ Selected':'from '+s.from}</span></button>`}).join('')+`</div>`
-    :`<div class="sug-label">No matching service</div><div class="sug-list"><button type="button" role="option" id="sug-opt-0" data-post>📝 Post your job instead — pros come to you</button></div>`;
+    :`<div class="sug-label">No matching service</div><div class="sug-list"><button type="button" role="option" id="sug-opt-0" data-post>📝 Post your job instead, pros come to you</button></div>`;
   setSugOpen(true);
   ensureSugVisible();
 }
@@ -2141,15 +2565,15 @@ const modalBg=document.getElementById('modalBg'),modal=document.getElementById('
 let modalPro=null,modalService=null;
 function openPostJob(hint){
   modalPro=null;modalService=hint||null;
-  document.getElementById('modalTitle').textContent=hint?`Book ${singular[hint]||hint} — free`:'Post a job — free';
-  document.getElementById('modalSub').textContent='Takes 60 seconds. Vetted pros reply with quotes — usually within 15 minutes. No account needed.';
+  document.getElementById('modalTitle').textContent=hint?`Book ${singular[hint]||hint}, free`:'Post a job, free';
+  document.getElementById('modalSub').textContent='Takes 60 seconds. Vetted pros reply with quotes, usually within 15 minutes. No account needed.';
   document.getElementById('successMsg').innerHTML='Your request has been sent to <b>vetted pros near you</b>.';
   document.getElementById('nsTime').innerHTML='First replies usually land within <b>15–30 minutes on WhatsApp</b>.';
   showModal();
 }
 function openContact(id){
   const p=proById(id);modalPro=p;modalService=p.cat;
-  document.getElementById('modalTitle').textContent=`Contact ${p.n.split(' ')[0]} — free`;
+  document.getElementById('modalTitle').textContent=`Contact ${p.n.split(' ')[0]}, free`;
   document.getElementById('modalSub').textContent=`${p.n} (${p.cat.replace(/s$/,'')}, ${proLocation(p)}) typically responds in ~${p.resp} minutes. No account needed.`;
   document.getElementById('successMsg').innerHTML=`Your request has been sent to <b>${p.n.split(' ')[0]}</b> directly.`;
   document.getElementById('nsTime').innerHTML=`${p.n.split(' ')[0]} usually replies within <b>~${p.resp} minutes on WhatsApp</b>.`;
@@ -2172,10 +2596,10 @@ modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
    readers via aria-live regions and inputs toggle aria-invalid. */
 const LEAD_DEBOUNCE=400;
 const leadValidators={
-  mDesc:v=>v.trim().length>=5?'':'Please tell us a little about the job — at least 5 characters.',
+  mDesc:v=>v.trim().length>=5?'':'Please tell us a little about the job, at least 5 characters.',
   mArea:v=>v.trim().length>=3?'':'Where should the pro come to? e.g. Lekki Phase 1.',
   mName:v=>/^[A-Za-zÀ-ſ][A-Za-zÀ-ſ' -]{1,}$/.test(v.trim())?'':'Please enter your first name (letters only).',
-  mPhone:v=>/^(\+234|0)[789][01]\d{8}$/.test(v.replace(/[\s()./-]/g,''))?'':'That number doesn’t look right — try 0803 123 4567 or +234 803 123 4567.'
+  mPhone:v=>/^(\+234|0)[789][01]\d{8}$/.test(v.replace(/[\s()./-]/g,''))?'':'That number doesn’t look right. Try 0803 123 4567 or +234 803 123 4567.'
 };
 const leadTimers={};
 function setFieldState(id,msg){
@@ -2260,14 +2684,14 @@ function openProfile(id){
     /* decoding="async" (not loading="lazy") — these are few, small and
        only render on demand, and lazy needs IntersectionObserver, which
        some embedded webviews don't run */
-    ?shots.slice(0,PF_MAX).map((src,i)=>`<button type="button" class="shot" data-lb="${i}" aria-label="View photo ${i+1} of ${shots.length}"><img src="${esc(src)}" alt="${esc(p.n)} — past work ${i+1}" decoding="async"></button>`).join('')
+    ?shots.slice(0,PF_MAX).map((src,i)=>`<button type="button" class="shot" data-lb="${i}" aria-label="View photo ${i+1} of ${shots.length}"><img src="${esc(src)}" alt="${esc(p.n)}, past work ${i+1}" decoding="async"></button>`).join('')
     :'📷 No portfolio photos uploaded yet.';
   lbShots=shots;
   /* per-pro skills once registration stores them; category fallback for seeds */
   document.getElementById('pfSkills').innerHTML=(p.skills||categorySkills[p.cat]||[]).map(s=>`<span class="skill-chip">${s}</span>`).join('');
   document.querySelector('#profileBg .rev').style.display=p.rev?'':'none';
   document.getElementById('pfRev').textContent=p.rev||'';
-  document.getElementById('pfRevWho').textContent=p.rev?('— '+p.who+' · verified booking'):'';
+  document.getElementById('pfRevWho').textContent=p.rev?(p.who+' · verified booking'):'';
   document.getElementById('pfPrice').textContent=p.pl;
   profileBg.classList.add('open');document.body.style.overflow='hidden';
 }
@@ -2303,6 +2727,302 @@ function closeProfile(){profileBg.classList.remove('open');if(!modalBg.classList
 document.getElementById('profileClose').onclick=closeProfile;
 profileBg.addEventListener('click',e=>{if(e.target===profileBg)closeProfile()});
 document.getElementById('pfContact').onclick=()=>{if(profilePro!==null)openContact(profilePro)};
+
+/* ============ CHECKOUT (escrow payment) ============ */
+const checkoutBg=document.getElementById('checkoutBg');
+let coPro=null;
+const nairaFmt=n=>'₦'+Number(n||0).toLocaleString('en-NG');
+function coErr(id,msg){
+  const el=document.getElementById(id),e=document.getElementById(id+'Err');
+  if(e)e.textContent=msg||'';
+  if(el)el.classList.toggle('invalid',!!msg);
+  return !msg;
+}
+function updateCoSummary(){
+  const n=parseInt(document.getElementById('coAmount').value,10);
+  document.getElementById('coSummary').innerHTML=(Number.isFinite(n)&&n>=100)
+    ? `<span>You pay, held safely in escrow</span><b>${nairaFmt(n)}</b>` : '';
+}
+function openCheckout(id){
+  const p=proById(id); if(!p)return;
+  coPro=p;
+  document.getElementById('coPro').innerHTML=
+    `<div class="avatar" style="background:${esc(p.c||'#0e7a4a')}">${esc(initials(p.n))}</div>`+
+    `<div class="who"><b>${esc(p.n)}</b><span>${esc((p.cat||'').replace(/s$/,''))} · ${esc(p.pl||'')}</span></div>`;
+  document.getElementById('coDesc').value='';
+  document.getElementById('coAmount').value=(Number.isFinite(p.price)&&p.price>0)?p.price:'';
+  document.getElementById('coName').value='';
+  document.getElementById('coPhone').value='';
+  document.getElementById('coEmail').value='';
+  ['coDesc','coAmount','coEmail'].forEach(k=>coErr(k,''));
+  document.getElementById('coMsg').textContent='';
+  updateCoSummary();
+  closeProfile();
+  checkoutBg.classList.add('open');document.body.style.overflow='hidden';
+}
+function closeCheckout(){checkoutBg.classList.remove('open');document.body.style.overflow=''}
+document.getElementById('checkoutClose').onclick=closeCheckout;
+checkoutBg.addEventListener('click',e=>{if(e.target===checkoutBg)closeCheckout()});
+document.getElementById('coAmount').addEventListener('input',updateCoSummary);
+document.getElementById('pfBook').onclick=()=>{if(profilePro!==null)openCheckout(profilePro)};
+
+document.getElementById('coPay').onclick=async()=>{
+  const desc=document.getElementById('coDesc').value.trim();
+  const amount=parseInt(document.getElementById('coAmount').value,10);
+  const email=document.getElementById('coEmail').value.trim();
+  const name=document.getElementById('coName').value.trim();
+  const phone=document.getElementById('coPhone').value.trim();
+  let ok=true;
+  ok=coErr('coDesc',desc.length>=3?'':'Tell us what you need done.')&&ok;
+  ok=coErr('coAmount',(Number.isFinite(amount)&&amount>=100)?'':'Enter the agreed price (₦100 or more).')&&ok;
+  ok=coErr('coEmail',/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)?'':'Enter a valid email for your receipt.')&&ok;
+  if(!ok)return;
+
+  const btn=document.getElementById('coPay'),msg=document.getElementById('coMsg');
+  btn.disabled=true;btn.textContent='Processing…';msg.className='de-msg';msg.textContent='';
+  try{
+    const booking=await ServoraAPI.createBooking({proId:coPro.id,service:coPro.cat,description:desc,amountNaira:amount,customer:{name,email,phone}});
+    if(!booking||!booking.ok)throw new Error((booking&&booking.error)||'Could not create the booking. Is the server running?');
+    const init=await ServoraAPI.initializePayment({bookingId:booking.booking.id,email});
+    if(init&&init.ok&&init.authorizationUrl){
+      // Remember this booking client-side so the (account-free) customer can
+      // return and confirm the job later — see "My bookings".
+      saveMyBooking({bookingId:booking.booking.id,reference:init.reference,proName:coPro.n,service:coPro.cat,amountKobo:amount*100,addedAt:Date.now()});
+      msg.textContent='Redirecting to secure checkout…';
+      window.location.href=init.authorizationUrl;   // → Paystack hosted checkout
+      return;
+    }
+    // Payments not configured / gateway error → offer the free contact path.
+    const why=(init&&init.error)||'Online payment isn’t available right now.';
+    msg.className='de-msg err';
+    msg.innerHTML=`${esc(why)} <button type="button" class="linkish" id="coFallback">Message the pro instead</button>`;
+    document.getElementById('coFallback').onclick=()=>{closeCheckout();openContact(coPro.id);};
+  }catch(err){
+    msg.className='de-msg err';msg.textContent=err.message||'Something went wrong. Please try again.';
+  }finally{
+    btn.disabled=false;btn.textContent='Pay securely →';
+  }
+};
+
+/* ============ PAYMENT RETURN (confirming) ============ */
+const payReturnBg=document.getElementById('payReturnBg'),payReturnBody=document.getElementById('payReturnBody');
+function closePayReturn(){payReturnBg.classList.remove('open');document.body.style.overflow=''}
+function payReturnConfirming(){
+  payReturnBody.innerHTML='<div class="spin"></div><h3>Confirming your payment…</h3><p>Hang on a moment while we secure your funds in escrow.</p>';
+}
+function payReturnSuccess(st){
+  payReturnBody.innerHTML=
+    '<div class="big ok"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>'+
+    '<h3>Payment secured 🎉</h3>'+
+    `<p><span class="amt">${nairaFmt((st.amountKobo||0)/100)}</span> is now held safely in <b>escrow</b>.</p>`+
+    '<p>Your pro can get to work. The money is released to them only when <b>you confirm the job is done</b>.</p>'+
+    '<button class="btn btn-primary" id="prDone">Done</button>';
+  document.getElementById('prDone').onclick=closePayReturn;
+}
+function payReturnFailed(){
+  payReturnBody.innerHTML='<div class="big warn">✕</div><h3>Payment not completed</h3><p>Your payment didn’t go through, and no money has left your account. You can try booking again.</p><button class="btn btn-primary" id="prDone">Close</button>';
+  document.getElementById('prDone').onclick=closePayReturn;
+}
+function payReturnPending(ref){
+  payReturnBody.innerHTML=
+    '<div class="big warn">⏳</div>'+
+    '<h3>Still confirming…</h3>'+
+    '<p>This is taking a little longer than usual. Your payment may still be processing.</p>'+
+    '<button class="btn btn-gold" id="prRetry">Check again</button>'+
+    '<div class="pr-alt">Paid but stuck? <button type="button" data-support="contact">Contact support</button></div>';
+  document.getElementById('prRetry').onclick=()=>pollPayReturn(ref,0);
+}
+async function pollPayReturn(ref,tries){
+  payReturnConfirming();
+  const st=await ServoraAPI.getPaymentStatus(ref);
+  if(st&&st.ok&&st.paid){payReturnSuccess(st);return;}
+  if(st&&st.ok&&st.status==='failed'){payReturnFailed();return;}
+  if(tries>=6){payReturnPending(ref);return;}
+  setTimeout(()=>pollPayReturn(ref,tries+1),2500);
+}
+function initPayReturn(){
+  const params=new URLSearchParams(location.search);
+  const ref=params.get('servora_pay');
+  if(!ref)return;
+  // clean the URL so a refresh doesn't re-trigger the confirming screen
+  params.delete('servora_pay');
+  const q=params.toString();
+  history.replaceState({},'',location.pathname+(q?'?'+q:'')+location.hash);
+  payReturnBg.classList.add('open');document.body.style.overflow='hidden';
+  pollPayReturn(ref,0);
+}
+// close the return modal on backdrop click only when it's not mid-confirm
+payReturnBg.addEventListener('click',e=>{if(e.target===payReturnBg&&!payReturnBody.querySelector('.spin'))closePayReturn()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&checkoutBg.classList.contains('open'))closeCheckout()});
+// run after the full script has defined its helpers (avoids TDZ on esc())
+setTimeout(initPayReturn,0);
+
+/* ============ MY BOOKINGS (customer confirm-job flow) ============
+   Customers have no account, so their bookings are remembered in
+   localStorage after payment. Opening the panel refetches each booking's
+   live status; confirming calls POST /api/bookings/:id/confirm. */
+const BOOKINGS_KEY='servora-bookings';
+const myBookingsBg=document.getElementById('myBookingsBg'),myBookingsList=document.getElementById('myBookingsList');
+function loadMyBookings(){try{return JSON.parse(localStorage.getItem(BOOKINGS_KEY)||'[]')}catch(e){return[]}}
+function saveMyBooking(b){
+  const list=loadMyBookings().filter(x=>x.bookingId!==b.bookingId);
+  list.unshift(b);
+  localStorage.setItem(BOOKINGS_KEY,JSON.stringify(list.slice(0,20)));
+  updateMyBookingsNav();
+}
+function updateMyBookingsNav(){
+  const has=loadMyBookings().length>0;
+  document.querySelectorAll('[data-mybookings]').forEach(el=>el.style.display=has?'':'none');
+}
+const BK_STATUS={
+  pending_payment:['Awaiting payment','warn'],
+  funded:['Paid · your pro will start soon','ok'],
+  in_progress:['In progress','ok'],
+  awaiting_confirmation:['Please confirm it’s done','warn'],
+  confirmed:['Confirmed · releasing payment','done'],
+  closed:['Completed & paid','done'],
+  cancelled:['Cancelled / refunded','warn'],
+  disputed:['Under Support review','warn'],
+};
+function renderBkCard(b){
+  const [label,cls]=BK_STATUS[b.status]||['Awaiting payment','warn'];
+  const canConfirm=b.status==='awaiting_confirmation';   // customer confirms only after the pro marks it done
+  const done=['confirmed','closed'].includes(b.status);
+  return `<div class="bk-card" data-bk="${esc(b.bookingId)}">
+    <div class="bk-top"><b>${esc(b.proName||'Your pro')}</b><span class="bk-status ${cls}">${esc(label)}</span></div>
+    <div class="bk-meta">${esc((b.service||'').replace(/s$/,''))} · ${nairaFmt((b.amountKobo||0)/100)} held in escrow</div>
+    <div class="bk-act" data-act="${esc(b.bookingId)}">
+      ${canConfirm?`<div class="bk-prompt">Your pro marked this job complete. Confirm to release the payment.</div><button type="button" class="btn btn-gold btn-sm" data-confirm="${esc(b.bookingId)}">Confirm & release payment</button>`:''}
+      ${b.status==='disputed'?'<div class="bk-done-note warn">⚖ This booking is under Servora Support review. Your funds remain safely held.</div>':''}
+      ${done?'<div class="bk-done-note">✓ You confirmed this job. Payment is on its way to your pro.</div>':''}
+    </div>
+    <p class="bk-msg" id="bkmsg-${esc(b.bookingId)}" aria-live="polite"></p>
+  </div>`;
+}
+async function openMyBookings(){
+  myBookingsBg.classList.add('open');document.body.style.overflow='hidden';
+  const list=loadMyBookings();
+  if(!list.length){myBookingsList.innerHTML='<div class="leads-empty">You haven’t booked anyone yet.<br>When you book &amp; pay a pro, it’ll show here so you can confirm once the job is done.</div>';return}
+  myBookingsList.innerHTML='<div class="leads-empty">Loading your bookings…</div>';
+  // refetch live status for each (falls back to stored status if offline)
+  const enriched=await Promise.all(list.map(async b=>{
+    const r=await ServoraAPI.getBooking(b.bookingId);
+    return {...b,status:(r&&r.ok&&r.booking)?r.booking.status:(b.status||'pending_payment')};
+  }));
+  myBookingsList.innerHTML=enriched.map(renderBkCard).join('');
+}
+function closeMyBookings(){myBookingsBg.classList.remove('open');document.body.style.overflow=''}
+document.getElementById('myBookingsClose').onclick=closeMyBookings;
+myBookingsBg.addEventListener('click',e=>{if(e.target===myBookingsBg)closeMyBookings()});
+// confirm flow: two-step so a customer can't release money by accident
+myBookingsBg.addEventListener('click',async e=>{
+  const start=e.target.closest('[data-confirm]');
+  if(start){
+    const id=start.dataset.confirm;
+    const act=myBookingsBg.querySelector('[data-act="'+CSS.escape(id)+'"]');
+    act.innerHTML=`<span class="bk-confirm-q">Only confirm once the job is <b>fully done</b> — this releases your escrow payment to the pro.</span>`+
+      `<div class="bk-confirm-row"><button type="button" class="btn btn-ghost btn-sm" data-cancelconfirm>Not yet</button><button type="button" class="btn btn-gold btn-sm" data-yesconfirm="${esc(id)}">Yes, release</button></div>`;
+    return;
+  }
+  if(e.target.closest('[data-cancelconfirm]')){openMyBookings();return}
+  const yes=e.target.closest('[data-yesconfirm]');
+  if(yes){
+    const id=yes.dataset.yesconfirm;
+    yes.disabled=true;yes.textContent='Releasing…';
+    const res=await ServoraAPI.confirmBooking(id);
+    if(res&&res.ok){openMyBookings();}
+    else{
+      const m=document.getElementById('bkmsg-'+id);
+      if(m){m.className='bk-msg err';m.textContent=(res&&res.error)||'Could not confirm. Please try again.';}
+      yes.disabled=false;yes.textContent='Yes, release';
+    }
+  }
+});
+document.addEventListener('click',e=>{if(e.target.closest('[data-mybookings]')){e.preventDefault();openMyBookings();}});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&myBookingsBg.classList.contains('open'))closeMyBookings()});
+updateMyBookingsNav();
+
+/* ============ SUPPORT DISPUTES CONSOLE (admin) ============ */
+const disputesBg=document.getElementById('disputesBg');
+let dcKey='',dcFilter='';
+function closeDisputes(){disputesBg.classList.remove('open');document.body.style.overflow=''}
+function openDisputesConsole(){
+  dcKey=sessionStorage.getItem('servora-admin-key')||'';
+  disputesBg.classList.add('open');document.body.style.overflow='hidden';
+  document.getElementById('dcErr').textContent='';document.getElementById('dcKey').value='';
+  const authed=Boolean(dcKey);
+  document.getElementById('disputesAuth').hidden=authed;
+  document.getElementById('disputesPanel').hidden=!authed;
+  if(authed)loadDisputes();
+}
+document.getElementById('disputesClose').onclick=closeDisputes;
+disputesBg.addEventListener('click',e=>{if(e.target===disputesBg)closeDisputes()});
+document.getElementById('dcLogin').onclick=async()=>{
+  const key=document.getElementById('dcKey').value.trim();
+  if(!key){document.getElementById('dcErr').textContent='Enter the admin key.';return}
+  const test=await ServoraAPI.getDisputes('',key);
+  if(!test||!test.ok){document.getElementById('dcErr').textContent='That key was rejected.';return}
+  dcKey=key;sessionStorage.setItem('servora-admin-key',key);
+  document.getElementById('disputesAuth').hidden=true;
+  document.getElementById('disputesPanel').hidden=false;
+  loadDisputes();
+};
+document.getElementById('dcFilter').addEventListener('click',e=>{
+  const b=e.target.closest('[data-df]');if(!b)return;
+  dcFilter=b.dataset.df;
+  document.querySelectorAll('#dcFilter button').forEach(x=>x.classList.toggle('on',x===b));
+  loadDisputes();
+});
+const disputesList=document.getElementById('disputesList');
+function renderDisputeCard(d){
+  const amt=d.amountKobo?nairaFmt(d.amountKobo/100):'';
+  const ev=d.evidence.map(e=>`<div class="dc-ev">${e.text?esc(e.text):''}${(e.photos||[]).map(p=>`<img src="${esc(p)}" alt="evidence">`).join('')}</div>`).join('');
+  const reqs=d.evidenceRequests.length?`<div class="dc-meta">📩 Evidence requested (${d.evidenceRequests.length})</div>`:'';
+  let act='';
+  if(d.status==='resolved'){
+    act=`<div class="dc-resolved">✓ Resolved: ${esc(d.resolution?.decision==='refund_customer'?'refunded to customer':'released to pro')}</div>`;
+  }else{
+    act=`<div class="dc-act">
+      <button type="button" class="btn btn-ghost btn-sm" data-dc="${esc(d.id)}" data-dcaction="request-evidence">Request evidence</button>
+      <button type="button" class="btn btn-ghost btn-sm" data-dc="${esc(d.id)}" data-dcaction="refund_customer">Refund customer</button>
+      <button type="button" class="btn btn-gold btn-sm" data-dc="${esc(d.id)}" data-dcaction="release_to_pro">Release to pro</button>
+    </div>`;
+  }
+  const title=d.service?esc(d.service.replace(/s$/,''))+' · '+esc(amt):('Dispute'+(amt?' · '+esc(amt):''));
+  return `<div class="dc-card">
+    <div class="dc-top"><b>${title}</b><span class="bk-status warn">${esc(d.status.replace(/_/g,' '))}</span></div>
+    <div class="dc-meta">Opened by ${esc(d.openedBy)} · ${esc(d.reason||'')}</div>
+    ${reqs}${ev}${act}
+    <p class="dc-msg" id="dcmsg-${esc(d.id)}" aria-live="polite"></p>
+  </div>`;
+}
+async function loadDisputes(){
+  disputesList.innerHTML='<div class="leads-empty">Loading disputes…</div>';
+  const data=await ServoraAPI.getDisputes(dcFilter,dcKey);
+  if(!data||!data.ok){disputesList.innerHTML='<div class="leads-empty">Couldn’t load disputes.</div>';return}
+  disputesList.innerHTML=data.disputes.length?data.disputes.map(renderDisputeCard).join('')
+    :'<div class="leads-empty">No disputes'+(dcFilter?' with this status':'')+'.</div>';
+}
+disputesList.addEventListener('click',async e=>{
+  const btn=e.target.closest('[data-dcaction]');if(!btn)return;
+  const id=btn.dataset.dc,action=btn.dataset.dcaction;
+  const msg=document.getElementById('dcmsg-'+id);
+  if(action==='request-evidence'){
+    btn.disabled=true;
+    const res=await ServoraAPI.disputeAction(id,'request-evidence',dcKey,{note:'Please share photos and a short description of the completed job.'});
+    if(res&&res.ok)loadDisputes(); else{btn.disabled=false;if(msg){msg.className='dc-msg err';msg.textContent=(res&&res.error)||'Failed.';}}
+    return;
+  }
+  // release or refund → confirm, then resolve
+  const label=action==='refund_customer'?'refund the customer':'release the funds to the pro';
+  if(!confirm(`Resolve this dispute and ${label}? This moves real money and cannot be undone.`))return;
+  btn.disabled=true;btn.textContent='…';
+  const res=await ServoraAPI.disputeAction(id,'resolve',dcKey,{decision:action});
+  if(res&&res.ok)loadDisputes();
+  else{btn.disabled=false;btn.textContent=action==='refund_customer'?'Refund customer':'Release to pro';if(msg){msg.className='dc-msg err';msg.textContent=(res&&res.error)||'Could not resolve.';}}
+});
+document.addEventListener('click',e=>{if(e.target.closest('[data-disputes-console]')){e.preventDefault();openDisputesConsole();}});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&disputesBg.classList.contains('open'))closeDisputes()});
 
 /* ============ PRO REGISTRATION MODAL ============
    Demo capture only — the payload already matches what
@@ -2358,7 +3078,7 @@ const pfInput=document.getElementById('rPortfolio'),pfGrid=document.getElementBy
 function renderPortfolio(){
   pfGrid.innerHTML=pfFiles.map((f,i)=>`<div class="pf-thumb"><img src="${f.dataUrl}" alt="Work photo ${i+1}: ${esc(f.name)}"><button type="button" class="rm" data-pf-rm="${i}" aria-label="Remove photo ${i+1}">✕</button></div>`).join('');
   const n=pfFiles.length;
-  pfCount.textContent=n?`${n}/${PF_MAX} photos uploaded${n>=PF_MAX?' — maximum reached':''}`:'';
+  pfCount.textContent=n?`${n}/${PF_MAX} photos uploaded${n>=PF_MAX?', maximum reached':''}`:'';
   pfDrop.classList.toggle('full',n>=PF_MAX);
   pfDropText.textContent=n?'Add more photos':'Add photos of your work';
 }
@@ -2377,14 +3097,14 @@ async function addPortfolioFiles(fileList){
       ?`“${tooBig[0]}” is too large. Maximum allowed size is ${MAX_FILE_MB}MB per photo.`
       :`${tooBig.length} photos are too large. Maximum allowed size is ${MAX_FILE_MB}MB per photo.`;
   }else if(skipped.length){
-    err.textContent=`Only ${PF_MAX} photos allowed — ${skipped.length} not added.`;
+    err.textContent=`Only ${PF_MAX} photos allowed, so ${skipped.length} were not added.`;
   }else err.textContent='';
   for(const f of queue){
     try{
       const dataUrl=await downscaleImage(f);
       pfFiles.push({name:f.name,size:f.size,dataUrl});
       renderPortfolio();
-    }catch(e){err.textContent=`Couldn’t read “${f.name}” — try another photo.`}
+    }catch(e){err.textContent=`Couldn’t read “${f.name}”. Try another photo.`}
   }
   renderPortfolio();
 }
@@ -2405,7 +3125,7 @@ pfGrid.addEventListener('click',e=>{
 
 function openRegister(plan){
   regPlan=plan;
-  document.getElementById('regTitle').textContent=`Join Servora — ${plan} plan`;
+  document.getElementById('regTitle').textContent=`Join Servora, ${plan} plan`;
   /* photos are kept in memory until the form is actually submitted,
      so accidentally closing the modal doesn't lose the selection */
   renderPortfolio();
@@ -2423,7 +3143,7 @@ regBg.addEventListener('click',e=>{if(e.target===regBg)closeRegister()});
    duplicates (it owns the data) and its message is shown inline. */
 const regValidators={
   rName:v=>/^[A-Za-zÀ-ſ][A-Za-zÀ-ſ' -]{2,}$/.test(v.trim())?'':'Please enter your full name.',
-  rPhone:v=>/^(\+234|0)[789][01]\d{8}$/.test(v.replace(/[\s()./-]/g,''))?'':'Enter a valid Nigerian number — e.g. 0803 123 4567.',
+  rPhone:v=>/^(\+234|0)[789][01]\d{8}$/.test(v.replace(/[\s()./-]/g,''))?'':'Enter a valid Nigerian number, e.g. 0803 123 4567.',
   rEmail:v=>!v.trim()||/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())?'':'That email doesn’t look right.'
 };
 const regTimers={};
@@ -2489,7 +3209,7 @@ document.getElementById('rSubmit').onclick=async()=>{
   const btn=document.getElementById('rSubmit');
   btn.disabled=true;btn.textContent='Submitting…';
   const res=await ServoraAPI.registerPro(app);
-  btn.disabled=false;btn.textContent='Apply — go live in ~48 hours';
+  btn.disabled=false;btn.textContent='Apply, go live in 48 hours';
   /* 3. duplicate phone/email → show the server's message on the field */
   if(res&&res.ok===false){
     const field=res.field==='email'?'rEmail':'rPhone';
@@ -2498,8 +3218,8 @@ document.getElementById('rSubmit').onclick=async()=>{
     return;
   }
   document.getElementById('regSuccessMsg').innerHTML=(res&&res.status==='verified')
-    ?`You’re verified and <b>live on Servora right now</b> — search <b>${app.trade}</b> in <b>${app.state}</b> and you’ll find yourself. (Demo mode auto-verifies; production takes ~48 hours.)`
-    :`Once verification passes (~48 hours), your profile appears automatically in <b>${app.trade}</b> listings for <b>${app.state}</b>. Our team will WhatsApp you — have your NIN and two guarantor contacts ready.`;
+    ?`You’re verified and <b>live on Servora right now</b>. Search <b>${app.trade}</b> in <b>${app.state}</b> and you’ll find yourself. (Demo mode auto-verifies; production takes about 48 hours.)`
+    :`Once verification passes, in about 48 hours, your profile appears automatically in <b>${app.trade}</b> listings for <b>${app.state}</b>. Our team will WhatsApp you, so have your NIN and two guarantor contacts ready.`;
   regModal.classList.add('done');
   /* application sent — clear the temporary uploads + credentials for a fresh form */
   pfFiles=[];renderPortfolio();
@@ -2545,8 +3265,8 @@ document.getElementById('loginForm').addEventListener('submit',async e=>{
   btn.disabled=true;btn.textContent='Checking…';
   const res=await ServoraAPI.login({identifier:idEl.value.trim(),password:pwEl.value});
   btn.disabled=false;btn.textContent='Sign in →';
-  if(!res){pwErr.textContent='Sign-in needs the API server — start it and try again.';return}
-  if(!res.ok){pwErr.textContent=res.error||'Sign-in failed — check your details.';return}
+  if(!res){pwErr.textContent='Sign-in needs the API server. Start it and try again.';return}
+  if(!res.ok){pwErr.textContent=res.error||'Sign-in failed. Please check your details.';return}
   setProSession(res);
   pwEl.value='';
   closeLogin();
@@ -2579,6 +3299,8 @@ function openLeadsDash(){
   document.getElementById('ePrice').value=p.priceFrom||'';
   document.getElementById('dashSaveMsg').textContent='';
   dashPhotos=proPhotos(p);dpfErr.textContent='';renderDashPhotos();
+  resetPayoutCard();refreshPayoutStatus();
+  resetJobsCard();
   dashFilter='all';dashQuery='';
   document.getElementById('leadSearch').value='';
   document.querySelectorAll('#leadChips button').forEach(b=>b.classList.toggle('on',b.dataset.f==='all'));
@@ -2591,7 +3313,7 @@ async function loadLeads(proId){
   leadsList.innerHTML='<div class="leads-empty">Loading your leads…</div>';
   const data=await ServoraAPI.getProLeads(proId);
   if(!data){
-    leadsList.innerHTML='<div class="leads-empty">The lead inbox needs the API — start the server and try again.</div>';
+    leadsList.innerHTML='<div class="leads-empty">The lead inbox needs the API. Start the server and try again.</div>';
     return;
   }
   dashLeads=data.leads;
@@ -2603,12 +3325,12 @@ function renderDashStats(){
   const thisMonth=dashLeads.filter(l=>isThisMonth(l.createdAt)).length;
   const withPhone=dashLeads.filter(l=>l.phone).length;
   const responseRate=total?Math.round(withPhone/total*100):0;  /* leads we can reach = contactable */
-  const avgResp=proSession.pro.responseMins||'—';
+  const avgResp=proSession.pro.responseMins?'~'+proSession.pro.responseMins+'m':'Not set';
   dashStats.innerHTML=`
     <div class="dash-stat"><b>${total}</b><span>Total leads</span></div>
     <div class="dash-stat"><b>${thisMonth}</b><span>This month</span></div>
     <div class="dash-stat"><b>${responseRate}%</b><span>Response rate</span></div>
-    <div class="dash-stat"><b>~${avgResp}m</b><span>Avg response</span></div>
+    <div class="dash-stat"><b>${avgResp}</b><span>Avg response</span></div>
     <div class="dash-stat"><b>${dashLeads.filter(l=>l.type==='direct_contact').length}</b><span>Direct</span></div>
     <div class="dash-stat"><b>${dashLeads.filter(l=>l.type!=='direct_contact').length}</b><span>Job posts</span></div>`;
 }
@@ -2647,6 +3369,136 @@ document.getElementById('leadChips').addEventListener('click',e=>{
   document.querySelectorAll('#leadChips button').forEach(x=>x.classList.toggle('on',x===b));
   renderLeads();
 });
+/* ---- pro payout account ----
+   Loads the pro's saved payout status on dashboard open (for the badge);
+   lazy-loads the bank list the first time the card is expanded; saves via
+   POST /api/pros/:id/payout which verifies the account + creates the
+   Paystack transfer recipient. */
+const payBankSel=document.getElementById('payBank');
+let payBanksLoaded=false;
+function resetPayoutCard(){
+  document.getElementById('dashPayout').open=false;
+  document.getElementById('payAcct').value='';
+  document.getElementById('payErr').textContent='';
+  document.getElementById('payoutMsg').textContent='';
+}
+function showCurrentPayout(pay){
+  const cur=document.getElementById('payoutCurrent'),badge=document.getElementById('payoutBadge');
+  if(pay){
+    cur.className='pay-current show';
+    cur.innerHTML=`<b>${esc(pay.accountName||'Account on file')} <span class="tick">✓</span></b><span>${esc(pay.bankName||'Bank')} · ••${esc(pay.accountLast4||'')}</span>`;
+    badge.textContent='✓ '+esc((pay.bankName||'Set')+' ••'+(pay.accountLast4||''));
+    badge.className='pay-badge set';
+  }else{
+    cur.className='pay-current';cur.innerHTML='';
+    badge.textContent='Not set up';badge.className='pay-badge';
+  }
+}
+async function refreshPayoutStatus(){
+  if(!proSession)return;
+  const res=await ServoraAPI.getPayoutAccount(proSession.pro.id,proSession.token);
+  showCurrentPayout(res&&res.ok&&res.hasAccount?res.payout:null);
+}
+async function loadBanksOnce(){
+  if(payBanksLoaded)return;
+  const data=await ServoraAPI.getBanks();
+  if(data&&data.ok&&data.banks&&data.banks.length){
+    const banks=data.banks.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    payBankSel.innerHTML='<option value="">Select your bank…</option>'+
+      banks.map(b=>`<option value="${esc(b.code)}">${esc(b.name)}</option>`).join('');
+    payBanksLoaded=true;
+  }else{
+    payBankSel.innerHTML='<option value="">Bank list unavailable</option>';
+  }
+}
+document.getElementById('dashPayout').addEventListener('toggle',e=>{ if(e.target.open)loadBanksOnce(); });
+document.getElementById('payoutSave').onclick=async()=>{
+  const acct=document.getElementById('payAcct').value.replace(/\D/g,'');
+  const bankCode=payBankSel.value;
+  const bankName=payBankSel.options[payBankSel.selectedIndex]?.text||'';
+  const err=document.getElementById('payErr'),msg=document.getElementById('payoutMsg');
+  err.textContent='';msg.textContent='';msg.className='de-msg';
+  if(!bankCode){err.textContent='Select your bank.';return}
+  if(!/^\d{10}$/.test(acct)){err.textContent='Enter your 10-digit account number.';return}
+  const btn=document.getElementById('payoutSave');
+  btn.disabled=true;btn.textContent='Verifying…';
+  const res=await ServoraAPI.setPayoutAccount(proSession.pro.id,{accountNumber:acct,bankCode,bankName},proSession.token);
+  btn.disabled=false;btn.textContent='Verify & save account';
+  if(res&&res.ok){
+    msg.className='de-msg';msg.textContent='✓ '+(res.message||'Payout account saved.');
+    showCurrentPayout(res.payout);
+    document.getElementById('payAcct').value='';
+  }else{
+    msg.className='de-msg err';msg.textContent=(res&&res.error)||'Couldn’t save your account. Is the server running?';
+  }
+};
+
+/* ---- pro "my jobs" (start / complete / dispute) ---- */
+const jobsList=document.getElementById('jobsList');
+const JOB_STATUS={
+  pending_payment:['Awaiting payment','warn'],
+  funded:['Paid · ready to start','ok'],
+  in_progress:['In progress','ok'],
+  awaiting_confirmation:['Awaiting customer confirmation','warn'],
+  confirmed:['Confirmed · releasing','ok'],
+  closed:['Paid out ✓','ok'],
+  cancelled:['Cancelled / refunded','warn'],
+  disputed:['Under Support review','warn'],
+};
+function resetJobsCard(){ document.getElementById('dashJobs').open=false; }
+function renderJobCard(b){
+  const [label,cls]=JOB_STATUS[b.status]||['—',''];
+  const cust=b.customer||{};
+  const canStart=b.status==='funded';
+  const canComplete=['funded','in_progress'].includes(b.status);
+  const awaiting=b.status==='awaiting_confirmation';
+  const canDispute=awaiting && b.disputeEligibleAt && Date.now()>=new Date(b.disputeEligibleAt).getTime();
+  const disputeHrs=awaiting && b.disputeEligibleAt ? Math.max(0,Math.ceil((new Date(b.disputeEligibleAt).getTime()-Date.now())/3600000)) : 0;
+  let actions='';
+  if(canStart||canComplete){
+    actions='<div class="job-act">'+
+      (canStart?`<button type="button" class="btn btn-ghost btn-sm" data-job="${esc(b.id)}" data-jobaction="start">Start job</button>`:'')+
+      (canComplete?`<button type="button" class="btn btn-gold btn-sm" data-job="${esc(b.id)}" data-jobaction="complete">Mark complete</button>`:'')+
+      '</div>';
+  }else if(awaiting){
+    actions=canDispute
+      ? `<div class="job-note warn">Customer hasn’t confirmed. You can now escalate.</div><div class="job-act"><button type="button" class="btn btn-ghost btn-sm" data-job="${esc(b.id)}" data-jobaction="dispute">Open dispute</button></div>`
+      : `<div class="job-note">Waiting for the customer to confirm. You can open a dispute in ~${disputeHrs}h if they don’t.</div>`;
+  }else if(b.status==='disputed'){ actions='<div class="job-note warn">⚖ Under Servora Support review. Funds held.</div>'; }
+  else if(b.status==='closed'){ actions='<div class="job-note ok">✓ Payment released to you.</div>'; }
+  else if(b.status==='confirmed'){ actions='<div class="job-note ok">Customer confirmed — payment releasing.</div>'; }
+  return `<div class="job-card">
+    <div class="job-top"><b>${esc((b.service||'').replace(/s$/,''))} · ${nairaFmt((b.agreedAmountKobo||0)/100)}</b><span class="bk-status ${cls}">${esc(label)}</span></div>
+    <div class="job-meta">${esc(b.description||'No description')}</div>
+    <div class="job-cust">👤 ${esc(cust.name||'Customer')}${cust.phone?' · '+esc(cust.phone):''}</div>
+    ${actions}
+    <p class="job-msg" id="jobmsg-${esc(b.id)}" aria-live="polite"></p>
+  </div>`;
+}
+async function loadProJobs(){
+  if(!proSession)return;
+  jobsList.innerHTML='<div class="leads-empty">Loading your jobs…</div>';
+  const data=await ServoraAPI.getProBookings(proSession.pro.id,proSession.token);
+  if(!data||!data.ok){jobsList.innerHTML='<div class="leads-empty">Couldn’t load jobs — start the server and try again.</div>';return}
+  const badge=document.getElementById('jobsBadge');
+  const active=data.bookings.filter(b=>['funded','in_progress','awaiting_confirmation','disputed'].includes(b.status)).length;
+  if(active){badge.textContent=active+' active';badge.style.display='';}else{badge.style.display='none';}
+  jobsList.innerHTML=data.bookings.length?data.bookings.map(renderJobCard).join('')
+    :'<div class="leads-empty">No paid bookings yet. When a customer books &amp; pays you, the job shows here.</div>';
+}
+document.getElementById('dashJobs').addEventListener('toggle',e=>{ if(e.target.open)loadProJobs(); });
+jobsList.addEventListener('click',async e=>{
+  const btn=e.target.closest('[data-jobaction]');
+  if(!btn)return;
+  const id=btn.dataset.job, action=btn.dataset.jobaction;
+  const msg=document.getElementById('jobmsg-'+id);
+  if(action==='dispute' && !confirm('Open a formal dispute? Servora Support will review and funds stay held.'))return;
+  btn.disabled=true;const orig=btn.textContent;btn.textContent='…';
+  const res=await ServoraAPI.proBookingAction(id,action,proSession.token, action==='dispute'?{reason:'Customer did not confirm within 24 hours.'}:null);
+  if(res&&res.ok){ loadProJobs(); }
+  else{ btn.disabled=false;btn.textContent=orig; if(msg){msg.className='job-msg err';msg.textContent=(res&&res.error)||'Action failed. Try again.';} }
+});
+
 /* ---- dashboard portfolio manager ----
    dashPhotos mixes existing "/uploads/…" URLs with new data URLs; the
    API takes the whole array as the desired final state, so add/remove/
@@ -2672,7 +3524,7 @@ async function addDashPhotos(fileList){
     :'';
   for(const f of queue){
     try{dashPhotos.push(await downscaleImage(f));renderDashPhotos()}
-    catch(e){dpfErr.textContent=`Couldn’t read “${f.name}” — try another photo.`}
+    catch(e){dpfErr.textContent=`Couldn’t read “${f.name}”. Try another photo.`}
   }
   renderDashPhotos();
 }
@@ -2699,7 +3551,7 @@ document.getElementById('dashSave').onclick=async()=>{
     portfolio:dashPhotos
   },proSession.token);
   btn.disabled=false;btn.textContent='Save changes';
-  if(!res||!res.ok){msg.className='de-msg err';msg.textContent=(res&&res.error)||'Couldn’t save — is the server running?';return}
+  if(!res||!res.ok){msg.className='de-msg err';msg.textContent=(res&&res.error)||'Couldn’t save. Is the server running?';return}
   /* keep the session profile in sync so stats/summary reflect the change */
   Object.assign(proSession.pro,res.pro);
   setProSession(proSession);
@@ -2735,25 +3587,25 @@ const KB=[
   {k:['hello','hi','hey','good morning','good afternoon','good evening','how far'],
    a:'Hi 👋 I’m the Servora assistant. I can help with bookings, prices, escrow, verification or your pro account. What do you need?'},
   {k:['free','cost','fee','charge','how much','price','pricing','expensive'],
-   a:'For customers Servora is <b>100% free</b> — no signup, no booking fees. You pay only the price your pro quotes, and only when the job is done.<br><br>Typical starting prices: electricians from <b>₦8,000</b>, plumbers <b>₦7,500</b>, cleaners <b>₦12,000</b>, AC techs <b>₦10,000</b>.'},
+   a:'For customers Servora is <b>always free</b>. No signup, no booking fees. You pay only the price your pro quotes, and only once the job is done.<br><br>Typical starting prices: electricians from <b>₦8,000</b>, plumbers <b>₦7,500</b>, cleaners <b>₦12,000</b>, AC techs <b>₦10,000</b>.'},
   {k:['escrow','safe','payment','pay','money','secure','protect'],
-   a:'Your money is <b>escrow-protected</b>. When you accept a quote, payment goes into a secure holding account — not to the pro. It’s released only when <b>you</b> tap “job done”. If there’s a dispute, our team steps in within 24 hours.'},
+   a:'Your money is <b>escrow-protected</b>. When you accept a quote, payment goes into a secure holding account rather than to the pro. It’s released only when <b>you</b> tap “job done”. If there’s a dispute, our team steps in within 24 hours.'},
   {k:['verify','verified','vetted','trust','background','check','scam','safe pro','id'],
    a:'Every pro passes a <b>4-stage check</b> before going live: NIN/government ID, a practical skill test, two guarantor references and address confirmation. Pros who drop below 4.2★ are removed from the platform.'},
   {k:['state','states','city','location','area','cover','coverage','where','lagos','abuja','ibadan','kano'],
-   a:'We cover <b>all 36 states + FCT Abuja</b>. Coverage is deepest in Lagos, the South West (Oyo, Ogun, Osun), Abuja and Port Harcourt.<br><br>If your state is still thin, post the job anyway — we’ll alert you the moment a verified pro joins, plus <b>₦2,000 off</b> your first booking.'},
+   a:'We cover <b>all 36 states + FCT Abuja</b>. Coverage is deepest in Lagos, the South West (Oyo, Ogun, Osun), Abuja and Port Harcourt.<br><br>If your state is still thin, post the job anyway. We’ll alert you the moment a verified pro joins, plus <b>₦2,000 off</b> your first booking.'},
   {k:['book','booking','how do i','how does it work','hire','request','quote','find'],
-   a:'It takes about 60 seconds:<br>1. Search your service and state, or post the job<br>2. Vetted pros reply with <b>fixed quotes</b> — usually in 15–30 minutes<br>3. Pick who you trust, then pay only when the job is done<br><br>No account needed. Want me to <a href="#services" data-sup-close>show you the services</a>?'},
+   a:'It takes about 60 seconds:<br>1. Search your service and state, or post the job<br>2. Vetted pros reply with <b>fixed quotes</b>, usually in 15–30 minutes<br>3. Pick who you trust, then pay only when the job is done<br><br>No account needed. Want me to <a href="#services" data-sup-close>show you the services</a>?'},
   {k:['refund','guarantee','wrong','bad','poor','complain','complaint','not satisfied','not happy','unhappy','damage','redo','re-do','mistake','dispute'],
-   a:'Our <b>Job-Done Guarantee</b> covers every booking. Report an issue within <b>7 days</b> and we’ll send the pro back free of charge, send a different pro, or refund you. About 97% of jobs are right first time — when they’re not, you never hold the bill.'},
+   a:'Our <b>Job-Done Guarantee</b> covers every booking. Report an issue within <b>7 days</b> and we’ll send the pro back free of charge, send a different pro, or refund you. About 97% of jobs are right first time. When they’re not, you never hold the bill.'},
   {k:['cancel','reschedule','change time'],
-   a:'You can cancel free of charge any time <b>before the job starts</b> — nothing leaves escrow until you confirm the work is done. To reschedule, just message your pro on WhatsApp from your booking.'},
+   a:'You can cancel free of charge any time <b>before the job starts</b>. Nothing leaves escrow until you confirm the work is done. To reschedule, just message your pro on WhatsApp from your booking.'},
   {k:['become a pro','join','register','sign up','signup','work','apply','professional account'],
-   a:'Joining is <b>free</b>. Tap “Become a Pro”, upload your ID and trade details, and most pros are verified within 48 hours. You keep the Starter plan free forever and pay commission <b>only when a customer actually pays you</b> — no job, no fee.<br><br>Want to <a href="#for-pros" data-sup-close>see the plans</a>?'},
+   a:'Joining is <b>free</b>. Tap “Become a Pro”, upload your ID and trade details, and most pros are verified within 48 hours. You keep the Starter plan free forever and pay commission <b>only when a customer pays you</b>. No job, no fee.<br><br>Want to <a href="#for-pros" data-sup-close>see the plans</a>?'},
   {k:['commission','subscription','plan','starter','elite','earn','payout','lead'],
-   a:'Plans are for professionals only:<br>• <b>Starter</b> — free, 15% commission, 5 leads/month<br>• <b>Pro</b> — ₦7,500/mo, 10% commission, unlimited leads + priority placement<br>• <b>Elite</b> — ₦25,000/mo, 5% commission, featured placement + instant payouts<br><br>Commission applies <b>only on completed paid jobs</b>.'},
+   a:'Plans are for professionals only:<br>• <b>Starter</b>: free, 15% commission, 5 leads/month<br>• <b>Pro</b>: ₦7,500/mo, 10% commission, unlimited leads + priority placement<br>• <b>Elite</b>: ₦25,000/mo, 5% commission, featured placement + instant payouts<br><br>Commission applies <b>only on completed paid jobs</b>.'},
   {k:['login','log in','password','sign in','forgot','account','my leads','dashboard'],
-   a:'Pros sign in with their registered <b>WhatsApp number and password</b> via “Pro Login” in the menu — that opens your leads dashboard.<br><br>Forgot your password? Tell me and I’ll connect you to a human who can reset it.'},
+   a:'Pros sign in with their registered <b>WhatsApp number and password</b> via “Pro Login” in the menu. That opens your leads dashboard.<br><br>Forgot your password? Tell me and I’ll connect you to a human who can reset it.'},
   {k:['advert','advertise','ads','sponsor','media kit','partnership','brand'],
    a:'We offer banner placements, category sponsorships and email features to 200,000+ Nigerian homeowners monthly. Email <b>ads@servora.ng</b> and the team will send the media kit.'},
   {k:['thank','thanks','nice','great','awesome','helpful','ok','okay'],
@@ -2792,10 +3644,10 @@ function askAgent(text){
     if(score>bestScore){bestScore=score;best=entry}
   });
   if(best)return{a:best.a};
-  return{a:'I’m not certain about that one — I’d rather connect you to a human than guess.<br><br>Type <b>“talk to human”</b> and I’ll hand you over, or ask me about <b>prices</b>, <b>escrow</b>, <b>verification</b>, <b>coverage</b> or <b>becoming a pro</b>.'};
+  return{a:'I’m not certain about that one, and I’d rather connect you to a human than guess.<br><br>Type <b>“talk to human”</b> and I’ll hand you over, or ask me about <b>prices</b>, <b>escrow</b>, <b>verification</b>, <b>coverage</b> or <b>becoming a pro</b>.'};
 }
 function humanHandoff(){
-  addMsg(`Of course — <b>a human agent will assist you</b> 🙋‍♀️<br>Our support team is online <b>8am–9pm daily</b> and typically replies on WhatsApp within <b>5 minutes</b>. Pick whichever is easiest:
+  addMsg(`Of course. <b>A human agent will assist you</b> 🙋‍♀️<br>Our support team is online <b>8am–9pm daily</b> and typically replies on WhatsApp within <b>5 minutes</b>. Pick whichever is easiest:
     <span class="handoff">
       <a href="${WA_SUPPORT}" target="_blank" rel="noopener">💬 Continue on WhatsApp <span style="margin-left:auto;opacity:.6">~5 min</span></a>
       <a href="mailto:support@servora.ng" target="_blank" rel="noopener">✉️ Email support@servora.ng <span style="margin-left:auto;opacity:.6">~24 h</span></a>
@@ -2822,7 +3674,7 @@ function openSupport(tab){
   if(!chatStarted){
     chatStarted=true;
     setTimeout(()=>{
-      addMsg('👋 Hi, I’m the <b>Servora assistant</b>. I can answer questions about bookings, prices, escrow, verification and pro accounts — instantly.<br><br>Need a person instead? Just type <b>“talk to human”</b>.','bot');
+      addMsg('👋 Hi, I’m the <b>Servora assistant</b>. I answer questions about bookings, prices, escrow, verification and pro accounts, instantly.<br><br>Need a person instead? Just type <b>“talk to human”</b>.','bot');
       renderChips();
     },260);
   }
@@ -2856,7 +3708,7 @@ supportBg.addEventListener('click',e=>{
 const supValidators={
   sName:v=>v.trim().length>=2?'':'Please tell us your name.',
   sEmail:v=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())?'':'Enter a valid email so we can reply.',
-  sMsg:v=>v.trim().length>=10?'':'A little more detail helps us help you (10+ characters).'
+  sMsg:v=>v.trim().length>=10?'':'A little more detail helps us help you. 10 characters or more.'
 };
 const supTimers={};
 function validateSup(id){
@@ -2887,11 +3739,11 @@ document.getElementById('supportForm').addEventListener('submit',async e=>{
   btn.disabled=false;btn.textContent='Send message →';
   if(!res||!res.ok){
     sent.className='de-msg err';
-    sent.innerHTML='Couldn’t send — please <a href="mailto:support@servora.ng" style="color:inherit;text-decoration:underline">email us directly</a>.';
+    sent.innerHTML='Couldn’t send. Please <a href="mailto:support@servora.ng" style="color:inherit;text-decoration:underline">email us directly</a>.';
     return;
   }
   sent.className='de-msg';
-  sent.innerHTML=`✓ Message sent — we’ll reply to <b>${esc(document.getElementById('sEmail').value.trim())}</b> within 24 hours.${res.ref?'<br>Reference: '+esc(res.ref):''}`;
+  sent.innerHTML=`✓ Message sent. We’ll reply to <b>${esc(document.getElementById('sEmail').value.trim())}</b> within 24 hours.${res.ref?'<br>Reference: '+esc(res.ref):''}`;
   document.getElementById('supportForm').reset();
   Object.keys(supValidators).forEach(id=>document.getElementById(id).classList.remove('valid','invalid'));
 });

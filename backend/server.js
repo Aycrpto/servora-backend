@@ -7,6 +7,8 @@
  *   GET  /api/pros/featured   paid placement — Elite/Pro subscribers first
  *   GET  /api/services        service taxonomy
  *   POST /api/leads           customer job requests (no account needed)
+ *   POST /api/bookings        agreed job + price (drives payment)
+ *   POST /api/payments/*      Paystack escrow: initialize / webhook / release
  *   GET  /api/health          liveness check
  *
  * Storage: JSON file (backend/data/db.json) behind src/store/store.js —
@@ -25,11 +27,20 @@ import servicesRouter from './src/routes/services.routes.js';
 import leadsRouter from './src/routes/leads.routes.js';
 import authRouter from './src/routes/auth.routes.js';
 import supportRouter from './src/routes/support.routes.js';
+import bookingsRouter from './src/routes/bookings.routes.js';
+import paymentsRouter from './src/routes/payments.routes.js';
+import disputesRouter from './src/routes/disputes.routes.js';
+import { paystackWebhook } from './src/controllers/payments.controller.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 app.use(cors());               // allow the frontend to run from another origin in dev
+
+// The Paystack webhook must be verified against the RAW request body, so it is
+// mounted with express.raw BEFORE the JSON parser below (which would discard it).
+app.post('/api/payments/webhook', express.raw({ type: '*/*' }), paystackWebhook);
+
 // Generous limit: portfolio photos arrive as base64 data URLs in JSON
 // (the client downscales them first, so bodies are typically <2MB).
 app.use(express.json({ limit: '12mb' }));
@@ -40,6 +51,9 @@ app.use('/api/services', servicesRouter);
 app.use('/api/leads', leadsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/support', supportRouter);
+app.use('/api/bookings', bookingsRouter);
+app.use('/api/payments', paymentsRouter);
+app.use('/api/disputes', disputesRouter);
 
 // Serve the frontend from the project root (index.html lives one level up)
 app.use(express.static(path.join(__dirname, '..')));

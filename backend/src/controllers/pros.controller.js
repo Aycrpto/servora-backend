@@ -3,8 +3,9 @@
  * The response shapes here are the contract the frontend's ServoraAPI maps from.
  */
 import { randomUUID } from 'node:crypto';
-import { loadDB, saveDB } from '../store/store.js';
+import { loadDB, saveDB, mutate } from '../store/store.js';
 import { persistPortfolio, deleteStored } from '../store/uploads.js';
+import * as paystack from '../services/paystack.js';
 import { AUTO_VERIFY, AVATAR_PALETTE } from '../config.js';
 
 const TIER_RANK = { elite: 0, pro: 1, starter: 2 };
@@ -14,8 +15,8 @@ const titleCase = s => String(s || '').trim().replace(/\s+/g, ' ').split(' ')
   .map(w => /^[A-Z0-9]{2,4}$/.test(w) ? w : (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
   .join(' ');
 
-/** Public listing shape — never expose credentials or private contact data. */
-const publicPro = ({ password, phone, email, idDocument, ...rest }) => rest;
+/** Public listing shape — never expose credentials, contact, or bank/payout data. */
+const publicPro = ({ password, phone, email, idDocument, payout, ...rest }) => rest;
 
 /** Compare phone numbers by their last 10 digits (0803… === +234803…). */
 const normPhone = s => String(s || '').replace(/\D/g, '').slice(-10);
@@ -133,6 +134,117 @@ export function updatePro(req, res) {
 
   saveDB(db);
   res.json({ ok: true, pro: publicPro(pro) });
+}
+
+const BEARER = req => (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+const NUBAN_RE = /^\d{10}$/;
+
+/**
+ * GET /api/pros/:id/bookings   (pro, self only)
+ * The pro's jobs, newest first — powers the "My jobs" dashboard section where
+ * they start/complete/dispute. Includes customer contact so they can reach out.
+ */
+export function proBookings(req, res) {
+  if (BEARER(req) !== 'demo-' + req.params.id) {
+    return res.status(403).json({ ok: false, error: 'Not authorised.' });
+  }
+  const bookings = loadDB().bookings
+    .filter(b => String(b.proId) === String(req.params.id))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json({ ok: true, count: bookings.length, bookings });
+}
+
+/**
+ * GET /api/pros/:id/payout   (pro, self only)
+ * Returns whether the pro has a payout account on file, masked for display.
+ * Never returns the recipient_code or the full account number.
+ */
+export function getPayoutAccount(req, res) {
+  if (BEARER(req) !== 'demo-' + req.params.id) {
+    return res.status(403).json({ ok: false, error: 'Not authorised.' });
+  }
+  const pro = loadDB().professionals.find(p => String(p.id) === String(req.params.id));
+  if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
+
+  const p = pro.payout;
+  if (!p?.recipientCode) return res.json({ ok: true, hasAccount: false });
+  res.json({
+    ok: true,
+    hasAccount: true,
+    payout: { bankName: p.bankName, accountName: p.accountName, accountLast4: p.accountLast4, verified: !!p.verified },
+  });
+}
+
+/**
+ * POST /api/pros/:id/payout   (pro, self only)
+ * Body: { accountNumber, bankCode, bankName? }
+ * Verifies the bank account with Paystack, creates a Transfer Recipient, and
+ * stores the durable recipient_code (plus masked display fields). This is what
+ * lets the release flow pay the pro. The full account number is NOT persisted.
+ */
+export async function setPayoutAccount(req, res) {
+  // Auth: a pro may only set their OWN payout account.
+  if (BEARER(req) !== 'demo-' + req.params.id) {
+    return res.status(403).json({ ok: false, error: 'Not authorised to edit this profile.' });
+  }
+
+  const acct = String(req.body?.accountNumber || '').replace(/\s/g, '');
+  const bank = String(req.body?.bankCode || '').trim();
+  if (!NUBAN_RE.test(acct)) return res.status(400).json({ ok: false, error: 'Enter a valid 10-digit account number.' });
+  if (!/^\d{3,6}$/.test(bank)) return res.status(400).json({ ok: false, error: 'Select a valid bank.' });
+
+  const pro = loadDB().professionals.find(p => String(p.id) === String(req.params.id));
+  if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
+
+  // 1) Verify the account with the bank — prevents misdirected payouts.
+  let resolved;
+  try {
+    resolved = await paystack.resolveAccount({ accountNumber: acct, bankCode: bank });
+  } catch (err) {
+    console.error('[payout] resolve', err.code || 'ERROR', '-', err.message);
+    if (err.code === 'PAYSTACK_NOT_CONFIGURED') {
+      return res.status(503).json({ ok: false, error: 'Payments are not configured on the server yet.' });
+    }
+    // A resolve failure almost always means bad account details (client error).
+    return res.status(422).json({ ok: false, error: 'We couldn’t verify that account number with the selected bank. Please check and try again.' });
+  }
+  const accountName = resolved?.account_name || null;
+
+  // 2) Create the durable Transfer Recipient.
+  let recipient;
+  try {
+    recipient = await paystack.createTransferRecipient({ name: pro.name, accountNumber: acct, bankCode: bank });
+  } catch (err) {
+    console.error('[payout] recipient', err.code || 'ERROR', '-', err.message);
+    if (err.code === 'PAYSTACK_NOT_CONFIGURED') {
+      return res.status(503).json({ ok: false, error: 'Payments are not configured on the server yet.' });
+    }
+    return res.status(502).json({ ok: false, error: 'Payment gateway error while saving your bank account. Please try again.' });
+  }
+
+  // 3) Store the recipient_code + masked display fields. The full account
+  //    number is deliberately NOT persisted — only the last 4 for display.
+  const payout = {
+    provider: 'paystack',
+    recipientCode: recipient.recipient_code,
+    bankCode: bank,
+    bankName: recipient.details?.bank_name || (req.body?.bankName ? String(req.body.bankName).trim() : null),
+    accountLast4: acct.slice(-4),
+    accountName,
+    verified: true,
+    updatedAt: new Date().toISOString(),
+  };
+  await mutate(d => {
+    const p = d.professionals.find(x => String(x.id) === String(req.params.id));
+    if (p) p.payout = payout;
+  });
+
+  // Safe summary only — no recipient_code, no full account number.
+  res.status(200).json({
+    ok: true,
+    message: 'Payout account verified and saved.',
+    payout: { bankName: payout.bankName, accountName, accountLast4: payout.accountLast4, verified: true },
+  });
 }
 
 /**
