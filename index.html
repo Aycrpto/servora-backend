@@ -894,6 +894,60 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   .fchips button{padding:7px 11px;font-size:11.5px}
 }
 @media(max-width:330px){.cats{grid-template-columns:minmax(0,1fr)}}
+
+/* ===== Quote / split-escrow flow ===== */
+.bk-breakdown{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0;background:var(--soft)}
+.bd-grp{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);margin:2px 0 4px}
+.bd-row{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;color:var(--ink2);padding:3px 0}
+.bd-row span{min-width:0}
+.bd-row b{white-space:nowrap;color:var(--ink)}
+.bd-row.total{border-top:1px dashed var(--line);margin-top:6px;padding-top:7px;font-weight:700;color:var(--ink)}
+.bk-prompt{background:var(--gold-soft);border:1px solid var(--gold);border-radius:10px;padding:9px 11px;font-size:13px;color:var(--ink2);margin:10px 0}
+.bk-done-note{font-size:13px;color:var(--muted);margin:8px 0}
+.bk-done-note.ok{color:var(--green)}
+.bk-done-note.warn{color:var(--gold-deep)}
+.ev-block{margin:10px 0}
+.ev-h{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.ev-none{font-size:12.5px;color:var(--faint);font-style:italic}
+.ev-gallery{display:flex;flex-wrap:wrap;gap:6px}
+.ev-gallery img,.ev-gallery video{width:74px;height:74px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#000}
+.ev-sec{margin:8px 0}
+.ev-sec-h{display:block;font-size:11.5px;font-weight:700;color:var(--faint);margin-bottom:4px}
+.bk-timeline{margin:8px 0 2px}
+.bk-timeline summary{font-size:12.5px;color:var(--green);cursor:pointer}
+.tl{list-style:none;margin:8px 0 0;padding:0 0 0 4px}
+.tl li{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink2);padding:3px 0}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:var(--green);margin-top:5px;flex:none}
+.tl-when{display:block;font-size:11px;color:var(--faint)}
+.q-reason{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;background:var(--card);color:var(--ink);resize:vertical;margin:6px 0}
+/* pro: quotes list + job tags */
+.quotes-list{display:flex;flex-direction:column;gap:7px;margin:10px 0 4px}
+.quote-chip{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px dashed var(--gold);border-radius:10px;padding:8px 11px;font-size:13px;background:var(--gold-soft)}
+.quote-chip>div{min-width:0}
+.job-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-soft);border:1px solid var(--gold);border-radius:6px;padding:1px 6px;vertical-align:middle}
+.job-split{font-size:12.5px;color:var(--muted);margin:6px 0}
+.job-split b{color:var(--ink)}
+.ev-badge{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 9px;align-self:center}
+.ev-badge.ok{color:var(--green);border-color:var(--green)}
+/* quote builder materials */
+.qb-mat{display:grid;grid-template-columns:1fr 100px 30px;gap:6px;margin-bottom:6px}
+.qb-mat input{margin:0}
+.qb-mat-rm{border:1.5px solid var(--line);background:var(--card);border-radius:8px;color:var(--muted);cursor:pointer;font-size:13px}
+.qb-mat-rm:hover{color:#c2452f;border-color:#c2452f}
+.q-link{display:flex;gap:6px;margin:12px 0}
+.q-link input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12.5px;background:var(--soft);color:var(--ink2)}
+.big.ok{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--green);color:#fff;font-size:26px;margin:0 auto 10px}
+/* evidence uploader */
+.ev-drop{border:1.5px dashed var(--line);border-radius:12px;padding:14px;text-align:center;color:var(--muted);cursor:pointer;font-size:13.5px;font-weight:600;margin:4px 0 8px;transition:border-color .2s,color .2s}
+.ev-drop:hover,.ev-drop:focus{border-color:var(--green);color:var(--green);outline:none}
+.ev-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.ev-thumb{position:relative;width:76px;height:76px}
+.ev-thumb img,.ev-thumb video{width:76px;height:76px;object-fit:cover;border-radius:9px;border:1px solid var(--line);background:#000}
+.ev-thumb .rm{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:#c2452f;color:#fff;cursor:pointer;font-size:12px;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.qv-note{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink2);margin:10px 0}
+.qv-note.ok{color:var(--green)}.qv-note.warn{color:var(--gold-deep)}
+.qv-pronote{font-size:13px;color:var(--muted);margin:8px 0}
+.dc-jobev{margin:8px 0;border-top:1px solid var(--line);padding-top:8px}
 </style>
 </head>
 <body>
@@ -1587,6 +1641,77 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   </div>
 </div>
 
+<!-- ============ QUOTE BUILDER MODAL (pro) ============ -->
+<div class="modal-bg" id="quoteBuilderBg">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="close" id="qbClose" aria-label="Close">✕</button>
+    <div class="form-view" id="qbForm">
+      <h3>Send a quote</h3>
+      <p class="sub">Itemise materials and labour. The customer pays the full total into <b>escrow</b>; you’re paid in two protected stages.</p>
+      <div class="row2">
+        <div><label for="qbName">Customer name</label><input id="qbName" type="text" placeholder="e.g. Ayo" autocomplete="off"></div>
+        <div><label for="qbPhone">Phone</label><input id="qbPhone" type="tel" inputmode="tel" placeholder="080X XXX XXXX"></div>
+      </div>
+      <label for="qbEmail">Customer email <span class="lbl-soft">(for the receipt)</span></label>
+      <input id="qbEmail" type="email" inputmode="email" placeholder="customer@example.com">
+      <p class="ferr" id="qbEmailErr" aria-live="polite"></p>
+      <label for="qbDesc">Job description</label>
+      <input id="qbDesc" type="text" placeholder="e.g. Replace kitchen sink and fix the leak">
+      <label>Materials <span class="lbl-soft">(each item priced separately)</span></label>
+      <div id="qbMaterials"></div>
+      <button type="button" class="linkish" id="qbAddMat">＋ Add material</button>
+      <div class="row2">
+        <div><label for="qbLabour">Labour / workmanship (₦)</label><input id="qbLabour" type="number" min="0" step="500" inputmode="numeric" placeholder="e.g. 10000"></div>
+        <div><label for="qbInspection">Inspection / visit (₦) <span class="lbl-soft">optional</span></label><input id="qbInspection" type="number" min="0" step="500" inputmode="numeric" placeholder="e.g. 2000"></div>
+      </div>
+      <label for="qbNote">Note to customer <span class="lbl-soft">optional</span></label>
+      <input id="qbNote" type="text" placeholder="e.g. Includes a 6-month warranty">
+      <div class="co-summary" id="qbSummary"></div>
+      <button class="btn btn-gold" id="qbSend">Create quote →</button>
+      <p class="de-msg" id="qbMsg" aria-live="polite"></p>
+    </div>
+    <div class="form-view" id="qbDone" hidden>
+      <div class="big ok">✓</div>
+      <h3>Quote ready to send</h3>
+      <p class="sub">Share this link with your customer (WhatsApp, SMS, email). When they accept and pay, the job appears in “My jobs”.</p>
+      <div class="q-link"><input id="qbLink" readonly><button type="button" class="btn btn-ghost btn-sm" id="qbCopy">Copy</button></div>
+      <button class="btn btn-primary" id="qbFinish">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ QUOTE VIEW MODAL (customer accepts & pays) ============ -->
+<div class="modal-bg" id="quoteViewBg">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="close" id="qvClose" aria-label="Close">✕</button>
+    <div class="form-view" id="qvBody"></div>
+  </div>
+</div>
+
+<!-- ============ EVIDENCE UPLOAD MODAL (pro) ============ -->
+<div class="modal-bg" id="evidenceBg">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="close" id="evClose" aria-label="Close">✕</button>
+    <div class="form-view">
+      <h3 id="evTitle">Upload evidence</h3>
+      <p class="sub" id="evSub"></p>
+      <label>Photos</label>
+      <div class="ev-drop" id="evPhotoDrop" tabindex="0" role="button">＋ Add photos</div>
+      <input type="file" id="evPhotoInput" accept="image/*" multiple hidden>
+      <div class="ev-thumbs" id="evPhotoGrid"></div>
+      <label id="evVideoLabel">Short video</label>
+      <div class="ev-drop" id="evVideoDrop" tabindex="0" role="button">＋ Add a short video</div>
+      <input type="file" id="evVideoInput" accept="video/*" hidden>
+      <div class="ev-thumbs" id="evVideoGrid"></div>
+      <label for="evNote">Note <span class="lbl-soft">optional</span></label>
+      <input id="evNote" type="text" placeholder="Anything the customer should know">
+      <p class="ferr" id="evErr" aria-live="polite"></p>
+      <button class="btn btn-gold" id="evSubmit">Upload evidence</button>
+      <p class="de-msg" id="evMsg" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
 <!-- ============ PRO REGISTRATION MODAL (dynamic-ready) ============
      Applications go through ServoraAPI.registerPro() — swap for
      POST /api/pros/register. Once verification passes, the new
@@ -1829,7 +1954,9 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <details class="dash-edit" id="dashJobs">
       <summary>🧰 My jobs <span class="pay-badge" id="jobsBadge" style="display:none"></span></summary>
       <div class="de-body">
-        <p class="pay-note">Paid bookings. Start a job, mark it complete, and the customer confirms to release your payment.</p>
+        <p class="pay-note">Send an itemised quote, or manage paid bookings. Upload evidence, and the customer releases your payment in two protected stages.</p>
+        <button type="button" class="btn btn-primary btn-sm" id="newQuoteBtn" style="width:100%">＋ Send a quote to a customer</button>
+        <div class="quotes-list" id="quotesList"></div>
         <div class="jobs-list" id="jobsList"></div>
       </div>
     </details>
@@ -2093,10 +2220,49 @@ const ServoraAPI={
   async getProBookings(id,token){
     return apiFetch('/api/pros/'+encodeURIComponent(id)+'/bookings',{headers:{Authorization:'Bearer '+(token||'')}});
   },
-  /* POST /api/bookings/:id/{start|complete|dispute} — pro token authorises. */
+  /* POST /api/bookings/:id/{start|complete|dispute|ready|evidence} — pro token authorises. */
   async proBookingAction(id,action,token,body){
     try{
       const r=await fetch('/api/bookings/'+encodeURIComponent(id)+'/'+action,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},body:body?JSON.stringify(body):undefined});
+      return await r.json();
+    }catch(e){return null}
+  },
+
+  /* ---- QUOTES (pro issues; customer accepts) ---- */
+  /* POST /api/quotes — pro builds an itemised quote (materials/labour/inspection). */
+  async createQuote(payload,token){
+    try{
+      const r=await fetch('/api/quotes',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},body:JSON.stringify(payload)});
+      return await r.json();
+    }catch(e){return null}
+  },
+  /* GET /api/quotes?proId= — the pro's issued quotes. */
+  async listQuotes(proId,token){
+    return apiFetch('/api/quotes?proId='+encodeURIComponent(proId),{headers:{Authorization:'Bearer '+(token||'')}});
+  },
+  /* GET /api/quotes/:id — a quote by its (capability) id. */
+  async getQuote(id){ return apiFetch('/api/quotes/'+encodeURIComponent(id)); },
+  /* POST /api/quotes/:id/{accept|decline} — customer decision (no account needed). */
+  async quoteAction(id,action){
+    try{
+      const r=await fetch('/api/quotes/'+encodeURIComponent(id)+'/'+action,{method:'POST',headers:{'Content-Type':'application/json'}});
+      return await r.json();
+    }catch(e){return null}
+  },
+
+  /* ---- SPLIT-ESCROW JOB ACTIONS ---- */
+  /* POST /api/bookings/:id/evidence — pro uploads pre-job/completion/redo media. */
+  async uploadEvidence(id,payload,token){
+    try{
+      const r=await fetch('/api/bookings/'+encodeURIComponent(id)+'/evidence',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},body:JSON.stringify(payload)});
+      return await r.json();
+    }catch(e){return null}
+  },
+  /* POST /api/bookings/:id/{approve-materials|confirm-completion|request-redo|escalate}
+     — customer capability = knowing the booking id (no account). */
+  async customerBookingAction(id,action,body){
+    try{
+      const r=await fetch('/api/bookings/'+encodeURIComponent(id)+'/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
       return await r.json();
     }catch(e){return null}
   },
@@ -2877,14 +3043,96 @@ function updateMyBookingsNav(){
 const BK_STATUS={
   pending_payment:['Awaiting payment','warn'],
   funded:['Paid · your pro will start soon','ok'],
+  awaiting_material_approval:['Approve the material cost','warn'],
   in_progress:['In progress','ok'],
+  awaiting_completion_review:['Review the finished work','warn'],
+  redo_in_progress:['Redo in progress','ok'],
+  awaiting_redo_review:['Review the redo','warn'],
+  completed:['Completed & paid','done'],
   awaiting_confirmation:['Please confirm it’s done','warn'],
   confirmed:['Confirmed · releasing payment','done'],
   closed:['Completed & paid','done'],
   cancelled:['Cancelled / refunded','warn'],
   disputed:['Under Support review','warn'],
 };
+/* Currency helper for kobo → ₦. */
+const koboFmt=k=>nairaFmt(Math.round((k||0)/100));
+/* Shared: render an evidence gallery (photos + videos) read-only. */
+function evidenceGallery(list,phase){
+  const items=(list||[]).filter(e=>!phase||e.phase===phase);
+  if(!items.length)return '';
+  const media=items.map(e=>
+    (e.photos||[]).map(p=>`<a href="${esc(p)}" target="_blank" rel="noopener"><img src="${esc(p)}" alt="evidence" loading="lazy"></a>`).join('')+
+    (e.videos||[]).map(v=>`<video src="${esc(v)}" controls preload="metadata"></video>`).join('')
+  ).join('');
+  return `<div class="ev-gallery">${media}</div>`;
+}
+const PHASE_LABEL={pre_job:'Before work',completion:'Completed work',redo:'Redo'};
+/* Group a booking's evidence into labelled phase sections. */
+function evidenceSections(evidence){
+  if(!evidence||!evidence.length)return '';
+  return ['pre_job','completion','redo'].map(ph=>{
+    const g=evidenceGallery(evidence,ph);
+    return g?`<div class="ev-sec"><span class="ev-sec-h">${PHASE_LABEL[ph]}</span>${g}</div>`:'';
+  }).join('');
+}
+function fmtWhen(at){ try{return new Date(at).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return''} }
+function bkTimeline(history){
+  if(!history||!history.length)return '';
+  const rows=history.map(h=>`<li><span class="tl-dot"></span><div>${esc(h.note||String(h.status).replace(/_/g,' '))}<span class="tl-when">${esc(fmtWhen(h.at))}</span></div></li>`).join('');
+  return `<details class="bk-timeline"><summary>Timeline</summary><ul class="tl">${rows}</ul></details>`;
+}
+/* Quote (split-escrow) booking card — the customer's side of the flow. */
+function renderQuoteBkCard(b){
+  const bk=b.booking||{}, ev=b.evidence||[], tx=b.transaction||{}, split=tx.split||{};
+  const bd=bk.breakdown||{}, id=b.bookingId, st=b.status;
+  const [label,cls]=BK_STATUS[st]||['—','warn'];
+  const mats=(bd.items||[]).filter(i=>i.kind==='material');
+  const breakdown=`<div class="bk-breakdown">`+
+    (mats.length?`<div class="bd-grp"><span>Materials</span></div>`+mats.map(i=>`<div class="bd-row"><span>${esc(i.label)}</span><b>${koboFmt(i.amountKobo)}</b></div>`).join(''):'')+
+    (bd.inspectionKobo?`<div class="bd-row"><span>Inspection / visit</span><b>${koboFmt(bd.inspectionKobo)}</b></div>`:'')+
+    (bd.labourKobo?`<div class="bd-row"><span>Labour / workmanship</span><b>${koboFmt(bd.labourKobo)}</b></div>`:'')+
+    `<div class="bd-row total"><span>Total in escrow</span><b>${koboFmt(bk.agreedAmountKobo)}</b></div></div>`;
+  let body='';
+  if(st==='funded'){
+    body=`<div class="bk-prompt">Your pro is documenting the site before starting. You'll be asked to approve the material cost next.</div>`;
+  }else if(st==='awaiting_material_approval'){
+    const stage1=split.stage1?koboFmt(split.stage1.payoutKobo):koboFmt((bd.materialsKobo||0)+(bd.inspectionKobo||0));
+    body=`<div class="ev-block"><div class="ev-h">📸 Before-work evidence from your pro</div>${evidenceGallery(ev,'pre_job')||'<p class="ev-none">No evidence uploaded.</p>'}</div>`+
+      `<div class="bk-prompt">Approve releasing the <b>material cost (${stage1})</b> so your pro can buy materials and begin. Your <b>labour fee stays protected</b> until the job is done.</div>`+
+      `<div class="bk-act" data-act="${esc(id)}"><button type="button" class="btn btn-gold btn-sm" data-qstart="approve-materials" data-bk="${esc(id)}">Approve material cost</button></div>`;
+  }else if(st==='in_progress'){
+    body=`<div class="bk-done-note ok">✓ Material cost released. Your pro is working. The labour fee stays held until you're satisfied.</div>`;
+  }else if(st==='awaiting_completion_review'||st==='awaiting_redo_review'){
+    const labour=split.stage2?koboFmt(split.stage2.payoutKobo):koboFmt(bd.labourKobo);
+    body=`<div class="ev-block"><div class="ev-h">✅ Completed-work evidence</div>${evidenceGallery(ev,st==='awaiting_redo_review'?'redo':'completion')||'<p class="ev-none">No evidence uploaded.</p>'}</div>`+
+      `<div class="bk-prompt">Happy with the work? Confirming releases the <b>labour fee (${labour})</b> to your pro.</div>`+
+      `<div class="bk-act" data-act="${esc(id)}"><button type="button" class="btn btn-gold btn-sm" data-qstart="confirm-completion" data-bk="${esc(id)}">Job completed ✓</button>`+
+      (st==='awaiting_completion_review'
+        ?`<button type="button" class="btn btn-ghost btn-sm" data-qstart="request-redo" data-bk="${esc(id)}">Request a redo</button>`
+        :`<button type="button" class="btn btn-ghost btn-sm" data-qstart="escalate" data-bk="${esc(id)}">Not satisfied — Support</button>`)+
+      `</div>`;
+  }else if(st==='redo_in_progress'){
+    body=`<div class="bk-done-note">🔁 You asked for a redo. Your pro is perfecting the work and will re-submit for your review.</div>`;
+  }else if(st==='completed'){
+    body=`<div class="bk-done-note">✓ Job completed. The labour fee has been released to your pro. Thank you!</div>`+evidenceSections(ev);
+  }else if(st==='disputed'){
+    body=`<div class="bk-done-note warn">⚖ Under Servora Support review. Your labour fee remains safely held while they review the evidence.</div>`;
+  }else if(st==='cancelled'){
+    body=`<div class="bk-done-note warn">This booking was cancelled/refunded.</div>`;
+  }else if(st==='pending_payment'){
+    body=`<div class="bk-prompt">Payment wasn't completed. No money has left your account.</div>`;
+  }
+  return `<div class="bk-card" data-bk="${esc(id)}">
+    <div class="bk-top"><b>${esc(b.proName||bk.proName||'Your pro')}</b><span class="bk-status ${cls}">${esc(label)}</span></div>
+    <div class="bk-meta">${esc((b.service||bk.service||'').replace(/s$/,''))} · quote job</div>
+    ${breakdown}${body}
+    ${bkTimeline(bk.history)}
+    <p class="bk-msg" id="bkmsg-${esc(id)}" aria-live="polite"></p>
+  </div>`;
+}
 function renderBkCard(b){
+  if((b.booking&&b.booking.kind==='quote')||b.kind==='quote')return renderQuoteBkCard(b);
   const [label,cls]=BK_STATUS[b.status]||['Awaiting payment','warn'];
   const canConfirm=b.status==='awaiting_confirmation';   // customer confirms only after the pro marks it done
   const done=['confirmed','closed'].includes(b.status);
@@ -2904,10 +3152,11 @@ async function openMyBookings(){
   const list=loadMyBookings();
   if(!list.length){myBookingsList.innerHTML='<div class="leads-empty">You haven’t booked anyone yet.<br>When you book &amp; pay a pro, it’ll show here so you can confirm once the job is done.</div>';return}
   myBookingsList.innerHTML='<div class="leads-empty">Loading your bookings…</div>';
-  // refetch live status for each (falls back to stored status if offline)
+  // refetch live booking + evidence for each (falls back to stored status if offline)
   const enriched=await Promise.all(list.map(async b=>{
     const r=await ServoraAPI.getBooking(b.bookingId);
-    return {...b,status:(r&&r.ok&&r.booking)?r.booking.status:(b.status||'pending_payment')};
+    if(r&&r.ok&&r.booking)return {...b,status:r.booking.status,booking:r.booking,evidence:r.evidence||[],transaction:r.transaction||null};
+    return {...b,status:(b.status||'pending_payment')};
   }));
   myBookingsList.innerHTML=enriched.map(renderBkCard).join('');
 }
@@ -2936,6 +3185,45 @@ myBookingsBg.addEventListener('click',async e=>{
       if(m){m.className='bk-msg err';m.textContent=(res&&res.error)||'Could not confirm. Please try again.';}
       yes.disabled=false;yes.textContent='Yes, release';
     }
+  }
+});
+/* Quote-flow customer actions: approve materials, confirm completion, redo, escalate. */
+const Q_MONEY={
+  'approve-materials':['Release the material cost to your pro now? Your labour fee stays protected.','Yes, release'],
+  'confirm-completion':['Confirm the job is fully done? This releases the labour fee to your pro and cannot be undone.','Yes, release'],
+};
+const Q_REASON={
+  'request-redo':['Tell your pro what needs perfecting (optional):','Send redo request'],
+  'escalate':['Briefly explain why you’re still not satisfied (Servora Support will review):','Escalate to Support'],
+};
+myBookingsBg.addEventListener('click',async e=>{
+  const start=e.target.closest('[data-qstart]');
+  if(start){
+    const id=start.dataset.bk, action=start.dataset.qstart;
+    const act=myBookingsBg.querySelector('[data-act="'+CSS.escape(id)+'"]');
+    if(!act)return;
+    if(Q_MONEY[action]){
+      const [q,yes]=Q_MONEY[action];
+      act.innerHTML=`<span class="bk-confirm-q">${esc(q)}</span><div class="bk-confirm-row"><button type="button" class="btn btn-ghost btn-sm" data-qcancel="${esc(id)}">Not yet</button><button type="button" class="btn btn-gold btn-sm" data-qyes="${esc(action)}" data-bk="${esc(id)}">${esc(yes)}</button></div>`;
+    }else if(Q_REASON[action]){
+      const [q,submit]=Q_REASON[action];
+      act.innerHTML=`<label class="bk-confirm-q" for="qr-${esc(id)}">${esc(q)}</label><textarea id="qr-${esc(id)}" class="q-reason" rows="2" placeholder="Optional note"></textarea><div class="bk-confirm-row"><button type="button" class="btn btn-ghost btn-sm" data-qcancel="${esc(id)}">Cancel</button><button type="button" class="btn ${action==='escalate'?'btn-ghost':'btn-gold'} btn-sm" data-qsubmit="${esc(action)}" data-bk="${esc(id)}">${esc(submit)}</button></div>`;
+    }
+    return;
+  }
+  if(e.target.closest('[data-qcancel]')){openMyBookings();return}
+  const go=e.target.closest('[data-qyes]')||e.target.closest('[data-qsubmit]');
+  if(!go)return;
+  const id=go.dataset.bk, action=go.dataset.qyes||go.dataset.qsubmit;
+  const reasonEl=document.getElementById('qr-'+id);
+  const body=reasonEl?{reason:reasonEl.value.trim()||undefined}:undefined;
+  go.disabled=true;const orig=go.textContent;go.textContent='Working…';
+  const res=await ServoraAPI.customerBookingAction(id,action,body);
+  if(res&&res.ok){openMyBookings();}
+  else{
+    const m=document.getElementById('bkmsg-'+id);
+    if(m){m.className='bk-msg err';m.textContent=(res&&res.error)||'Could not complete that. Please try again.';}
+    go.disabled=false;go.textContent=orig;
   }
 });
 document.addEventListener('click',e=>{if(e.target.closest('[data-mybookings]')){e.preventDefault();openMyBookings();}});
@@ -2989,10 +3277,12 @@ function renderDisputeCard(d){
     </div>`;
   }
   const title=d.service?esc(d.service.replace(/s$/,''))+' · '+esc(amt):('Dispute'+(amt?' · '+esc(amt):''));
+  const kindTag=d.kind==='quote'?'<span class="job-tag">quote · labour held</span>':'';
+  const jobEv=d.bookingEvidence&&d.bookingEvidence.length?`<div class="dc-jobev"><div class="ev-h">Job evidence from the pro</div>${evidenceSections(d.bookingEvidence)}</div>`:'';
   return `<div class="dc-card">
-    <div class="dc-top"><b>${title}</b><span class="bk-status warn">${esc(d.status.replace(/_/g,' '))}</span></div>
+    <div class="dc-top"><b>${title} ${kindTag}</b><span class="bk-status warn">${esc(d.status.replace(/_/g,' '))}</span></div>
     <div class="dc-meta">Opened by ${esc(d.openedBy)} · ${esc(d.reason||'')}</div>
-    ${reqs}${ev}${act}
+    ${jobEv}${reqs}${ev}${act}
     <p class="dc-msg" id="dcmsg-${esc(d.id)}" aria-live="polite"></p>
   </div>`;
 }
@@ -3000,7 +3290,15 @@ async function loadDisputes(){
   disputesList.innerHTML='<div class="leads-empty">Loading disputes…</div>';
   const data=await ServoraAPI.getDisputes(dcFilter,dcKey);
   if(!data||!data.ok){disputesList.innerHTML='<div class="leads-empty">Couldn’t load disputes.</div>';return}
-  disputesList.innerHTML=data.disputes.length?data.disputes.map(renderDisputeCard).join('')
+  // Quote disputes: pull the booking's pre-job/completion/redo evidence for review.
+  const enriched=await Promise.all(data.disputes.map(async d=>{
+    if(d.kind==='quote'&&d.bookingId){
+      const r=await ServoraAPI.getBooking(d.bookingId);
+      if(r&&r.ok)return {...d,bookingEvidence:r.evidence||[]};
+    }
+    return d;
+  }));
+  disputesList.innerHTML=enriched.length?enriched.map(renderDisputeCard).join('')
     :'<div class="leads-empty">No disputes'+(dcFilter?' with this status':'')+'.</div>';
 }
 disputesList.addEventListener('click',async e=>{
@@ -3437,8 +3735,13 @@ document.getElementById('payoutSave').onclick=async()=>{
 const jobsList=document.getElementById('jobsList');
 const JOB_STATUS={
   pending_payment:['Awaiting payment','warn'],
-  funded:['Paid · ready to start','ok'],
+  funded:['Paid · document the site','ok'],
+  awaiting_material_approval:['Awaiting material approval','warn'],
   in_progress:['In progress','ok'],
+  awaiting_completion_review:['Awaiting customer review','warn'],
+  redo_in_progress:['Redo requested','warn'],
+  awaiting_redo_review:['Awaiting review of redo','warn'],
+  completed:['Paid out ✓','ok'],
   awaiting_confirmation:['Awaiting customer confirmation','warn'],
   confirmed:['Confirmed · releasing','ok'],
   closed:['Paid out ✓','ok'],
@@ -3446,7 +3749,44 @@ const JOB_STATUS={
   disputed:['Under Support review','warn'],
 };
 function resetJobsCard(){ document.getElementById('dashJobs').open=false; }
+const EV_REQ={pre_job:{p:2,v:1},completion:{p:2,v:0},redo:{p:2,v:0}};
+function evCount(ev,phase){let p=0,v=0;(ev||[]).filter(e=>e.phase===phase).forEach(e=>{p+=(e.photos||[]).length;v+=(e.videos||[]).length});return {p,v}}
+function evReqText(phase){const r=EV_REQ[phase];return r.v?`${r.p} photos + ${r.v} video`:`${r.p} photos`}
+/* Quote (split-escrow) job card — the pro's side of the flow. */
+function renderQuoteJobCard(b){
+  const [label,cls]=JOB_STATUS[b.status]||['—',''];
+  const cust=b.customer||{}, st=b.status, id=b.id, ev=b.evidence||[], tx=b.transaction||{}, split=tx.split||{};
+  const payLine=split.stage1?`<div class="job-split">You receive <b>${koboFmt(split.stage1.payoutKobo)}</b> (materials) now · <b>${koboFmt(split.stage2.payoutKobo)}</b> (labour) on completion</div>`:'';
+  const evBadge=(phase)=>{const c=evCount(ev,phase),r=EV_REQ[phase];const ok=c.p>=r.p&&c.v>=r.v;return `<span class="ev-badge ${ok?'ok':''}">${c.p} photo${c.p===1?'':'s'}${r.v?` · ${c.v} video`:''} · need ${evReqText(phase)}</span>`};
+  let actions='';
+  if(st==='funded'){
+    actions=`<div class="job-note">Upload <b>before-work evidence</b> (${evReqText('pre_job')}) then confirm you're ready. The customer approves the material cost next.</div>`+
+      `<div class="job-act">${evBadge('pre_job')}<button type="button" class="btn btn-ghost btn-sm" data-evphase="pre_job" data-job="${esc(id)}">Upload before-work evidence</button><button type="button" class="btn btn-gold btn-sm" data-job="${esc(id)}" data-jobaction="ready">I’m ready to begin →</button></div>`;
+  }else if(st==='awaiting_material_approval'){
+    actions='<div class="job-note warn">Waiting for the customer to approve & release the material cost.</div>';
+  }else if(st==='in_progress'){
+    actions=`<div class="job-note ok">✓ Material cost received. Upload <b>completion evidence</b> (${evReqText('completion')}) then mark the job complete.</div>`+
+      `<div class="job-act">${evBadge('completion')}<button type="button" class="btn btn-ghost btn-sm" data-evphase="completion" data-job="${esc(id)}">Upload completion evidence</button><button type="button" class="btn btn-gold btn-sm" data-job="${esc(id)}" data-jobaction="complete">Mark complete</button></div>`;
+  }else if(st==='awaiting_completion_review'){
+    actions='<div class="job-note warn">Waiting for the customer to review. They release the labour fee or request one redo.</div>';
+  }else if(st==='redo_in_progress'){
+    actions=`<div class="job-note warn">🔁 Redo requested${b.redoReason?': '+esc(b.redoReason):''}. Perfect the work, upload <b>redo evidence</b> (${evReqText('redo')}), then mark complete.</div>`+
+      `<div class="job-act">${evBadge('redo')}<button type="button" class="btn btn-ghost btn-sm" data-evphase="redo" data-job="${esc(id)}">Upload redo evidence</button><button type="button" class="btn btn-gold btn-sm" data-job="${esc(id)}" data-jobaction="complete">Mark complete</button></div>`;
+  }else if(st==='awaiting_redo_review'){
+    actions='<div class="job-note warn">Waiting for the customer to review the redo.</div>';
+  }else if(st==='disputed'){ actions='<div class="job-note warn">⚖ Under Servora Support review. The labour fee stays held.</div>'; }
+  else if(st==='completed'){ actions='<div class="job-note ok">✓ Job completed. Labour fee released to you.</div>'; }
+  else if(st==='cancelled'){ actions='<div class="job-note warn">Cancelled / refunded.</div>'; }
+  return `<div class="job-card">
+    <div class="job-top"><b>${esc((b.service||'').replace(/s$/,''))} · ${nairaFmt((b.agreedAmountKobo||0)/100)} <span class="job-tag">quote</span></b><span class="bk-status ${cls}">${esc(label)}</span></div>
+    <div class="job-meta">${esc(b.description||'No description')}</div>
+    <div class="job-cust">👤 ${esc(cust.name||'Customer')}${cust.phone?' · '+esc(cust.phone):''}</div>
+    ${payLine}${actions}
+    <p class="job-msg" id="jobmsg-${esc(id)}" aria-live="polite"></p>
+  </div>`;
+}
 function renderJobCard(b){
+  if(b.kind==='quote')return renderQuoteJobCard(b);
   const [label,cls]=JOB_STATUS[b.status]||['—',''];
   const cust=b.customer||{};
   const canStart=b.status==='funded';
@@ -3475,19 +3815,44 @@ function renderJobCard(b){
     <p class="job-msg" id="jobmsg-${esc(b.id)}" aria-live="polite"></p>
   </div>`;
 }
+const QUOTE_ACTIVE=['funded','awaiting_material_approval','in_progress','awaiting_completion_review','redo_in_progress','awaiting_redo_review'];
 async function loadProJobs(){
   if(!proSession)return;
+  loadProQuotes();
   jobsList.innerHTML='<div class="leads-empty">Loading your jobs…</div>';
   const data=await ServoraAPI.getProBookings(proSession.pro.id,proSession.token);
   if(!data||!data.ok){jobsList.innerHTML='<div class="leads-empty">Couldn’t load jobs — start the server and try again.</div>';return}
+  // Quote jobs need their evidence to show upload progress + gate the buttons.
+  const bookings=await Promise.all(data.bookings.map(async b=>{
+    if(b.kind==='quote' && QUOTE_ACTIVE.includes(b.status)){
+      const r=await ServoraAPI.getBooking(b.id);
+      if(r&&r.ok)return {...b,evidence:r.evidence||[],transaction:r.transaction||null};
+    }
+    return b;
+  }));
   const badge=document.getElementById('jobsBadge');
-  const active=data.bookings.filter(b=>['funded','in_progress','awaiting_confirmation','disputed'].includes(b.status)).length;
+  const active=bookings.filter(b=>QUOTE_ACTIVE.concat(['awaiting_confirmation','disputed']).includes(b.status)).length;
   if(active){badge.textContent=active+' active';badge.style.display='';}else{badge.style.display='none';}
-  jobsList.innerHTML=data.bookings.length?data.bookings.map(renderJobCard).join('')
-    :'<div class="leads-empty">No paid bookings yet. When a customer books &amp; pays you, the job shows here.</div>';
+  jobsList.innerHTML=bookings.length?bookings.map(renderJobCard).join('')
+    :'<div class="leads-empty">No paid bookings yet. Send a quote above, or when a customer books &amp; pays you the job shows here.</div>';
+}
+/* Sent quotes not yet accepted — so the pro can copy the link again. */
+async function loadProQuotes(){
+  const wrap=document.getElementById('quotesList');
+  if(!wrap||!proSession)return;
+  const data=await ServoraAPI.listQuotes(proSession.pro.id,proSession.token);
+  const pending=(data&&data.ok?data.quotes:[]).filter(q=>q.status==='sent');
+  wrap.innerHTML=pending.map(q=>`<div class="quote-chip"><div><b>${koboFmt(q.totalKobo)}</b> · ${esc((q.service||'').replace(/s$/,''))} · ${esc(q.customer?.name||q.customer?.email||q.customer?.phone||'customer')}</div><button type="button" class="btn btn-ghost btn-sm" data-copyquote="${esc(q.id)}">Copy link</button></div>`).join('');
 }
 document.getElementById('dashJobs').addEventListener('toggle',e=>{ if(e.target.open)loadProJobs(); });
+document.getElementById('newQuoteBtn').onclick=openQuoteBuilder;
+document.getElementById('quotesList').addEventListener('click',e=>{
+  const c=e.target.closest('[data-copyquote]');if(!c)return;
+  copyQuoteLink(c.dataset.copyquote,c);
+});
 jobsList.addEventListener('click',async e=>{
+  const evb=e.target.closest('[data-evphase]');
+  if(evb){ openEvidenceModal(evb.dataset.job,evb.dataset.evphase); return; }
   const btn=e.target.closest('[data-jobaction]');
   if(!btn)return;
   const id=btn.dataset.job, action=btn.dataset.jobaction;
@@ -3498,6 +3863,209 @@ jobsList.addEventListener('click',async e=>{
   if(res&&res.ok){ loadProJobs(); }
   else{ btn.disabled=false;btn.textContent=orig; if(msg){msg.className='job-msg err';msg.textContent=(res&&res.error)||'Action failed. Try again.';} }
 });
+function copyQuoteLink(id,btn){
+  const link=location.origin+location.pathname+'?servora_quote='+encodeURIComponent(id);
+  navigator.clipboard?.writeText(link).then(()=>{if(btn){const t=btn.textContent;btn.textContent='Copied ✓';setTimeout(()=>btn.textContent=t,1500)}},()=>prompt('Copy this quote link:',link));
+}
+
+/* ============ QUOTE BUILDER (pro) ============ */
+const quoteBuilderBg=document.getElementById('quoteBuilderBg');
+function qbMatRow(){
+  const div=document.createElement('div');div.className='qb-mat';
+  div.innerHTML=`<input class="qb-mat-label" type="text" placeholder="e.g. PVC pipes"><input class="qb-mat-amt" type="number" min="0" step="100" inputmode="numeric" placeholder="₦"><button type="button" class="qb-mat-rm" aria-label="Remove item">✕</button>`;
+  div.querySelector('.qb-mat-rm').onclick=()=>{div.remove();qbUpdateTotal()};
+  div.querySelector('.qb-mat-amt').addEventListener('input',qbUpdateTotal);
+  return div;
+}
+function qbReadMaterials(){
+  return [...document.querySelectorAll('#qbMaterials .qb-mat')].map(r=>({
+    label:r.querySelector('.qb-mat-label').value.trim()||'Material',
+    amountNaira:parseInt(r.querySelector('.qb-mat-amt').value,10)
+  })).filter(m=>Number.isFinite(m.amountNaira)&&m.amountNaira>0);
+}
+function qbTotals(){
+  const mats=qbReadMaterials().reduce((s,m)=>s+m.amountNaira,0);
+  const labour=parseInt(document.getElementById('qbLabour').value,10)||0;
+  const insp=parseInt(document.getElementById('qbInspection').value,10)||0;
+  return {mats,labour,insp,total:mats+labour+insp};
+}
+function qbUpdateTotal(){
+  const t=qbTotals();
+  document.getElementById('qbSummary').innerHTML=t.total>0?`<span>Customer pays into escrow</span><b>${nairaFmt(t.total)}</b>`:'';
+}
+function openQuoteBuilder(){
+  if(!proSession)return;
+  document.getElementById('qbForm').hidden=false;document.getElementById('qbDone').hidden=true;
+  ['qbName','qbPhone','qbEmail','qbDesc','qbLabour','qbInspection','qbNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('qbEmailErr').textContent='';document.getElementById('qbMsg').textContent='';
+  const mats=document.getElementById('qbMaterials');mats.innerHTML='';mats.appendChild(qbMatRow());
+  qbUpdateTotal();
+  quoteBuilderBg.classList.add('open');document.body.style.overflow='hidden';
+}
+function closeQuoteBuilder(){quoteBuilderBg.classList.remove('open');document.body.style.overflow=''}
+document.getElementById('qbClose').onclick=closeQuoteBuilder;
+quoteBuilderBg.addEventListener('click',e=>{if(e.target===quoteBuilderBg)closeQuoteBuilder()});
+document.getElementById('qbAddMat').onclick=()=>document.getElementById('qbMaterials').appendChild(qbMatRow());
+['qbLabour','qbInspection'].forEach(id=>document.getElementById(id).addEventListener('input',qbUpdateTotal));
+document.getElementById('qbSend').onclick=async()=>{
+  const name=document.getElementById('qbName').value.trim();
+  const phone=document.getElementById('qbPhone').value.trim();
+  const email=document.getElementById('qbEmail').value.trim();
+  const desc=document.getElementById('qbDesc').value.trim();
+  const note=document.getElementById('qbNote').value.trim();
+  const t=qbTotals(),msg=document.getElementById('qbMsg');
+  const emailOk=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  if(email&&!emailOk){document.getElementById('qbEmailErr').textContent='Enter a valid customer email.';return}
+  document.getElementById('qbEmailErr').textContent='';
+  if(!email&&!phone){document.getElementById('qbEmailErr').textContent='Add the customer’s email or phone.';return}
+  if(t.total<100){msg.className='de-msg err';msg.textContent='Add at least one priced item (₦100+ total).';return}
+  if(t.labour+t.insp<=0){msg.className='de-msg err';msg.textContent='Include a labour and/or inspection fee.';return}
+  const btn=document.getElementById('qbSend');btn.disabled=true;btn.textContent='Creating…';msg.textContent='';
+  const res=await ServoraAPI.createQuote({
+    proId:proSession.pro.id,
+    service:proSession.pro.category||proSession.pro.cat,
+    description:desc||null,
+    customer:{name,email,phone},
+    materials:qbReadMaterials(),
+    labourNaira:t.labour||undefined,
+    inspectionNaira:t.insp||undefined,
+    note:note||undefined
+  },proSession.token);
+  btn.disabled=false;btn.textContent='Create quote →';
+  if(!res||!res.ok){msg.className='de-msg err';msg.textContent=(res&&res.error)||'Could not create the quote.';return}
+  document.getElementById('qbLink').value=location.origin+location.pathname+'?servora_quote='+encodeURIComponent(res.quote.id);
+  document.getElementById('qbForm').hidden=true;document.getElementById('qbDone').hidden=false;
+  loadProQuotes();
+};
+document.getElementById('qbCopy').onclick=()=>{const i=document.getElementById('qbLink');i.select();navigator.clipboard?.writeText(i.value);document.getElementById('qbCopy').textContent='Copied ✓'};
+document.getElementById('qbFinish').onclick=()=>{closeQuoteBuilder();loadProJobs();};
+
+/* ============ EVIDENCE UPLOADER (pro) ============ */
+const evidenceBg=document.getElementById('evidenceBg');
+let evBooking=null,evPhase=null,evPhotos=[],evVideos=[];
+const EV_TITLE={pre_job:'Before-work evidence',completion:'Completion evidence',redo:'Redo evidence'};
+const MAX_VIDEO_MB=20,MAX_VIDEO_BYTES=MAX_VIDEO_MB*1024*1024;
+function readFileDataUrl(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(new Error('unreadable'));fr.readAsDataURL(file)})}
+function evRenderThumbs(){
+  document.getElementById('evPhotoGrid').innerHTML=evPhotos.map((src,i)=>`<div class="ev-thumb"><img src="${esc(src)}" alt=""><button type="button" class="rm" data-evrm-p="${i}" aria-label="Remove">✕</button></div>`).join('');
+  document.getElementById('evVideoGrid').innerHTML=evVideos.map((src,i)=>`<div class="ev-thumb"><video src="${esc(src)}" muted preload="metadata"></video><button type="button" class="rm" data-evrm-v="${i}" aria-label="Remove">✕</button></div>`).join('');
+}
+function openEvidenceModal(bookingId,phase){
+  if(!proSession)return;
+  evBooking=bookingId;evPhase=phase;evPhotos=[];evVideos=[];
+  document.getElementById('evTitle').textContent=EV_TITLE[phase]||'Upload evidence';
+  const r=EV_REQ[phase];
+  document.getElementById('evSub').textContent=`Required: at least ${r.p} clear photos${r.v?` and ${r.v} short video`:''} of the site.`;
+  const showVid=r.v>0;
+  document.getElementById('evVideoLabel').style.display=showVid?'':'none';
+  document.getElementById('evVideoDrop').style.display=showVid?'':'none';
+  document.getElementById('evVideoGrid').style.display=showVid?'':'none';
+  document.getElementById('evNote').value='';document.getElementById('evErr').textContent='';document.getElementById('evMsg').textContent='';
+  evRenderThumbs();
+  evidenceBg.classList.add('open');document.body.style.overflow='hidden';
+}
+function closeEvidence(){evidenceBg.classList.remove('open');document.body.style.overflow=''}
+document.getElementById('evClose').onclick=closeEvidence;
+evidenceBg.addEventListener('click',e=>{if(e.target===evidenceBg)closeEvidence()});
+const evPhotoInput=document.getElementById('evPhotoInput'),evVideoInput=document.getElementById('evVideoInput');
+document.getElementById('evPhotoDrop').onclick=()=>evPhotoInput.click();
+document.getElementById('evPhotoDrop').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();evPhotoInput.click()}});
+document.getElementById('evVideoDrop').onclick=()=>evVideoInput.click();
+document.getElementById('evVideoDrop').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();evVideoInput.click()}});
+evPhotoInput.addEventListener('change',async()=>{
+  const err=document.getElementById('evErr');err.textContent='';
+  for(const f of [...evPhotoInput.files].filter(f=>f.type.startsWith('image/'))){
+    if(evPhotos.length>=8)break;
+    if(f.size>MAX_FILE_BYTES){err.textContent=`“${f.name}” is over ${MAX_FILE_MB}MB.`;continue}
+    try{evPhotos.push(await downscaleImage(f));evRenderThumbs()}catch(e){err.textContent='Couldn’t read a photo.'}
+  }
+  evPhotoInput.value='';
+});
+evVideoInput.addEventListener('change',async()=>{
+  const err=document.getElementById('evErr');err.textContent='';
+  const f=evVideoInput.files[0];evVideoInput.value='';
+  if(!f)return;
+  if(!f.type.startsWith('video/')){err.textContent='Choose a video file.';return}
+  if(f.size>MAX_VIDEO_BYTES){err.textContent=`Video is over ${MAX_VIDEO_MB}MB. Keep it short (10–20s).`;return}
+  try{evVideos=[await readFileDataUrl(f)];evRenderThumbs()}catch(e){err.textContent='Couldn’t read the video.'}
+});
+document.getElementById('evPhotoGrid').addEventListener('click',e=>{const b=e.target.closest('[data-evrm-p]');if(b){evPhotos.splice(+b.dataset.evrmP,1);evRenderThumbs()}});
+document.getElementById('evVideoGrid').addEventListener('click',e=>{const b=e.target.closest('[data-evrm-v]');if(b){evVideos.splice(+b.dataset.evrmV,1);evRenderThumbs()}});
+document.getElementById('evSubmit').onclick=async()=>{
+  const err=document.getElementById('evErr'),msg=document.getElementById('evMsg'),r=EV_REQ[evPhase];
+  if(evPhotos.length<r.p){err.textContent=`Add at least ${r.p} photos.`;return}
+  if(r.v&&evVideos.length<r.v){err.textContent=`Add at least ${r.v} short video.`;return}
+  err.textContent='';
+  const btn=document.getElementById('evSubmit');btn.disabled=true;btn.textContent='Uploading…';msg.textContent='';
+  const res=await ServoraAPI.uploadEvidence(evBooking,{phase:evPhase,photos:evPhotos,videos:evVideos,note:document.getElementById('evNote').value.trim()||undefined},proSession.token);
+  btn.disabled=false;btn.textContent='Upload evidence';
+  if(!res||!res.ok){msg.className='de-msg err';msg.textContent=(res&&res.error)||'Upload failed. Try again.';return}
+  closeEvidence();loadProJobs();
+};
+
+/* ============ QUOTE VIEW (customer accepts & pays) ============ */
+const quoteViewBg=document.getElementById('quoteViewBg');
+function closeQuoteView(){quoteViewBg.classList.remove('open');document.body.style.overflow=''}
+document.getElementById('qvClose').onclick=closeQuoteView;
+quoteViewBg.addEventListener('click',e=>{if(e.target===quoteViewBg)closeQuoteView()});
+function renderQuoteView(q){
+  const mats=(q.items||[]).filter(i=>i.kind==='material');
+  const rows=(mats.length?`<div class="bd-grp"><span>Materials</span></div>`+mats.map(i=>`<div class="bd-row"><span>${esc(i.label)}</span><b>${koboFmt(i.amountKobo)}</b></div>`).join(''):'')+
+    (q.inspectionKobo?`<div class="bd-row"><span>Inspection / visit</span><b>${koboFmt(q.inspectionKobo)}</b></div>`:'')+
+    (q.labourKobo?`<div class="bd-row"><span>Labour / workmanship</span><b>${koboFmt(q.labourKobo)}</b></div>`:'')+
+    `<div class="bd-row total"><span>Total</span><b>${koboFmt(q.totalKobo)}</b></div>`;
+  let cta='';
+  if(q.status==='sent'){
+    cta=`<div class="qv-note">You pay the full total into <b>escrow</b>. It’s released in two protected stages: the <b>material cost</b> after you approve it, and the <b>labour fee</b> only when you’re satisfied.</div>
+      <button class="btn btn-gold" id="qvAccept">Accept &amp; pay ${koboFmt(q.totalKobo)} →</button>
+      <button class="btn btn-ghost btn-sm" id="qvDecline">Decline</button>`;
+  }else if(q.status==='accepted'){
+    cta=`<div class="qv-note ok">✓ You’ve accepted this quote. Open “My bookings” to continue.</div>`;
+  }else if(q.status==='declined'){
+    cta=`<div class="qv-note warn">This quote was declined.</div>`;
+  }
+  return `<h3>Quote from ${esc(q.proName||'your pro')}</h3>
+    <p class="sub">${esc((q.service||'').replace(/s$/,''))}${q.description?' · '+esc(q.description):''}</p>
+    <div class="bk-breakdown">${rows}</div>
+    ${q.note?`<p class="qv-pronote">📝 ${esc(q.note)}</p>`:''}
+    ${cta}
+    <p class="de-msg" id="qvMsg" aria-live="polite"></p>`;
+}
+async function openQuoteView(id){
+  quoteViewBg.classList.add('open');document.body.style.overflow='hidden';
+  document.getElementById('qvBody').innerHTML='<div class="leads-empty">Loading quote…</div>';
+  const res=await ServoraAPI.getQuote(id);
+  if(!res||!res.ok){document.getElementById('qvBody').innerHTML='<h3>Quote unavailable</h3><p class="sub">This quote link is invalid or has expired.</p>';return}
+  const q=res.quote;
+  document.getElementById('qvBody').innerHTML=renderQuoteView(q);
+  const acc=document.getElementById('qvAccept');if(acc)acc.onclick=()=>acceptAndPay(q);
+  const dec=document.getElementById('qvDecline');if(dec)dec.onclick=async()=>{if(!confirm('Decline this quote?'))return;await ServoraAPI.quoteAction(id,'decline');openQuoteView(id);};
+}
+async function acceptAndPay(q){
+  const btn=document.getElementById('qvAccept'),msg=document.getElementById('qvMsg');
+  btn.disabled=true;btn.textContent='Processing…';
+  const acc=await ServoraAPI.quoteAction(q.id,'accept');
+  if(!acc||!acc.ok){msg.className='de-msg err';msg.textContent=(acc&&acc.error)||'Could not accept the quote.';btn.disabled=false;btn.textContent='Accept & pay →';return}
+  const booking=acc.booking;
+  const init=await ServoraAPI.initializePayment({bookingId:booking.id,email:q.customer?.email||booking.customer?.email});
+  if(init&&init.ok&&init.authorizationUrl){
+    saveMyBooking({bookingId:booking.id,reference:init.reference,proName:q.proName,service:q.service,amountKobo:booking.agreedAmountKobo,kind:'quote',addedAt:Date.now()});
+    window.location.href=init.authorizationUrl;return;
+  }
+  msg.className='de-msg err';msg.textContent=(init&&init.error)||'Online payment isn’t available right now.';
+  btn.disabled=false;btn.textContent='Accept & pay →';
+}
+/* Open a quote automatically from ?servora_quote=<id> (a pro-shared link). */
+function initQuoteLink(){
+  const p=new URLSearchParams(location.search);
+  const id=p.get('servora_quote');
+  if(!id)return;
+  p.delete('servora_quote');const qs=p.toString();
+  history.replaceState({},'',location.pathname+(qs?'?'+qs:'')+location.hash);
+  openQuoteView(id);
+}
+setTimeout(initQuoteLink,0);
+addEventListener('keydown',e=>{if(e.key==='Escape'){if(quoteBuilderBg.classList.contains('open'))closeQuoteBuilder();if(quoteViewBg.classList.contains('open'))closeQuoteView();if(evidenceBg.classList.contains('open'))closeEvidence();}});
 
 /* ---- dashboard portfolio manager ----
    dashPhotos mixes existing "/uploads/…" URLs with new data URLs; the
