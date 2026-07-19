@@ -539,6 +539,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 /* login + signed-in bar */
 .linkish{color:var(--green);font-weight:700;text-decoration:underline;font-size:inherit;padding:0}
 .lbl-soft{font-weight:500;color:var(--faint)}
+.lbl-req{font-weight:700;color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-left:4px}
 .dash-id{display:flex;align-items:center;gap:11px;background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:10px 12px;margin-top:4px}
 .dash-id .avatar{width:38px;height:38px;font-size:13px}
 .dash-id .who b{font-size:13.5px;display:block;line-height:1.25}
@@ -551,6 +552,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .dash-stat{background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:11px 8px;text-align:center}
 .dash-stat b{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em}
 .dash-stat span{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.dash-quote-cta{width:100%;margin-top:11px}
 .dash-edit{margin-top:9px;background:var(--soft);border:1px solid var(--line2);border-radius:12px;overflow:hidden}
 .dash-edit summary{list-style:none;cursor:pointer;padding:12px 15px;font-size:13px;font-weight:700;min-height:44px;display:flex;align-items:center;gap:7px;transition:color .2s}
 .dash-edit summary:hover{color:var(--green)}
@@ -596,6 +598,30 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .modal.done .success{display:block}
 /* profile modal */
 .pmodal{max-width:520px}
+/* ===== Book-a-Pro wizard ===== */
+.bp-modal{max-width:540px}
+.bp-steps{display:flex;gap:6px;margin-bottom:14px}
+.bp-dot{height:4px;flex:1;border-radius:3px;background:var(--line2);transition:background .25s}
+.bp-dot.on{background:var(--gold)}
+.bp-chosen{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);background:var(--soft);border:1px solid var(--line2);border-radius:999px;padding:5px 12px;margin-bottom:14px}
+.bp-services{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.bp-svc{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;background:var(--soft);border:1.5px solid var(--line2);border-radius:14px;padding:14px 14px;cursor:pointer;transition:border-color .18s,transform .18s,background .18s}
+.bp-svc:hover{border-color:var(--gold);transform:translateY(-2px)}
+.bp-svc.on{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 10%,var(--card))}
+.bp-svc-ico{display:inline-flex;color:var(--gold)}
+.bp-svc-name{font-weight:800;font-size:14.5px;letter-spacing:-.01em;line-height:1.2}
+.bp-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px}
+.bp-nav .btn-primary{margin-left:auto}
+.bp-loading{padding:26px 6px;text-align:center;color:var(--muted);font-weight:600}
+.bp-rhead{font-weight:800;font-size:15px;letter-spacing:-.01em;margin:2px 0 4px}
+.bp-rsub{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+.bp-grid{display:flex;flex-direction:column;gap:12px}
+.bp-grid .pro{max-width:none}
+.bp-empty{background:var(--soft);border:1px dashed var(--line2);border-radius:14px;padding:20px 16px;text-align:center;margin-bottom:14px}
+.bp-empty .be-ico{font-size:26px;display:block;margin-bottom:6px}
+.bp-empty h4{font-size:15px;margin-bottom:4px}
+.bp-empty p{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+.bp-nearby{margin-top:20px;padding-top:16px;border-top:1px solid var(--line2)}
 .pmodal .phead{display:flex;gap:16px;align-items:center;margin-bottom:18px}
 .pmodal .avatar{width:64px;height:64px;font-size:22px}
 .pmodal .phead h3{margin-bottom:2px;padding-right:0}
@@ -1527,6 +1553,63 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   </div>
 </div>
 
+<!-- ============ BOOK A PRO — GUIDED DISCOVERY WIZARD ============
+     Book a Pro → 1) pick a service → 2) state + area/LGA → 3) describe the job
+     → 4) available verified pros in that area. Only if none are found in the
+     area does the customer get the "Post a job" fallback (matched later). -->
+<div class="modal-bg" id="bookProBg">
+  <div class="modal bp-modal" role="dialog" aria-modal="true" aria-labelledby="bpHeading">
+    <button class="close" id="bookProClose" aria-label="Close">✕</button>
+    <div class="bp-steps" id="bpSteps" aria-hidden="true">
+      <span class="bp-dot" data-dot="1"></span>
+      <span class="bp-dot" data-dot="2"></span>
+      <span class="bp-dot" data-dot="3"></span>
+      <span class="bp-dot" data-dot="4"></span>
+    </div>
+    <h3 id="bpHeading">Book a Pro</h3>
+    <p class="sub" id="bpSub">First, what do you need done?</p>
+
+    <!-- Step 1 · service -->
+    <div class="bp-step" id="bpStep1">
+      <div class="bp-services" id="bpServices" role="listbox" aria-label="Choose a service"></div>
+    </div>
+
+    <!-- Step 2 · location -->
+    <div class="bp-step" id="bpStep2" hidden>
+      <div class="bp-chosen" id="bpChosen1"></div>
+      <label for="bpState">Which state are you in?</label>
+      <select id="bpState"></select>
+      <label for="bpArea" style="margin-top:12px">Area / LGA</label>
+      <input type="text" id="bpArea" placeholder="e.g. Lekki, Ikeja, Wuse…" autocomplete="address-level2" aria-describedby="bpLocErr">
+      <p class="ferr" id="bpLocErr" aria-live="polite"></p>
+      <div class="bp-nav">
+        <button type="button" class="btn btn-ghost btn-sm" data-bp-back>← Back</button>
+        <button type="button" class="btn btn-primary" id="bpToStep3">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 3 · description -->
+    <div class="bp-step" id="bpStep3" hidden>
+      <div class="bp-chosen" id="bpChosen2"></div>
+      <label for="bpDesc">Briefly, what needs doing?</label>
+      <textarea id="bpDesc" rows="3" placeholder="e.g. AC not cooling — needs a gas refill and full service" aria-describedby="bpDescErr"></textarea>
+      <p class="ferr" id="bpDescErr" aria-live="polite"></p>
+      <div class="bp-nav">
+        <button type="button" class="btn btn-ghost btn-sm" data-bp-back>← Back</button>
+        <button type="button" class="btn btn-primary" id="bpToResults">See available pros →</button>
+      </div>
+    </div>
+
+    <!-- Step 4 · matched pros / post-a-job fallback -->
+    <div class="bp-step" id="bpStep4" hidden>
+      <div id="bpResults" aria-live="polite"></div>
+      <div class="bp-nav">
+        <button type="button" class="btn btn-ghost btn-sm" data-bp-back>← Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ PROFILE MODAL ============ -->
 <div class="modal-bg" id="profileBg">
   <div class="modal pmodal" role="dialog" aria-modal="true">
@@ -1751,8 +1834,15 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       </div>
       <label for="rPw">Create a password <span class="lbl-soft">(optional, for signing in to view your leads)</span></label>
       <input type="password" id="rPw" autocomplete="new-password" placeholder="Leave empty to use demo password servora123">
-      <label for="rId">Upload ID: NIN slip, driver’s licence or voter’s card <span class="lbl-soft">(max 5MB)</span></label>
-      <input type="file" id="rId" accept="image/*,.pdf" aria-describedby="rIdErr">
+      <label for="rIdType">Verify your identity <span class="lbl-req">Required</span></label>
+      <select id="rIdType" aria-describedby="rIdErr">
+        <option value="">Choose your ID type…</option>
+        <option value="NIN">National ID (NIN slip)</option>
+        <option value="Driver's Licence">Driver’s Licence</option>
+        <option value="International Passport">International Passport</option>
+      </select>
+      <label for="rId" class="lbl-soft" style="margin-top:10px">Upload a clear photo of your ID <span class="lbl-soft">(max 5MB)</span></label>
+      <input type="file" id="rId" accept="image/*,.pdf" required aria-required="true" aria-describedby="rIdErr">
       <p class="ferr" id="rIdErr" aria-live="polite"></p>
       <!-- Portfolio / past work — OPTIONAL. Files are previewed locally;
            only metadata is sent for now (simulated upload, like the ID). -->
@@ -1909,6 +1999,9 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <h3>My dashboard</h3>
     <div class="dash-id" id="dashWho"></div>
     <div class="dash-stats" id="dashStats"></div>
+    <!-- Always-visible primary action: opens the quote builder on one click,
+         no need to expand "My jobs" first. -->
+    <button type="button" class="btn btn-primary dash-quote-cta" id="dashQuoteBtn">＋ Send a quote to a customer</button>
     <details class="dash-edit" id="dashEdit">
       <summary>✏️ Edit my profile</summary>
       <div class="de-body">
@@ -2090,24 +2183,30 @@ const ServoraAPI={
   /* GET /api/services — taxonomy is bundled too for instant render */
   async getServices(){return services},
 
-  /* GET /api/pros?category=&state=&sort= */
-  async getPros({category=null,state=null,sort='rating'}={}){
+  /* GET /api/pros?category=&state=&area=&sort= */
+  async getPros({category=null,state=null,area=null,sort='rating'}={}){
     const qs=new URLSearchParams();
     if(category)qs.set('category',category);
     if(state)qs.set('state',state);
+    if(area)qs.set('area',area);
     qs.set('sort',sort);
     const live=await apiFetch('/api/pros?'+qs);
-    if(live&&live.pros)return{pros:cachePros(live.pros.map(mapApiPro)),stateCovered:!!live.stateCovered};
+    if(live&&live.pros)return{pros:cachePros(live.pros.map(mapApiPro)),stateCovered:!!live.stateCovered,areaCovered:!!live.areaCovered};
     /* offline fallback — bundled seeds, same ranking rules as the API */
     let list=pros.slice();
     if(category)list=list.filter(p=>p.cat===category);
     const inState=state?list.filter(p=>p.state===state):list;
     const stateCovered=Boolean(state)&&inState.length>0;
     if(stateCovered)list=inState;
+    const q=area?String(area).trim().toLowerCase():'';
+    const matchesArea=p=>q&&[p.lga,p.area].some(v=>v&&String(v).toLowerCase().includes(q));
+    const areaCovered=stateCovered&&q?list.some(matchesArea):false;
     const tierRank={elite:0,pro:1,starter:2};
     const by={rating:(a,b)=>b.r-a.r,resp:(a,b)=>a.resp-b.resp,price:(a,b)=>a.price-b.price,jobs:(a,b)=>b.j-a.j};
-    list.sort((a,b)=>by[sort](a,b)||tierRank[a.tier]-tierRank[b.tier]);
-    return{pros:cachePros(list),stateCovered};
+    const rank=(a,b)=>by[sort](a,b)||tierRank[a.tier]-tierRank[b.tier];
+    if(areaCovered)list=[...list.filter(matchesArea).sort(rank),...list.filter(p=>!matchesArea(p)).sort(rank)];
+    else list.sort(rank);
+    return{pros:cachePros(list),stateCovered,areaCovered};
   },
 
   /* GET /api/pros/featured — Elite paid placement first */
@@ -2748,14 +2847,134 @@ function openContact(id){
 function showModal(){
   modal.classList.remove('done');
   resetLeadValidation();
+  /* Carry the wizard's answers into the lead form (job description + area) so
+     the customer doesn't retype them when contacting a pro or posting a job. */
+  if(window.bpPrefill){
+    const d=document.getElementById('mDesc'),a=document.getElementById('mArea');
+    if(window.bpPrefill.desc&&!d.value)d.value=window.bpPrefill.desc;
+    if(window.bpPrefill.area&&!a.value)a.value=window.bpPrefill.area;
+    window.bpPrefill=null;
+  }
   modalBg.classList.add('open');document.body.style.overflow='hidden';
   setSugOpen(false);
   closeProfile();
+  if(typeof closeBookPro==='function')closeBookPro();
 }
 function closeModal(){modalBg.classList.remove('open');document.body.style.overflow=''}
 document.getElementById('modalClose').onclick=closeModal;
 document.getElementById('mDone').onclick=closeModal;
 modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
+
+/* ============ BOOK A PRO — GUIDED DISCOVERY WIZARD ============
+   service → state + area → description → verified pros in that area.
+   Post-a-job is offered ONLY when no pro covers the chosen area. */
+(function(){
+  const bg=document.getElementById('bookProBg');
+  if(!bg)return;
+  const S={service:null,stateName:'',area:'',desc:'',step:1};
+  const steps=[1,2,3,4].map(n=>document.getElementById('bpStep'+n));
+  const dots=[...document.querySelectorAll('#bpSteps .bp-dot')];
+  const SUB={1:'First, what do you need done?',2:'Where do you need them?',3:'Tell the pro what to expect.',4:'Available verified pros near you'};
+  const one=n=>String(n).replace(/s$/,'');          /* "Plumbers" → "Plumber" */
+  const many=()=>esc(S.service);                    /* proper-cased plural */
+  function show(n){
+    S.step=n;
+    steps.forEach((el,i)=>el.hidden=(i+1)!==n);
+    dots.forEach((d,i)=>d.classList.toggle('on',i+1<=n));
+    document.getElementById('bpSub').textContent=SUB[n]||'';
+    if(n===2)document.getElementById('bpChosen1').textContent='🛠️ '+one(S.service);
+    if(n===3)document.getElementById('bpChosen2').textContent='🛠️ '+one(S.service)+' · 📍 '+S.area+', '+S.stateName;
+  }
+  function renderServices(){
+    document.getElementById('bpServices').innerHTML=services.map(s=>
+      `<button type="button" class="bp-svc${S.service===s.name?' on':''}" role="option" aria-selected="${S.service===s.name}" data-bp-svc="${esc(s.name)}">
+         <span class="bp-svc-ico">${s.icon}</span>
+         <span class="bp-svc-name">${esc(one(s.name))}</span>
+       </button>`).join('');
+  }
+  function buildStates(){
+    document.getElementById('bpState').innerHTML='<option value="">Select your state…</option>'+
+      '<optgroup label="Popular">'+POPULAR_STATES.map(s=>`<option>${s}</option>`).join('')+'</optgroup>'+
+      '<optgroup label="All states (A–Z)">'+NIGERIAN_STATES.map(s=>`<option>${s}</option>`).join('')+'</optgroup>';
+  }
+  window.openBookPro=function(preService){
+    S.service=preService||null;S.stateName='';S.area='';S.desc='';
+    renderServices();
+    if(!document.getElementById('bpState').options.length)buildStates();
+    document.getElementById('bpState').value='';
+    document.getElementById('bpArea').value='';
+    document.getElementById('bpDesc').value='';
+    document.getElementById('bpLocErr').textContent='';
+    document.getElementById('bpDescErr').textContent='';
+    document.getElementById('bpResults').innerHTML='';
+    bg.classList.add('open');document.body.style.overflow='hidden';
+    if(typeof closeProfile==='function')closeProfile();
+    show(preService?2:1);
+  };
+  function closeBookPro(){bg.classList.remove('open');document.body.style.overflow='';window.bpPrefill=null}
+  window.closeBookPro=closeBookPro;
+  document.getElementById('bookProClose').onclick=closeBookPro;
+  bg.addEventListener('click',e=>{
+    if(e.target===bg){closeBookPro();return}
+    if(e.target.closest('[data-bp-back]'))show(Math.max(1,S.step-1));
+    if(e.target.closest('[data-bp-post]'))postJob();
+  });
+  document.getElementById('bpServices').addEventListener('click',e=>{
+    const b=e.target.closest('[data-bp-svc]');if(!b)return;
+    S.service=b.dataset.bpSvc;renderServices();show(2);
+    setTimeout(()=>document.getElementById('bpState').focus(),40);
+  });
+  document.getElementById('bpToStep3').onclick=()=>{
+    const st=document.getElementById('bpState').value.trim();
+    const ar=document.getElementById('bpArea').value.trim();
+    const err=document.getElementById('bpLocErr');
+    if(!st){err.textContent='Please select your state.';return}
+    if(ar.length<2){err.textContent='Enter your area or LGA (e.g. Lekki, Ikeja, Wuse).';return}
+    err.textContent='';S.stateName=st;S.area=ar;show(3);
+    setTimeout(()=>document.getElementById('bpDesc').focus(),40);
+  };
+  document.getElementById('bpToResults').onclick=()=>{
+    const d=document.getElementById('bpDesc').value.trim();
+    const err=document.getElementById('bpDescErr');
+    if(d.length<5){err.textContent='Add a short description so pros know what you need (5+ characters).';return}
+    err.textContent='';S.desc=d;show(4);renderResults();
+  };
+  function postJob(){
+    window.bpPrefill={desc:S.desc,area:S.area+', '+S.stateName};
+    openPostJob(S.service);   /* showModal() closes this wizard + consumes the prefill */
+  }
+  async function renderResults(){
+    const box=document.getElementById('bpResults');
+    box.innerHTML=`<div class="bp-loading">Finding verified ${many()} in ${esc(S.area)}…</div>`;
+    /* Carry the job description + location into whatever the customer clicks
+       next — Contact a pro or Post a job — so they never retype it. */
+    window.bpPrefill={desc:S.desc,area:S.area+', '+S.stateName};
+    const {pros:list,stateCovered,areaCovered}=await ServoraAPI.getPros({category:S.service,state:S.stateName,area:S.area,sort:'rating'});
+    const q=S.area.trim().toLowerCase();
+    const matches=p=>[p.area,p.lga].some(v=>v&&String(v).toLowerCase().includes(q));
+    const inArea=(stateCovered&&areaCovered)?list.filter(matches):[];
+    const nearby=list.filter(p=>!inArea.includes(p));
+    const svcOne=esc(one(S.service));
+    let html='';
+    if(inArea.length){
+      html+=`<div class="bp-rhead">${inArea.length} verified ${inArea.length>1?many():svcOne} in ${esc(S.area)}</div>`+
+            `<div class="bp-rsub">All ID-verified · contact free, no signup · pay only when the job's done.</div>`+
+            `<div class="bp-grid">${inArea.map(proCard).join('')}</div>`;
+    }else{
+      const scope=stateCovered?esc(S.area):esc(S.stateName);
+      html+=`<div class="bp-empty"><span class="be-ico">📍</span>`+
+            `<h4>No ${many()} in ${scope} yet</h4>`+
+            `<p>Post your job and we'll match you with an available ${svcOne.toLowerCase()} as soon as one covers ${scope}.</p>`+
+            `<button type="button" class="btn btn-gold" data-bp-post>📝 Post this job, free</button></div>`;
+      if(nearby.length){
+        html+=`<div class="bp-nearby"><div class="bp-rhead">${nearby.length} ${nearby.length>1?many():svcOne} elsewhere in ${esc(stateCovered?S.stateName:'Nigeria')}</div>`+
+              `<div class="bp-rsub">Some pros travel — you can still reach out.</div>`+
+              `<div class="bp-grid">${nearby.slice(0,6).map(proCard).join('')}</div></div>`;
+      }
+    }
+    box.innerHTML=html;
+  }
+})();
 /* ============ LEAD FORM VALIDATION ============
    Shared by "Post a job" and "Contact a Pro" (same form).
    Real-time with ~400ms debounce; errors are announced to screen
@@ -3360,16 +3579,25 @@ function downscaleImage(file,maxDim=1200,quality=.82){
 }
 
 /* ID upload — same 5MB ceiling; blocks submission until it's fixed */
+/* ID verification is MANDATORY: a valid ID type must be chosen AND a file
+   uploaded (within the size limit) before an application can be submitted. */
 function validateIdFile(){
+  const typeEl=document.getElementById('rIdType');
   const el=document.getElementById('rId'),err=document.getElementById('rIdErr'),f=el.files[0];
   let msg='';
-  if(f&&f.size>MAX_FILE_BYTES)msg=`File is too large. Maximum allowed size is ${MAX_FILE_MB}MB. (“${f.name}” is ${(f.size/1024/1024).toFixed(1)}MB.)`;
+  if(!typeEl.value)msg='Select your ID type — NIN, driver’s licence or international passport.';
+  else if(!f)msg=`Upload a clear photo of your ${typeEl.value} to verify your identity.`;
+  else if(f.size>MAX_FILE_BYTES)msg=`File is too large. Maximum allowed size is ${MAX_FILE_MB}MB. (“${f.name}” is ${(f.size/1024/1024).toFixed(1)}MB.)`;
   err.textContent=msg;
-  el.setAttribute('aria-invalid',msg?'true':'false');
-  el.classList.toggle('invalid',!!msg);
+  const invalid=!!msg;
+  el.setAttribute('aria-invalid',invalid?'true':'false');
+  el.classList.toggle('invalid',invalid&&!!typeEl.value);
+  typeEl.setAttribute('aria-invalid',invalid&&!typeEl.value?'true':'false');
+  typeEl.classList.toggle('invalid',invalid&&!typeEl.value);
   return !msg;
 }
 document.getElementById('rId').addEventListener('change',validateIdFile);
+document.getElementById('rIdType').addEventListener('change',validateIdFile);
 const pfInput=document.getElementById('rPortfolio'),pfGrid=document.getElementById('pfGrid'),
       pfDrop=document.getElementById('pfDrop'),pfCount=document.getElementById('pfCount'),
       pfDropText=document.getElementById('pfDropText');
@@ -3483,11 +3711,12 @@ document.getElementById('rSubmit').onclick=async()=>{
   const oversizePhotos=pfFiles.some(f=>f.size>MAX_FILE_BYTES);
   if(oversizePhotos)document.getElementById('pfErr').textContent=`Some photos are over ${MAX_FILE_MB}MB. Remove them to continue.`;
   if(badFields.length||!idOk||oversizePhotos){
-    const focusId=badFields[0]||(!idOk?'rId':'rPortfolio');
+    const focusId=badFields[0]||(!idOk?(document.getElementById('rIdType').value?'rId':'rIdType'):'rPortfolio');
     document.getElementById(focusId).focus();
     return;
   }
   const idFile=document.getElementById('rId').files[0]||null;
+  const idType=document.getElementById('rIdType').value;
   const app={
     name:document.getElementById('rName').value,
     phone:document.getElementById('rPhone').value,
@@ -3498,7 +3727,9 @@ document.getElementById('rSubmit').onclick=async()=>{
     plan:regPlan,
     /* DEMO: plain-text password (or null → shared demo password) */
     password:document.getElementById('rPw').value.trim()||null,
-    /* ID + portfolio uploads simulated for v1 — only file metadata is sent */
+    /* ID upload is mandatory. The government-ID image itself is NOT uploaded
+       (privacy) — we send the type + file metadata, which the server requires. */
+    idType,
     idFileName:idFile?idFile.name:null,
     idFileSizeKB:idFile?Math.round(idFile.size/1024):null,
     /* real image data — the server writes these to /uploads */
@@ -3522,6 +3753,7 @@ document.getElementById('rSubmit').onclick=async()=>{
   /* application sent — clear the temporary uploads + credentials for a fresh form */
   pfFiles=[];renderPortfolio();
   document.getElementById('rId').value='';
+  document.getElementById('rIdType').value='';
   document.getElementById('rPw').value='';
   document.getElementById('rEmail').value='';
   resetRegValidation();
@@ -3846,6 +4078,7 @@ async function loadProQuotes(){
 }
 document.getElementById('dashJobs').addEventListener('toggle',e=>{ if(e.target.open)loadProJobs(); });
 document.getElementById('newQuoteBtn').onclick=openQuoteBuilder;
+document.getElementById('dashQuoteBtn').onclick=openQuoteBuilder;
 document.getElementById('quotesList').addEventListener('click',e=>{
   const c=e.target.closest('[data-copyquote]');if(!c)return;
   copyQuoteLink(c.dataset.copyquote,c);
@@ -3895,6 +4128,9 @@ function qbUpdateTotal(){
 }
 function openQuoteBuilder(){
   if(!proSession)return;
+  /* Expand "My jobs" in the background so the new quote/job lists are visible
+     once the builder closes — the builder itself opens on this single click. */
+  const jobs=document.getElementById('dashJobs');if(jobs)jobs.open=true;
   document.getElementById('qbForm').hidden=false;document.getElementById('qbDone').hidden=true;
   ['qbName','qbPhone','qbEmail','qbDesc','qbLabour','qbInspection','qbNote'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('qbEmailErr').textContent='';document.getElementById('qbMsg').textContent='';
@@ -4323,7 +4559,7 @@ document.addEventListener('click',e=>{
   const browseAll=e.target.closest('[data-browse-all]');
   if(browseAll){openResults(null);return}
   const post=e.target.closest('[data-post]');
-  if(post){openPostJob();return}
+  if(post){openBookPro();return}   /* guided discovery; posts a job only if no pro covers the area */
   const postPro=e.target.closest('[data-post-pro]');
   if(postPro){openRegister(postPro.dataset.postPro);return}
   const leadsBtn=e.target.closest('[data-leads]');
