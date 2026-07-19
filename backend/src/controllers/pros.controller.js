@@ -29,14 +29,18 @@ const SORTERS = {
 };
 
 /**
- * GET /api/pros?category=&state=&sort=
+ * GET /api/pros?category=&state=&area=&sort=
  * Only verified pros are listed. If the requested state has no pros yet,
  * falls back to nationwide results with stateCovered:false so the UI can
  * say "no pros in X yet — showing top pros nationwide".
+ * `area` (LGA/neighbourhood) is matched case-insensitively against each pro's
+ * lga/area; `areaCovered` tells the "Book a Pro" wizard whether to offer the
+ * matched pros or fall back to "Post a job". Nearby (same-state) pros are still
+ * returned so the UI can suggest alternatives.
  * Ranking rule: sort key first, then subscription tier (Elite > Pro > Starter).
  */
 export function listPros(req, res) {
-  const { category, state, sort = 'rating' } = req.query;
+  const { category, state, area, sort = 'rating' } = req.query;
   let pros = loadDB().professionals.filter(p => p.status === 'verified');
 
   if (category) pros = pros.filter(p => p.category === category);
@@ -45,10 +49,23 @@ export function listPros(req, res) {
   const stateCovered = Boolean(state) && inState.length > 0;
   if (stateCovered) pros = inState;
 
-  const sorter = SORTERS[sort] || SORTERS.rating;
-  pros.sort((a, b) => sorter(a, b) || TIER_RANK[a.tier] - TIER_RANK[b.tier]);
+  // Area match (only meaningful once we're within the requested state).
+  const q = area ? String(area).trim().toLowerCase() : '';
+  const matchesArea = p => q && [p.lga, p.area].some(v => v && String(v).toLowerCase().includes(q));
+  const areaCovered = stateCovered && q ? pros.some(matchesArea) : false;
 
-  res.json({ pros: pros.map(publicPro), stateCovered });
+  const sorter = SORTERS[sort] || SORTERS.rating;
+  const rank = (a, b) => sorter(a, b) || TIER_RANK[a.tier] - TIER_RANK[b.tier];
+  // Surface area matches first, then the rest of the state, each ranked.
+  if (areaCovered) {
+    const inArea = pros.filter(matchesArea).sort(rank);
+    const rest = pros.filter(p => !matchesArea(p)).sort(rank);
+    pros = [...inArea, ...rest];
+  } else {
+    pros.sort(rank);
+  }
+
+  res.json({ pros: pros.map(publicPro), stateCovered, areaCovered });
 }
 
 /**
@@ -254,12 +271,21 @@ export async function setPayoutAccount(req, res) {
  * Real implementation: multipart upload (multer) to object storage,
  * then a verification queue flips status to 'verified'.
  */
+const ID_TYPES = ["NIN", "Driver's Licence", "International Passport"];
+
 export function registerPro(req, res) {
-  const { name, phone, email, trade, state, lga, plan, idFileName, idFileSizeKB, portfolio, password } = req.body || {};
+  const { name, phone, email, trade, state, lga, plan, idType, idFileName, idFileSizeKB, portfolio, password } = req.body || {};
 
   const missing = ['name', 'phone', 'trade', 'state'].filter(f => !req.body?.[f]?.toString().trim());
   if (missing.length) {
     return res.status(400).json({ ok: false, error: `Missing required fields: ${missing.join(', ')}` });
+  }
+
+  // ID verification is MANDATORY. A registration must carry a recognised ID
+  // type and an uploaded document (we keep only its metadata, never the image).
+  const cleanIdType = idType?.toString().trim() || '';
+  if (!ID_TYPES.includes(cleanIdType) || !idFileName?.toString().trim()) {
+    return res.status(422).json({ ok: false, field: 'id', error: 'A valid government ID (NIN, driver’s licence or international passport) must be uploaded to register.' });
   }
 
   const db = loadDB();
@@ -304,7 +330,7 @@ export function registerPro(req, res) {
     review: null,
     skills: null,
     status: AUTO_VERIFY ? 'verified' : 'pending_verification',
-    idDocument: idFileName ? { fileName: idFileName, sizeKB: idFileSizeKB ?? null, note: 'simulated upload — metadata only' } : null,
+    idDocument: { type: cleanIdType, fileName: idFileName, sizeKB: idFileSizeKB ?? null, note: 'metadata only — ID image not stored' },
     // Optional past-work photos (max 5) — written to /uploads, stored as URLs
     portfolio: persistPortfolio(portfolio),
     createdAt: new Date().toISOString(),
