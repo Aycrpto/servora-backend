@@ -19,9 +19,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
-const DB_PATH = path.join(DATA_DIR, 'db.json');
-const SEED_PATH = path.join(DATA_DIR, 'db.seed.json');
+// The bundled data dir (ships with db.seed.json). The live db.json path can be
+// pointed elsewhere via env — useful for a persistent disk in production, and
+// for running an isolated test server that won't touch real data.
+const APP_DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const DATA_DIR = process.env.SERVORA_DATA_DIR || APP_DATA_DIR;
+const DB_PATH = process.env.SERVORA_DB_PATH || path.join(DATA_DIR, 'db.json');
+const SEED_PATH = path.join(APP_DATA_DIR, 'db.seed.json');
 
 // New money collections are added here; loadDB() backfills them into any
 // older db.json automatically via the spread merge below.
@@ -29,6 +33,9 @@ const EMPTY = {
   professionals: [], leads: [], supportMessages: [],
   bookings: [], transactions: [], transactionEvents: [], processedWebhooks: [],
   disputes: [],
+  // Quote-based split-escrow flow: pro-issued quotes and the pre-job/completion
+  // evidence attached to a booking. Backfilled into older db.json via the spread.
+  quotes: [], evidence: [],
 };
 
 export function loadDB() {

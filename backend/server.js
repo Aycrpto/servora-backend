@@ -28,6 +28,7 @@ import leadsRouter from './src/routes/leads.routes.js';
 import authRouter from './src/routes/auth.routes.js';
 import supportRouter from './src/routes/support.routes.js';
 import bookingsRouter from './src/routes/bookings.routes.js';
+import quotesRouter from './src/routes/quotes.routes.js';
 import paymentsRouter from './src/routes/payments.routes.js';
 import disputesRouter from './src/routes/disputes.routes.js';
 import { paystackWebhook } from './src/controllers/payments.controller.js';
@@ -41,9 +42,10 @@ app.use(cors());               // allow the frontend to run from another origin 
 // mounted with express.raw BEFORE the JSON parser below (which would discard it).
 app.post('/api/payments/webhook', express.raw({ type: '*/*' }), paystackWebhook);
 
-// Generous limit: portfolio photos arrive as base64 data URLs in JSON
-// (the client downscales them first, so bodies are typically <2MB).
-app.use(express.json({ limit: '12mb' }));
+// Generous limit: portfolio photos AND job-evidence videos arrive as base64
+// data URLs in JSON. Photos are downscaled client-side; short evidence videos
+// are the largest bodies (capped at ~25MB decoded in uploads.js).
+app.use(express.json({ limit: '30mb' }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, name: 'servora-api', version: '1.0.0' }));
 app.use('/api/pros', prosRouter);
@@ -52,6 +54,7 @@ app.use('/api/leads', leadsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/support', supportRouter);
 app.use('/api/bookings', bookingsRouter);
+app.use('/api/quotes', quotesRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/disputes', disputesRouter);
 

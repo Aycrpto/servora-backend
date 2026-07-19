@@ -15,7 +15,7 @@ import { loadDB, mutate } from '../store/store.js';
 import { APP_BASE_URL, ADMIN_API_KEY, PAYSTACK_CONFIGURED } from '../config.js';
 import * as paystack from '../services/paystack.js';
 import {
-  TX_STATUS, BOOKING_STATUS, computeSplit, genReference, canTransition, recordEvent,
+  TX_STATUS, BOOKING_STATUS, computeSplit, computeQuoteSplit, genReference, canTransition, recordEvent,
 } from '../services/escrow.js';
 import { releaseEscrow } from '../services/escrowActions.js';
 
@@ -58,7 +58,28 @@ export async function initializePayment(req, res) {
 
     // AMOUNT IS SERVER-DERIVED from the booking — never taken from the client.
     const amountKobo = booking.agreedAmountKobo;
-    const { commissionBps, commissionKobo, proPayoutKobo } = computeSplit(amountKobo);
+
+    // Quote bookings carry a materials/labour/inspection breakdown and pay out in
+    // two escrow stages; simple bookings pay out once. Derive the split from the
+    // booking (never the client) so the money math is authoritative.
+    const isQuote = booking.kind === 'quote' && Boolean(booking.breakdown);
+    let commissionBps, commissionKobo, proPayoutKobo, splitObj = null;
+    if (isQuote) {
+      const bd = booking.breakdown;
+      const qs = computeQuoteSplit(bd.materialsKobo, bd.labourKobo, bd.inspectionKobo);
+      commissionBps = qs.commissionBps;
+      commissionKobo = qs.totalCommissionKobo;
+      proPayoutKobo = qs.stage1PayoutKobo + qs.stage2PayoutKobo;
+      splitObj = {
+        materialsKobo: qs.materialsKobo, labourKobo: qs.labourKobo, inspectionKobo: qs.inspectionKobo,
+        inspectionCommissionKobo: qs.inspectionCommissionKobo, labourCommissionKobo: qs.labourCommissionKobo,
+        totalCommissionKobo: qs.totalCommissionKobo,
+        stage1: { milestone: 'materials', payoutKobo: qs.stage1PayoutKobo, status: 'held', recipientCode: null, transferReference: null, transferCode: null, transferredAt: null, failureReason: null },
+        stage2: { milestone: 'labour', payoutKobo: qs.stage2PayoutKobo, status: 'held', recipientCode: null, transferReference: null, transferCode: null, transferredAt: null, failureReason: null },
+      };
+    } else {
+      ({ commissionBps, commissionKobo, proPayoutKobo } = computeSplit(amountKobo));
+    }
 
     // Reuse an existing still-pending transaction for this booking (idempotent).
     let tx = db.transactions.find((t) => t.bookingId === bookingId && t.status === TX_STATUS.PENDING);
@@ -70,6 +91,7 @@ export async function initializePayment(req, res) {
         reference,
         bookingId,
         proId: booking.proId,
+        kind: isQuote ? 'quote' : 'simple',
         customer: { email: payerEmail, phone: booking.customer?.phone ?? null },
         amountKobo,
         commissionBps,
@@ -78,6 +100,7 @@ export async function initializePayment(req, res) {
         currency: 'NGN',
         status: TX_STATUS.PENDING,
         authorizationUrl: null,
+        ...(splitObj ? { split: splitObj } : {}),
         charge: { chargedAt: null, channel: null, paystackFeesKobo: null, verified: false },
         payout: { recipientCode: null, transferCode: null, transferReference: null, transferredAt: null, failureReason: null },
         refund: { refundedAt: null, reason: null, amountKobo: null },

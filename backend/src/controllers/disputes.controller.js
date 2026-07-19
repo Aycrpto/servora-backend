@@ -10,7 +10,8 @@
 import { loadDB, mutate } from '../store/store.js';
 import { persistPortfolio } from '../store/uploads.js';
 import { ADMIN_API_KEY } from '../config.js';
-import { releaseEscrow, refundEscrow } from '../services/escrowActions.js';
+import { TX_STATUS } from '../services/escrow.js';
+import { releaseEscrow, releaseLabour, refundEscrow } from '../services/escrowActions.js';
 
 const now = () => new Date().toISOString();
 const adminOk = (req) => Boolean(ADMIN_API_KEY) && req.headers['x-admin-key'] === ADMIN_API_KEY;
@@ -82,17 +83,26 @@ export async function resolveDispute(req, res) {
     return res.status(400).json({ ok: false, error: "decision must be 'release_to_pro' or 'refund_customer'." });
   }
 
-  const dispute = loadDB().disputes.find((d) => d.id === req.params.id);
+  const db0 = loadDB();
+  const dispute = db0.disputes.find((d) => d.id === req.params.id);
   if (!dispute) return res.status(404).json({ ok: false, error: 'Dispute not found.' });
   if (dispute.status === 'resolved') return res.status(409).json({ ok: false, error: 'Dispute already resolved.' });
   if (!dispute.reference) return res.status(409).json({ ok: false, error: 'Dispute has no linked transaction.' });
 
+  // Split (quote) disputes escalate with only the labour still held, so releasing
+  // to the pro means releasing that labour stage; refunds are handled partially
+  // inside refundEscrow. Simple disputes release the single escrow amount.
+  const tx = db0.transactions.find((t) => t.reference === dispute.reference);
+  const isSplit = Boolean(tx?.split) || tx?.status === TX_STATUS.PARTIALLY_RELEASED;
+
   let outcome;
   if (decision === 'release_to_pro') {
     // Release straight from 'disputed' (bypass the confirmed-gate). The booking
-    // only advances to 'closed' if the transfer actually succeeds, so a failed
-    // payout leaves the dispute open and retryable — no half-resolved state.
-    outcome = await releaseEscrow(dispute.reference, 'support', { requireConfirmed: false });
+    // only advances on a successful transfer, so a failed payout leaves the
+    // dispute open and retryable — no half-resolved state.
+    outcome = isSplit
+      ? await releaseLabour(dispute.reference, 'support')
+      : await releaseEscrow(dispute.reference, 'support', { requireConfirmed: false });
   } else {
     outcome = await refundEscrow(dispute.reference, { reason: reason || 'Dispute resolved in customer favour', actor: 'support' });
   }
