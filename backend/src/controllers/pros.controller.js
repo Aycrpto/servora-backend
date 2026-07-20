@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { loadDB, saveDB, mutate } from '../store/store.js';
 import { persistPortfolio, deleteStored } from '../store/uploads.js';
 import * as paystack from '../services/paystack.js';
+import { hashPassword } from '../services/passwords.js';
 import { AUTO_VERIFY, AVATAR_PALETTE } from '../config.js';
 
 const TIER_RANK = { elite: 0, pro: 1, starter: 2 };
@@ -327,9 +328,8 @@ export function registerPro(req, res) {
     avatarColor: AVATAR_PALETTE[Math.floor(Math.random() * AVATAR_PALETTE.length)],
     badges: ['v'],
     tier: (plan || 'Starter').toLowerCase(),
-    // DEMO ONLY: plain-text password (null → shared demo password on login).
-    // FUTURE: bcrypt hash here, never store the raw value.
-    password: password?.toString().trim() || null,
+    // scrypt hash — the raw value is never stored (null → shared fallback on login).
+    password: password?.toString().trim() ? hashPassword(password.toString().trim()) : null,
     bio: `New on Servora — ID-verified ${trade.replace(/s$/, '').toLowerCase()} serving ${cleanLga ? cleanLga + ', ' : ''}${state}.`,
     review: null,
     skills: null,

@@ -3,6 +3,7 @@ import {
   listPros, featuredPros, registerPro, proLeads, updatePro,
   getPayoutAccount, setPayoutAccount, proBookings,
 } from '../controllers/pros.controller.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -13,6 +14,7 @@ router.get('/:id/bookings', proBookings); // GET  /api/pros/:id/bookings (self)
 router.get('/:id/payout', getPayoutAccount);  // GET  /api/pros/:id/payout   (self)
 router.post('/:id/payout', setPayoutAccount); // POST /api/pros/:id/payout   (self)
 router.patch('/:id', updatePro);        // PATCH /api/pros/:id
-router.post('/register', registerPro);  // POST  /api/pros/register
+// POST /api/pros/register — throttled against spam sign-ups
+router.post('/register', rateLimit({ name: 'register', windowMs: 60_000, max: 5 }), registerPro);
 
 export default router;

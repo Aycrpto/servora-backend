@@ -3,10 +3,12 @@ import {
   initializePayment, getPaymentStatus, releaseFunds,
   listTransactions, getTransaction, listBanks,
 } from '../controllers/payments.controller.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = Router();
 
-router.post('/initialize', initializePayment);            // POST /api/payments/initialize
+// POST /api/payments/initialize — throttled (creates gateway sessions)
+router.post('/initialize', rateLimit({ name: 'payinit', windowMs: 60_000, max: 10 }), initializePayment);
 router.get('/status/:reference', getPaymentStatus);       // GET  /api/payments/status/:ref   (public)
 router.post('/release', releaseFunds);                    // POST /api/payments/release   (admin)
 router.get('/banks', listBanks);                          // GET  /api/payments/banks
