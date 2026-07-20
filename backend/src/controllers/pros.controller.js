@@ -92,10 +92,14 @@ export function proLeads(req, res) {
   const pro = db.professionals.find(p => String(p.id) === String(req.params.id));
   if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found' });
 
+  // Direct-contact leads go only to the addressed pro. Open job posts fan out
+  // STRICTLY by profession: the lead's service must equal the pro's category
+  // (a lead with no service reaches no inbox — every entry path sets one), and
+  // the state must match when the lead has one.
   const leads = db.leads.filter(l =>
     (l.proId && String(l.proId) === String(pro.id)) ||
-    (l.type !== 'direct_contact' &&
-      (!l.service || l.service === pro.category) &&
+    (!l.proId && l.type !== 'direct_contact' &&
+      l.service === pro.category &&
       (!l.state || l.state === pro.state))
   ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
