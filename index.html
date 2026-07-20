@@ -472,6 +472,11 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 /* ============ MODALS ============ */
 .modal-bg{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
 .modal-bg.open{display:flex;animation:fadeIn .25s ease}
+/* Modals that open ON TOP of the dashboard (quote builder, evidence uploader):
+   higher z-index than the dashboard regardless of DOM order, and a plain dim
+   instead of a second backdrop blur — stacked blurs repaint slowly and caused
+   the open to feel delayed. The dashboard stays open behind. */
+.modal-layer{z-index:120;backdrop-filter:none}
 @keyframes fadeIn{from{opacity:0}}
 ::selection{background:var(--gold-soft);color:var(--green-ink)}
 [data-theme="dark"] ::selection{background:rgba(242,184,75,.35);color:#fff}
@@ -1353,7 +1358,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       </div>
     </div>
     <div class="rv" style="text-align:center;margin-top:28px">
-      <button class="btn btn-ghost btn-sm" data-leads>📥 Already a pro? View your leads</button>
+      <button class="btn btn-ghost btn-sm" data-leads>📥 Already a pro? View your jobs</button>
     </div>
     <div class="ad-strip rv">
       <div>
@@ -1458,7 +1463,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <h5>For Pros</h5>
         <ul>
           <li><a href="#for-pros">Become a Pro</a></li>
-          <li><button data-leads>My leads</button></li>
+          <li><button data-leads>My Jobs</button></li>
           <li><a href="#for-pros">Pricing &amp; plans</a></li>
           <li><a href="#for-pros">Featured listings</a></li>
           <li><a href="mailto:ads@servora.ng">Advertise with us</a></li>
@@ -1725,7 +1730,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 </div>
 
 <!-- ============ QUOTE BUILDER MODAL (pro) ============ -->
-<div class="modal-bg" id="quoteBuilderBg">
+<div class="modal-bg modal-layer" id="quoteBuilderBg">
   <div class="modal" role="dialog" aria-modal="true">
     <button class="close" id="qbClose" aria-label="Close">✕</button>
     <div class="form-view" id="qbForm">
@@ -1772,7 +1777,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 </div>
 
 <!-- ============ EVIDENCE UPLOAD MODAL (pro) ============ -->
-<div class="modal-bg" id="evidenceBg">
+<div class="modal-bg modal-layer" id="evidenceBg">
   <div class="modal" role="dialog" aria-modal="true">
     <button class="close" id="evClose" aria-label="Close">✕</button>
     <div class="form-view">
@@ -1804,7 +1809,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <button class="close" id="regClose" aria-label="Close">✕</button>
     <div class="form-view">
       <h3 id="regTitle">Join Servora, Pro plan</h3>
-      <p class="sub">Create your professional profile. Verification takes about 48 hours, then your profile goes live and the leads start.</p>
+      <p class="sub">Create your professional profile. Verification takes about 48 hours, then your profile goes live and the jobs start.</p>
       <div class="row2">
         <div>
           <label for="rName">Full name</label>
@@ -1832,7 +1837,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
           <input type="text" id="rLga" placeholder="e.g. Ikeja">
         </div>
       </div>
-      <label for="rPw">Create a password <span class="lbl-soft">(optional, for signing in to view your leads)</span></label>
+      <label for="rPw">Create a password <span class="lbl-soft">(optional, for signing in to view your jobs)</span></label>
       <input type="password" id="rPw" autocomplete="new-password" placeholder="Leave empty to use demo password servora123">
       <label for="rIdType">Verify your identity <span class="lbl-req">Required</span></label>
       <select id="rIdType" aria-describedby="rIdErr">
@@ -1848,7 +1853,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
            only metadata is sent for now (simulated upload, like the ID). -->
       <div class="pf-sec">
         <div class="pf-title">Show your past work <span class="pf-rec">Recommended</span></div>
-        <p class="pf-help">Upload 2–5 clear photos of jobs you’ve done before (max 5MB each). Professionals who show their work get <b>more bookings</b>.</p>
+        <p class="pf-help">2–5 photos, max 5MB each.</p>
         <p class="ferr" id="pfErr" aria-live="polite"></p>
         <label class="pf-drop" id="pfDrop" for="rPortfolio">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
@@ -1973,7 +1978,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <button class="close" id="loginClose" aria-label="Close">✕</button>
     <form id="loginForm" novalidate>
       <h3>Pro sign in</h3>
-      <p class="sub">Sign in to see your leads. New here? <button type="button" class="linkish" data-post-pro="Starter">Create your free profile</button></p>
+      <p class="sub">Sign in to see your jobs. New here? <button type="button" class="linkish" data-post-pro="Starter">Create your free profile</button></p>
       <label for="lgId">WhatsApp number or email</label>
       <input type="text" id="lgId" name="identifier" inputmode="tel" autocomplete="username" placeholder="080X XXX XXXX" required aria-required="true" aria-describedby="lgIdErr">
       <p class="ferr" id="lgIdErr" aria-live="polite"></p>
@@ -2033,7 +2038,6 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <details class="dash-edit" id="dashPayout">
       <summary>💳 Payout account <span class="pay-badge" id="payoutBadge">Not set up</span></summary>
       <div class="de-body">
-        <p class="pay-note">Add the bank account where Servora sends your earnings. We verify it with your bank before saving, and only your payouts are affected.</p>
         <div class="pay-current" id="payoutCurrent"></div>
         <label for="payBank">Bank</label>
         <select id="payBank"><option value="">Loading banks…</option></select>
@@ -2045,9 +2049,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       </div>
     </details>
     <details class="dash-edit" id="dashJobs">
-      <summary>🧰 My jobs <span class="pay-badge" id="jobsBadge" style="display:none"></span></summary>
+      <summary>🧰 Quotes &amp; bookings <span class="pay-badge" id="jobsBadge" style="display:none"></span></summary>
       <div class="de-body">
-        <p class="pay-note">Send an itemised quote, or manage paid bookings. Upload evidence, and the customer releases your payment in two protected stages.</p>
         <button type="button" class="btn btn-primary btn-sm" id="newQuoteBtn" style="width:100%">＋ Send a quote to a customer</button>
         <div class="quotes-list" id="quotesList"></div>
         <div class="jobs-list" id="jobsList"></div>
@@ -2056,10 +2059,10 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <div class="dash-tools">
       <div class="dash-search">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="search" id="leadSearch" placeholder="Search by customer or request…" aria-label="Search leads">
+        <input type="search" id="leadSearch" placeholder="Search by customer or request…" aria-label="Search jobs">
       </div>
-      <div class="fchips" id="leadChips" role="group" aria-label="Filter leads">
-        <button type="button" data-f="all" class="on">All leads</button>
+      <div class="fchips" id="leadChips" role="group" aria-label="Filter jobs">
+        <button type="button" data-f="all" class="on">All</button>
         <button type="button" data-f="direct">Direct contact</button>
         <button type="button" data-f="job">Job posts</button>
         <button type="button" data-f="today">Today</button>
@@ -2827,7 +2830,7 @@ setTimeout(showTicker,4500);setInterval(showTicker,14000);
 
 /* ============ CONTACT / POST-JOB MODAL ============ */
 const modalBg=document.getElementById('modalBg'),modal=document.getElementById('modal');
-let modalPro=null,modalService=null;
+let modalPro=null,modalService=null,leadStateOverride=null;
 function openPostJob(hint){
   modalPro=null;modalService=hint||null;
   document.getElementById('modalTitle').textContent=hint?`Book ${singular[hint]||hint}, free`:'Post a job, free';
@@ -2853,6 +2856,7 @@ function showModal(){
     const d=document.getElementById('mDesc'),a=document.getElementById('mArea');
     if(window.bpPrefill.desc&&!d.value)d.value=window.bpPrefill.desc;
     if(window.bpPrefill.area&&!a.value)a.value=window.bpPrefill.area;
+    leadStateOverride=window.bpPrefill.state||null;   /* wizard's state, not the hero selector's */
     window.bpPrefill=null;
   }
   modalBg.classList.add('open');document.body.style.overflow='hidden';
@@ -2860,7 +2864,7 @@ function showModal(){
   closeProfile();
   if(typeof closeBookPro==='function')closeBookPro();
 }
-function closeModal(){modalBg.classList.remove('open');document.body.style.overflow=''}
+function closeModal(){modalBg.classList.remove('open');document.body.style.overflow='';leadStateOverride=null}
 document.getElementById('modalClose').onclick=closeModal;
 document.getElementById('mDone').onclick=closeModal;
 modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
@@ -2940,7 +2944,7 @@ modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
     err.textContent='';S.desc=d;show(4);renderResults();
   };
   function postJob(){
-    window.bpPrefill={desc:S.desc,area:S.area+', '+S.stateName};
+    window.bpPrefill={desc:S.desc,area:S.area+', '+S.stateName,state:S.stateName};
     openPostJob(S.service);   /* showModal() closes this wizard + consumes the prefill */
   }
   async function renderResults(){
@@ -2948,7 +2952,7 @@ modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
     box.innerHTML=`<div class="bp-loading">Finding verified ${many()} in ${esc(S.area)}…</div>`;
     /* Carry the job description + location into whatever the customer clicks
        next — Contact a pro or Post a job — so they never retype it. */
-    window.bpPrefill={desc:S.desc,area:S.area+', '+S.stateName};
+    window.bpPrefill={desc:S.desc,area:S.area+', '+S.stateName,state:S.stateName};
     const {pros:list,stateCovered,areaCovered}=await ServoraAPI.getPros({category:S.service,state:S.stateName,area:S.area,sort:'rating'});
     const q=S.area.trim().toLowerCase();
     const matches=p=>[p.area,p.lga].some(v=>v&&String(v).toLowerCase().includes(q));
@@ -3040,7 +3044,7 @@ document.getElementById('leadForm').addEventListener('submit',async e=>{
     name:document.getElementById('mName').value,
     phone:document.getElementById('mPhone').value,
     when,
-    state:citySel.value
+    state:leadStateOverride||citySel.value
   });
   /* reference number from the API (locally generated when offline) */
   const ref=(res&&res.id?String(res.id).replace(/-/g,''):Math.random().toString(36).slice(2)).slice(0,8).toUpperCase();
@@ -3369,7 +3373,7 @@ function renderBkCard(b){
 async function openMyBookings(){
   myBookingsBg.classList.add('open');document.body.style.overflow='hidden';
   const list=loadMyBookings();
-  if(!list.length){myBookingsList.innerHTML='<div class="leads-empty">You haven’t booked anyone yet.<br>When you book &amp; pay a pro, it’ll show here so you can confirm once the job is done.</div>';return}
+  if(!list.length){myBookingsList.innerHTML='<div class="leads-empty">You haven’t booked anyone yet.</div>';return}
   myBookingsList.innerHTML='<div class="leads-empty">Loading your bookings…</div>';
   // refetch live booking + evidence for each (falls back to stored status if offline)
   const enriched=await Promise.all(list.map(async b=>{
@@ -3772,7 +3776,7 @@ function setProSession(s){
   updateProUI();
 }
 function updateProUI(){
-  document.querySelectorAll('[data-login-label]').forEach(el=>el.textContent=proSession?'My Leads':'Pro Login');
+  document.querySelectorAll('[data-login-label]').forEach(el=>el.textContent=proSession?'My Jobs':'Pro Login');
 }
 const loginBg=document.getElementById('loginBg');
 function openLogin(){
@@ -3840,10 +3844,10 @@ function openLeadsDash(){
 }
 async function loadLeads(proId){
   dashStats.innerHTML='';
-  leadsList.innerHTML='<div class="leads-empty">Loading your leads…</div>';
+  leadsList.innerHTML='<div class="leads-empty">Loading your jobs…</div>';
   const data=await ServoraAPI.getProLeads(proId);
   if(!data){
-    leadsList.innerHTML='<div class="leads-empty">The lead inbox needs the API. Start the server and try again.</div>';
+    leadsList.innerHTML='<div class="leads-empty">Couldn’t load your jobs — start the server and try again.</div>';
     return;
   }
   dashLeads=data.leads;
@@ -3857,7 +3861,7 @@ function renderDashStats(){
   const responseRate=total?Math.round(withPhone/total*100):0;  /* leads we can reach = contactable */
   const avgResp=proSession.pro.responseMins?'~'+proSession.pro.responseMins+'m':'Not set';
   dashStats.innerHTML=`
-    <div class="dash-stat"><b>${total}</b><span>Total leads</span></div>
+    <div class="dash-stat"><b>${total}</b><span>Job requests</span></div>
     <div class="dash-stat"><b>${thisMonth}</b><span>This month</span></div>
     <div class="dash-stat"><b>${responseRate}%</b><span>Response rate</span></div>
     <div class="dash-stat"><b>${avgResp}</b><span>Avg response</span></div>
@@ -3874,9 +3878,9 @@ function renderLeads(){
     list=list.filter(l=>[l.name,l.description,l.service,l.area].filter(Boolean).some(f=>String(f).toLowerCase().includes(q)));
   }
   const totalShown=list.length;
-  document.getElementById('leadCount').textContent=dashLeads.length?`Showing ${totalShown} of ${dashLeads.length} lead${dashLeads.length===1?'':'s'}`:'';
+  document.getElementById('leadCount').textContent=dashLeads.length?`Showing ${totalShown} of ${dashLeads.length} request${dashLeads.length===1?'':'s'}`:'';
   if(!dashLeads.length){
-    leadsList.innerHTML='<div class="leads-empty">No leads yet.<br>New leads appear here the moment a customer contacts you directly or posts a job matching your trade and state.</div>';
+    leadsList.innerHTML='<div class="leads-empty">No job requests yet.</div>';
     return;
   }
   leadsList.innerHTML=totalShown?list.map(l=>`
@@ -3889,7 +3893,7 @@ function renderLeads(){
      <div class="lc-meta">📍 ${esc([l.area,l.state].filter(Boolean).join(', '))||'Location not given'}${l.when?' · '+esc(l.when):''}</div>
      <div class="lc-meta">👤 ${esc(l.name||'Customer')} · ${esc(l.phone||'no number left')}</div>
      ${l.phone?`<div class="lc-cta"><a href="${waLink(l.phone)}" target="_blank" rel="noopener">💬 Reply on WhatsApp</a><a href="tel:${esc(l.phone)}">📞 Call</a></div>`:''}
-   </div>`).join(''):'<div class="leads-empty">No leads match your search or filter.<br>Try “All leads” or a different search term.</div>';
+   </div>`).join(''):'<div class="leads-empty">No job requests match your search or filter.</div>';
 }
 /* search + filter — update the list in real time */
 document.getElementById('leadSearch').addEventListener('input',e=>{dashQuery=e.target.value.trim();renderLeads()});
@@ -4066,7 +4070,7 @@ async function loadProJobs(){
   const active=bookings.filter(b=>QUOTE_ACTIVE.concat(['awaiting_confirmation','disputed']).includes(b.status)).length;
   if(active){badge.textContent=active+' active';badge.style.display='';}else{badge.style.display='none';}
   jobsList.innerHTML=bookings.length?bookings.map(renderJobCard).join('')
-    :'<div class="leads-empty">No paid bookings yet. Send a quote above, or when a customer books &amp; pays you the job shows here.</div>';
+    :'<div class="leads-empty">No paid bookings yet.</div>';
 }
 /* Sent quotes not yet accepted — so the pro can copy the link again. */
 async function loadProQuotes(){
@@ -4128,9 +4132,6 @@ function qbUpdateTotal(){
 }
 function openQuoteBuilder(){
   if(!proSession)return;
-  /* Expand "My jobs" in the background so the new quote/job lists are visible
-     once the builder closes — the builder itself opens on this single click. */
-  const jobs=document.getElementById('dashJobs');if(jobs)jobs.open=true;
   document.getElementById('qbForm').hidden=false;document.getElementById('qbDone').hidden=true;
   ['qbName','qbPhone','qbEmail','qbDesc','qbLabour','qbInspection','qbNote'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('qbEmailErr').textContent='';document.getElementById('qbMsg').textContent='';
@@ -4138,7 +4139,13 @@ function openQuoteBuilder(){
   qbUpdateTotal();
   quoteBuilderBg.classList.add('open');document.body.style.overflow='hidden';
 }
-function closeQuoteBuilder(){quoteBuilderBg.classList.remove('open');document.body.style.overflow=''}
+function closeQuoteBuilder(){
+  quoteBuilderBg.classList.remove('open');
+  /* the dashboard may still be open behind this layered modal */
+  document.body.style.overflow=leadsBg.classList.contains('open')?'hidden':'';
+  /* reveal the quotes/jobs lists the builder may have changed */
+  const jobs=document.getElementById('dashJobs');if(jobs&&!jobs.open)jobs.open=true;
+}
 document.getElementById('qbClose').onclick=closeQuoteBuilder;
 quoteBuilderBg.addEventListener('click',e=>{if(e.target===quoteBuilderBg)closeQuoteBuilder()});
 document.getElementById('qbAddMat').onclick=()=>document.getElementById('qbMaterials').appendChild(qbMatRow());
@@ -4200,7 +4207,7 @@ function openEvidenceModal(bookingId,phase){
   evRenderThumbs();
   evidenceBg.classList.add('open');document.body.style.overflow='hidden';
 }
-function closeEvidence(){evidenceBg.classList.remove('open');document.body.style.overflow=''}
+function closeEvidence(){evidenceBg.classList.remove('open');document.body.style.overflow=leadsBg.classList.contains('open')?'hidden':''}
 document.getElementById('evClose').onclick=closeEvidence;
 evidenceBg.addEventListener('click',e=>{if(e.target===evidenceBg)closeEvidence()});
 const evPhotoInput=document.getElementById('evPhotoInput'),evVideoInput=document.getElementById('evVideoInput');
@@ -4408,8 +4415,8 @@ const KB=[
    a:'Joining is <b>free</b>. Tap “Become a Pro”, upload your ID and trade details, and most pros are verified within 48 hours. You keep the Starter plan free forever and pay commission <b>only when a customer pays you</b>. No job, no fee.<br><br>Want to <a href="#for-pros" data-sup-close>see the plans</a>?'},
   {k:['commission','subscription','plan','starter','elite','earn','payout','lead'],
    a:'Plans are for professionals only:<br>• <b>Starter</b>: free, 15% commission, 5 leads/month<br>• <b>Pro</b>: ₦7,500/mo, 10% commission, unlimited leads + priority placement<br>• <b>Elite</b>: ₦25,000/mo, 5% commission, featured placement + instant payouts<br><br>Commission applies <b>only on completed paid jobs</b>.'},
-  {k:['login','log in','password','sign in','forgot','account','my leads','dashboard'],
-   a:'Pros sign in with their registered <b>WhatsApp number and password</b> via “Pro Login” in the menu. That opens your leads dashboard.<br><br>Forgot your password? Tell me and I’ll connect you to a human who can reset it.'},
+  {k:['login','log in','password','sign in','forgot','account','my leads','my jobs','dashboard'],
+   a:'Pros sign in with their registered <b>WhatsApp number and password</b> via “Pro Login” in the menu. That opens your jobs dashboard.<br><br>Forgot your password? Tell me and I’ll connect you to a human who can reset it.'},
   {k:['advert','advertise','ads','sponsor','media kit','partnership','brand'],
    a:'We offer banner placements, category sponsorships and email features to 200,000+ Nigerian homeowners monthly. Email <b>ads@servora.ng</b> and the team will send the media kit.'},
   {k:['thank','thanks','nice','great','awesome','helpful','ok','okay'],
