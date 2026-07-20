@@ -627,6 +627,12 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .bp-empty h4{font-size:15px;margin-bottom:4px}
 .bp-empty p{color:var(--muted);font-size:12.5px;margin-bottom:14px}
 .bp-nearby{margin-top:20px;padding-top:16px;border-top:1px solid var(--line2)}
+/* ===== skeleton loading (listings) ===== */
+.sk-card{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.sk{position:relative;overflow:hidden;background:var(--soft);border-radius:8px;min-height:12px}
+.sk::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--line2),transparent);animation:skSlide 1.2s infinite}
+@keyframes skSlide{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.sk::after{animation:none}}
 .pmodal .phead{display:flex;gap:16px;align-items:center;margin-bottom:18px}
 .pmodal .avatar{width:64px;height:64px;font-size:22px}
 .pmodal .phead h3{margin-bottom:2px;padding-right:0}
@@ -1510,7 +1516,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
          for/id, errors announced to screen readers through aria-live -->
     <form class="form-view" id="leadForm" novalidate>
       <h3 id="modalTitle">Post a job, free</h3>
-      <p class="sub" id="modalSub">Takes 60 seconds. Vetted pros reply with quotes, usually within 15 minutes.</p>
+      <p class="sub" id="modalSub">Vetted pros reply within ~15 minutes.</p>
       <label for="mDesc">What do you need done?</label>
       <input type="text" id="mDesc" name="description" placeholder="e.g. AC not cooling, needs gas refill" required aria-required="true" aria-describedby="mDescErr" autocomplete="off">
       <p class="ferr" id="mDescErr" aria-live="polite"></p>
@@ -1538,7 +1544,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       </select>
       <div class="note">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-        <span><b>No account created, no fees.</b> Your number is shared only with pros you contact. Payment is held in escrow and released when you confirm the job is done.</span>
+        <span><b>Free</b> · no account needed · escrow-protected payments</span>
       </div>
       <button type="submit" class="btn btn-gold" id="mSubmit">Get my free quotes →</button>
     </form>
@@ -1700,7 +1706,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   <div class="modal pmodal" role="dialog" aria-modal="true">
     <button class="close" id="myBookingsClose" aria-label="Close">✕</button>
     <h3>My bookings</h3>
-    <p class="sub">Confirm a job once it’s fully done, and we’ll release your escrow payment to the pro.</p>
+    <p class="sub">Confirming a completed job releases its payment.</p>
     <div class="bk-list" id="myBookingsList"></div>
   </div>
 </div>
@@ -1838,7 +1844,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         </div>
       </div>
       <label for="rPw">Create a password <span class="lbl-soft">(optional, for signing in to view your jobs)</span></label>
-      <input type="password" id="rPw" autocomplete="new-password" placeholder="Leave empty to use demo password servora123">
+      <input type="password" id="rPw" autocomplete="new-password" placeholder="Choose a password">
       <label for="rIdType">Verify your identity <span class="lbl-req">Required</span></label>
       <select id="rIdType" aria-describedby="rIdErr">
         <option value="">Choose your ID type…</option>
@@ -1865,7 +1871,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       </div>
       <div class="note">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-        <span><b>4-stage verification:</b> NIN/ID check, skill assessment, two guarantor references and address confirmation. Have your NIN and guarantor contacts ready.</span>
+        <span><b>4-stage verification:</b> ID · skill test · guarantors · address</span>
       </div>
       <button class="btn btn-gold" id="rSubmit">Apply, go live in 48 hours</button>
     </div>
@@ -1985,10 +1991,6 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <label for="lgPw">Password</label>
       <input type="password" id="lgPw" name="password" autocomplete="current-password" placeholder="Your password" required aria-required="true" aria-describedby="lgPwErr">
       <p class="ferr" id="lgPwErr" aria-live="polite"></p>
-      <div class="note">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span><b>Demo mode:</b> pros who didn’t set a password sign in with <b>servora123</b>. Seed pros use 0801&nbsp;000&nbsp;00XX (XX = profile number).</span>
-      </div>
       <button type="submit" class="btn btn-gold" id="lgSubmit">Sign in →</button>
     </form>
   </div>
@@ -2617,10 +2619,18 @@ function matchService(q){
   const tokens=q.split(/\s+/);
   return services.find(s=>s.name.toLowerCase().includes(q)||s.kw.some(k=>k.startsWith(q)||tokens.includes(k)))||null;
 }
+/* Shimmer placeholder cards shown while listings load. */
+function skeletonCards(n){
+  return Array.from({length:n},()=>`<div class="sk-card" aria-hidden="true">
+    <div style="display:flex;gap:12px;align-items:center"><span class="sk" style="width:48px;height:48px;border-radius:50%"></span><span class="sk" style="flex:1;height:14px"></span></div>
+    <span class="sk" style="width:60%"></span><span class="sk" style="width:85%"></span><span class="sk" style="width:40%;height:30px;border-radius:10px"></span>
+  </div>`).join('');
+}
 /* Renders listings from ServoraAPI.getPros — real registered pros
    will flow through this exact same path once the backend lands. */
 async function renderResults(){
   const state=citySel.value;
+  resultsGrid.innerHTML=skeletonCards(6);
   const {pros:list,stateCovered}=await ServoraAPI.getPros({category:currentCat,state,sort:currentSort});
   const label=list.length===1?(currentCat?currentCat.replace(/s$/,''):'pro'):(currentCat||'pros');
   document.getElementById('resultsTitle').innerHTML=`${list.length} vetted <em>${label}</em> ${stateCovered?'in '+state:'across Nigeria'}`;
@@ -2834,7 +2844,7 @@ let modalPro=null,modalService=null,leadStateOverride=null;
 function openPostJob(hint){
   modalPro=null;modalService=hint||null;
   document.getElementById('modalTitle').textContent=hint?`Book ${singular[hint]||hint}, free`:'Post a job, free';
-  document.getElementById('modalSub').textContent='Takes 60 seconds. Vetted pros reply with quotes, usually within 15 minutes. No account needed.';
+  document.getElementById('modalSub').textContent='Vetted pros reply within ~15 minutes. No account needed.';
   document.getElementById('successMsg').innerHTML='Your request has been sent to <b>vetted pros near you</b>.';
   document.getElementById('nsTime').innerHTML='First replies usually land within <b>15–30 minutes on WhatsApp</b>.';
   showModal();
@@ -2859,6 +2869,11 @@ function showModal(){
     leadStateOverride=window.bpPrefill.state||null;   /* wizard's state, not the hero selector's */
     window.bpPrefill=null;
   }
+  /* returning guests never retype their contact details */
+  const g=guestProfile();
+  const nm=document.getElementById('mName'),ph=document.getElementById('mPhone');
+  if(g.name&&!nm.value)nm.value=g.name;
+  if(g.phone&&!ph.value)ph.value=g.phone;
   modalBg.classList.add('open');document.body.style.overflow='hidden';
   setSugOpen(false);
   closeProfile();
@@ -2949,7 +2964,7 @@ modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
   }
   async function renderResults(){
     const box=document.getElementById('bpResults');
-    box.innerHTML=`<div class="bp-loading">Finding verified ${many()} in ${esc(S.area)}…</div>`;
+    box.innerHTML=`<div class="bp-rsub">Finding verified ${many()} in ${esc(S.area)}…</div><div class="bp-grid">${skeletonCards(2)}</div>`;
     /* Carry the job description + location into whatever the customer clicks
        next — Contact a pro or Post a job — so they never retype it. */
     window.bpPrefill={desc:S.desc,area:S.area+', '+S.stateName,state:S.stateName};
@@ -3035,6 +3050,7 @@ document.getElementById('leadForm').addEventListener('submit',async e=>{
   document.getElementById('leadSummary').textContent=`${modalService?modalService.replace(/s$/,'')+' · ':''}${desc.length>60?desc.slice(0,57)+'…':desc} · ${area} · ${when}`;
   document.getElementById('leadRef').textContent='';
   modal.classList.add('done');
+  saveGuestProfile({name:document.getElementById('mName').value,phone:document.getElementById('mPhone').value});
   const res=await ServoraAPI.submitLead({
     type:modalPro?'direct_contact':'job_post',
     proId:modalPro?modalPro.id:null,
@@ -3118,6 +3134,17 @@ profileBg.addEventListener('click',e=>{if(e.target===profileBg)closeProfile()});
 document.getElementById('pfContact').onclick=()=>{if(profilePro!==null)openContact(profilePro)};
 
 /* ============ CHECKOUT (escrow payment) ============ */
+/* ============ GUEST PROFILE (returning-guest prefill) ============
+   Customers never create accounts. After a successful lead or payment we
+   remember their contact details on this device and prefill the next form. */
+const GUEST_KEY='servora-guest';
+function guestProfile(){try{return JSON.parse(localStorage.getItem(GUEST_KEY)||'{}')}catch(e){return{}}}
+function saveGuestProfile(p){
+  const next=guestProfile();
+  ['name','phone','email'].forEach(k=>{const v=(p&&p[k]||'').toString().trim();if(v)next[k]=v});
+  try{localStorage.setItem(GUEST_KEY,JSON.stringify(next))}catch(e){}
+}
+
 const checkoutBg=document.getElementById('checkoutBg');
 let coPro=null;
 const nairaFmt=n=>'₦'+Number(n||0).toLocaleString('en-NG');
@@ -3140,9 +3167,10 @@ function openCheckout(id){
     `<div class="who"><b>${esc(p.n)}</b><span>${esc((p.cat||'').replace(/s$/,''))} · ${esc(p.pl||'')}</span></div>`;
   document.getElementById('coDesc').value='';
   document.getElementById('coAmount').value=(Number.isFinite(p.price)&&p.price>0)?p.price:'';
-  document.getElementById('coName').value='';
-  document.getElementById('coPhone').value='';
-  document.getElementById('coEmail').value='';
+  const g=guestProfile();   /* returning guests never retype their details */
+  document.getElementById('coName').value=g.name||'';
+  document.getElementById('coPhone').value=g.phone||'';
+  document.getElementById('coEmail').value=g.email||'';
   ['coDesc','coAmount','coEmail'].forEach(k=>coErr(k,''));
   document.getElementById('coMsg').textContent='';
   updateCoSummary();
@@ -3166,6 +3194,7 @@ document.getElementById('coPay').onclick=async()=>{
   ok=coErr('coAmount',(Number.isFinite(amount)&&amount>=100)?'':'Enter the agreed price (₦100 or more).')&&ok;
   ok=coErr('coEmail',/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)?'':'Enter a valid email for your receipt.')&&ok;
   if(!ok)return;
+  saveGuestProfile({name,phone,email});
 
   const btn=document.getElementById('coPay'),msg=document.getElementById('coMsg');
   btn.disabled=true;btn.textContent='Processing…';msg.className='de-msg';msg.textContent='';
@@ -3534,13 +3563,17 @@ disputesList.addEventListener('click',async e=>{
     if(res&&res.ok)loadDisputes(); else{btn.disabled=false;if(msg){msg.className='dc-msg err';msg.textContent=(res&&res.error)||'Failed.';}}
     return;
   }
-  // release or refund → confirm, then resolve
+  // release or refund → two-step inline confirm (moves real money), then resolve
   const label=action==='refund_customer'?'refund the customer':'release the funds to the pro';
-  if(!confirm(`Resolve this dispute and ${label}? This moves real money and cannot be undone.`))return;
+  if(btn.dataset.arm!=='1'){
+    btn.dataset.arm='1';btn.textContent='Tap again to confirm';
+    if(msg){msg.className='dc-msg';msg.textContent=`This will ${label} — it cannot be undone.`;}
+    return;
+  }
   btn.disabled=true;btn.textContent='…';
   const res=await ServoraAPI.disputeAction(id,'resolve',dcKey,{decision:action});
   if(res&&res.ok)loadDisputes();
-  else{btn.disabled=false;btn.textContent=action==='refund_customer'?'Refund customer':'Release to pro';if(msg){msg.className='dc-msg err';msg.textContent=(res&&res.error)||'Could not resolve.';}}
+  else{btn.disabled=false;btn.dataset.arm='';btn.textContent=action==='refund_customer'?'Refund customer':'Release to pro';if(msg){msg.className='dc-msg err';msg.textContent=(res&&res.error)||'Could not resolve.';}}
 });
 document.addEventListener('click',e=>{if(e.target.closest('[data-disputes-console]')){e.preventDefault();openDisputesConsole();}});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&disputesBg.classList.contains('open'))closeDisputes()});
@@ -3751,7 +3784,7 @@ document.getElementById('rSubmit').onclick=async()=>{
     return;
   }
   document.getElementById('regSuccessMsg').innerHTML=(res&&res.status==='verified')
-    ?`You’re verified and <b>live on Servora right now</b>. Search <b>${app.trade}</b> in <b>${app.state}</b> and you’ll find yourself. (Demo mode auto-verifies; production takes about 48 hours.)`
+    ?`You’re verified and <b>live on Servora right now</b>. Search <b>${app.trade}</b> in <b>${app.state}</b> and you’ll find yourself.`
     :`Once verification passes, in about 48 hours, your profile appears automatically in <b>${app.trade}</b> listings for <b>${app.state}</b>. Our team will WhatsApp you, so have your NIN and two guarantor contacts ready.`;
   regModal.classList.add('done');
   /* application sent — clear the temporary uploads + credentials for a fresh form */
@@ -4094,7 +4127,12 @@ jobsList.addEventListener('click',async e=>{
   if(!btn)return;
   const id=btn.dataset.job, action=btn.dataset.jobaction;
   const msg=document.getElementById('jobmsg-'+id);
-  if(action==='dispute' && !confirm('Open a formal dispute? Servora Support will review and funds stay held.'))return;
+  /* two-step inline confirm for the money-adjacent action — no native dialog */
+  if(action==='dispute' && btn.dataset.arm!=='1'){
+    btn.dataset.arm='1';btn.textContent='Tap again to open a dispute';
+    if(msg){msg.className='job-msg';msg.textContent='Servora Support will review; funds stay held.';}
+    return;
+  }
   btn.disabled=true;const orig=btn.textContent;btn.textContent='…';
   const res=await ServoraAPI.proBookingAction(id,action,proSession.token, action==='dispute'?{reason:'Customer did not confirm within 24 hours.'}:null);
   if(res&&res.ok){ loadProJobs(); }
@@ -4259,8 +4297,14 @@ function renderQuoteView(q){
     `<div class="bd-row total"><span>Total</span><b>${koboFmt(q.totalKobo)}</b></div>`;
   let cta='';
   if(q.status==='sent'){
-    cta=`<div class="qv-note">You pay the full total into <b>escrow</b>. It’s released in two protected stages: the <b>material cost</b> after you approve it, and the <b>labour fee</b> only when you’re satisfied.</div>
-      <button class="btn btn-gold" id="qvAccept">Accept &amp; pay ${koboFmt(q.totalKobo)} →</button>
+    /* Guest flow: if the pro didn't put an email on the quote, collect one here
+       (Paystack needs it for the receipt) instead of dead-ending at payment. */
+    const needEmail=!(q.customer&&q.customer.email);
+    cta=`<div class="qv-note">Held in <b>escrow</b> — materials released when you approve, labour only when you’re satisfied.</div>`+
+      (needEmail?`<label for="qvEmail">Email <span class="lbl-soft">(for your payment receipt)</span></label>
+      <input type="email" id="qvEmail" inputmode="email" placeholder="you@example.com" autocomplete="email" value="${esc(guestProfile().email||'')}">
+      <p class="ferr" id="qvEmailErr" aria-live="polite"></p>`:'')+
+      `<button class="btn btn-gold" id="qvAccept">Accept &amp; pay ${koboFmt(q.totalKobo)} →</button>
       <button class="btn btn-ghost btn-sm" id="qvDecline">Decline</button>`;
   }else if(q.status==='accepted'){
     cta=`<div class="qv-note ok">✓ You’ve accepted this quote. Open “My bookings” to continue.</div>`;
@@ -4282,15 +4326,33 @@ async function openQuoteView(id){
   const q=res.quote;
   document.getElementById('qvBody').innerHTML=renderQuoteView(q);
   const acc=document.getElementById('qvAccept');if(acc)acc.onclick=()=>acceptAndPay(q);
-  const dec=document.getElementById('qvDecline');if(dec)dec.onclick=async()=>{if(!confirm('Decline this quote?'))return;await ServoraAPI.quoteAction(id,'decline');openQuoteView(id);};
+  /* two-step inline confirm — no native dialog */
+  const dec=document.getElementById('qvDecline');
+  if(dec)dec.onclick=async()=>{
+    if(dec.dataset.arm!=='1'){dec.dataset.arm='1';dec.textContent='Tap again to decline';return}
+    dec.disabled=true;
+    await ServoraAPI.quoteAction(id,'decline');
+    openQuoteView(id);
+  };
 }
 async function acceptAndPay(q){
   const btn=document.getElementById('qvAccept'),msg=document.getElementById('qvMsg');
+  /* resolve the payer email: quote → inline field (validated + remembered) */
+  let email=q.customer?.email||null;
+  const emailEl=document.getElementById('qvEmail');
+  if(emailEl){
+    email=emailEl.value.trim();
+    const okEmail=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+    document.getElementById('qvEmailErr').textContent=okEmail?'':'Enter a valid email for your receipt.';
+    emailEl.classList.toggle('invalid',!okEmail);
+    if(!okEmail){emailEl.focus();return}
+    saveGuestProfile({email});
+  }
   btn.disabled=true;btn.textContent='Processing…';
   const acc=await ServoraAPI.quoteAction(q.id,'accept');
   if(!acc||!acc.ok){msg.className='de-msg err';msg.textContent=(acc&&acc.error)||'Could not accept the quote.';btn.disabled=false;btn.textContent='Accept & pay →';return}
   const booking=acc.booking;
-  const init=await ServoraAPI.initializePayment({bookingId:booking.id,email:q.customer?.email||booking.customer?.email});
+  const init=await ServoraAPI.initializePayment({bookingId:booking.id,email:email||booking.customer?.email});
   if(init&&init.ok&&init.authorizationUrl){
     saveMyBooking({bookingId:booking.id,reference:init.reference,proName:q.proName,service:q.service,amountKobo:booking.agreedAmountKobo,kind:'quote',addedAt:Date.now()});
     window.location.href=init.authorizationUrl;return;
