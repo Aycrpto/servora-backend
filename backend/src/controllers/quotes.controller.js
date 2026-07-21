@@ -15,6 +15,7 @@
 import { randomUUID } from 'node:crypto';
 import { loadDB, mutate } from '../store/store.js';
 import { BOOKING_STATUS, computeQuoteSplit, pushBookingHistory } from '../services/escrow.js';
+import { deliverQuote } from '../services/notifications.js';
 
 const now = () => new Date().toISOString();
 const isPosInt = (n) => Number.isInteger(n) && n > 0;
@@ -120,7 +121,21 @@ export async function createQuote(req, res) {
   };
 
   await mutate((d) => d.quotes.push(quote));
-  res.status(201).json({ ok: true, quote });
+
+  // Auto-send to the customer (email / SMS / WhatsApp — whichever their contact
+  // details and configured providers allow). Never fails the quote itself.
+  let delivery = null;
+  try {
+    delivery = await deliverQuote(quote);
+    await mutate((d) => {
+      const q = d.quotes.find((x) => x.id === quote.id);
+      if (q) q.delivery = delivery.channels;
+    });
+  } catch (err) {
+    console.error('[notify] quote delivery error:', err.message);
+  }
+
+  res.status(201).json({ ok: true, quote, delivery });
 }
 
 /** GET /api/quotes/:id   (capability by id — pro/customer can view). */

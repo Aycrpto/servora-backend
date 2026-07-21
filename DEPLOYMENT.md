@@ -108,6 +108,14 @@ CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
 
+# Quote notifications (optional). When set, new quotes are auto-sent to the
+# customer; without them the composed message is logged and the pro shares it
+# via the one-tap WhatsApp/SMS/Email buttons instead.
+# RESEND_API_KEY=re_xxxxxxxx        # email via resend.com
+# EMAIL_FROM=Servora <quotes@servora.ng>
+# TERMII_API_KEY=TLxxxxxxxx         # SMS + WhatsApp via termii.com
+# TERMII_SENDER_ID=Servora
+
 # DATABASE_URL=postgres://...      # once money tables are migrated
 ```
 On a VPS, `.env` in the app dir is fine (root-owned, 600). On PaaS, set these in
