@@ -145,11 +145,35 @@ export function recordEvent(db, tx, { type, fromStatus = null, toStatus = null, 
 }
 
 /**
+ * Human-readable status labels, audience-aware. The single backend vocabulary
+ * for job statuses — mirrors the frontend STATUS map so API consumers (and the
+ * booking history below) are self-describing without knowing the state machine.
+ */
+export const STATUS_LABELS = {
+  pending_payment:            { customer: 'Awaiting Payment',           pro: 'Awaiting Payment' },
+  funded:                     { customer: 'Paid — In Escrow',           pro: 'Pending Inspection' },
+  awaiting_material_approval: { customer: 'Approve Material Cost',      pro: 'Ready to Start' },
+  in_progress:                { customer: 'In Progress',                pro: 'In Progress' },
+  awaiting_completion_review: { customer: 'Completed by Provider',      pro: 'Awaiting Customer Confirmation' },
+  redo_in_progress:           { customer: 'Redo Requested',             pro: 'Redo Requested' },
+  awaiting_redo_review:       { customer: 'Review the Redo',            pro: 'Awaiting Customer Confirmation' },
+  completed:                  { customer: 'Job Completed',              pro: 'Paid Out' },
+  awaiting_confirmation:      { customer: 'Awaiting Your Confirmation', pro: 'Awaiting Customer Confirmation' },
+  confirmed:                  { customer: 'Job Completed',              pro: 'Confirmed — Releasing' },
+  closed:                     { customer: 'Job Completed',              pro: 'Paid Out' },
+  cancelled:                  { customer: 'Cancelled / Refunded',       pro: 'Cancelled' },
+  disputed:                   { customer: 'Under Review',               pro: 'Under Review' },
+};
+export const statusLabel = (status, audience = 'customer') =>
+  STATUS_LABELS[status]?.[audience] ?? String(status || '').replace(/_/g, ' ');
+
+/**
  * Append a booking status-history entry. Kept on the booking itself (b.history)
  * so both parties can see a plain, ordered timeline of what happened and when.
+ * Each entry carries the customer-facing label so the API is self-describing.
  * Call inside a mutate() alongside the status change.
  */
 export function pushBookingHistory(b, status, actor = 'system', note = null) {
   if (!Array.isArray(b.history)) b.history = [];
-  b.history.push({ status, actor, note, at: new Date().toISOString() });
+  b.history.push({ status, label: statusLabel(status), actor, note, at: new Date().toISOString() });
 }

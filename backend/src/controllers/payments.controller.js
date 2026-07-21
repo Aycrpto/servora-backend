@@ -15,7 +15,7 @@ import { loadDB, mutate } from '../store/store.js';
 import { APP_BASE_URL, ADMIN_API_KEY, PAYSTACK_CONFIGURED } from '../config.js';
 import * as paystack from '../services/paystack.js';
 import {
-  TX_STATUS, BOOKING_STATUS, computeSplit, computeQuoteSplit, genReference, canTransition, recordEvent,
+  TX_STATUS, BOOKING_STATUS, computeSplit, computeQuoteSplit, genReference, canTransition, recordEvent, pushBookingHistory,
 } from '../services/escrow.js';
 import { releaseEscrow } from '../services/escrowActions.js';
 
@@ -212,6 +212,7 @@ export function applyChargeSuccess(db, data, actor = 'webhook') {
   if (booking && booking.status === BOOKING_STATUS.PENDING_PAYMENT) {
     booking.status = BOOKING_STATUS.FUNDED;
     booking.updatedAt = now();
+    pushBookingHistory(booking, BOOKING_STATUS.FUNDED, 'customer', 'Payment received — held in escrow');
   }
 }
 
