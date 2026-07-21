@@ -538,8 +538,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .lead-card .lc-desc{font-weight:600;color:var(--ink);margin-bottom:4px;line-height:1.45}
 .lead-card .lc-meta{color:var(--muted);font-size:12px;margin-top:2px}
 .lead-card .lc-cta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.lead-card .lc-cta a{font-size:12px;font-weight:700;color:var(--green);border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;display:inline-flex;gap:5px;align-items:center;transition:border-color .2s;min-height:34px}
-.lead-card .lc-cta a:hover{border-color:var(--green)}
+.lead-card .lc-cta a,.lead-card .lc-cta button{font-size:12px;font-weight:700;color:var(--green);border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;display:inline-flex;gap:5px;align-items:center;transition:border-color .2s;min-height:34px;cursor:pointer}
+.lead-card .lc-cta a:hover,.lead-card .lc-cta button:hover{border-color:var(--green)}
 .leads-empty{text-align:center;color:var(--muted);padding:24px 10px;font-size:13.5px;line-height:1.6}
 /* login + signed-in bar */
 .linkish{color:var(--green);font-weight:700;text-decoration:underline;font-size:inherit;padding:0}
@@ -986,6 +986,12 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .qb-mat-rm{border:1.5px solid var(--line);background:var(--card);border-radius:8px;color:var(--muted);cursor:pointer;font-size:13px}
 .qb-mat-rm:hover{color:#c2452f;border-color:#c2452f}
 .q-link{display:flex;gap:6px;margin:12px 0}
+/* quote builder — customer picker rows */
+.qb-cust-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;max-height:46vh;overflow-y:auto;overscroll-behavior:contain}
+.qb-cust{display:flex;flex-direction:column;gap:4px;text-align:left;background:var(--soft);border:1.5px solid var(--line2);border-radius:12px;padding:11px 13px;cursor:pointer;transition:border-color .18s}
+.qb-cust:hover{border-color:var(--gold)}
+.qb-cust-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px}
+.qb-cust-meta{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* one-tap quote share row (WhatsApp / SMS / Email) */
 .q-share{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 4px}
 .q-share a{flex:1;min-width:104px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 10px;border-radius:12px;border:1.5px solid var(--line2);background:var(--soft);font-size:13px;font-weight:700;color:var(--ink);text-decoration:none;transition:border-color .18s,transform .18s}
@@ -1753,13 +1759,22 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
   </div>
 </div>
 
-<!-- ============ QUOTE BUILDER MODAL (pro) ============ -->
+<!-- ============ QUOTE BUILDER MODAL (pro) ============
+     Two steps: 1) pick the customer (from your leads, or new), 2) build the
+     itemised quote pre-filled with their details. -->
 <div class="modal-bg modal-layer" id="quoteBuilderBg">
   <div class="modal" role="dialog" aria-modal="true">
     <button class="close" id="qbClose" aria-label="Close">✕</button>
-    <div class="form-view" id="qbForm">
+    <div class="form-view" id="qbPick" hidden>
       <h3>Send a quote</h3>
-      <p class="sub">Itemise materials and labour. The customer pays the full total into <b>escrow</b>; you’re paid in two protected stages.</p>
+      <p class="sub">Who is this quote for?</p>
+      <button type="button" class="btn btn-primary btn-sm" id="qbNewCust" style="width:100%">＋ New customer</button>
+      <div class="qb-cust-list" id="qbCustList"></div>
+    </div>
+    <div class="form-view" id="qbForm" hidden>
+      <h3>Send a quote</h3>
+      <p class="sub" id="qbFormSub">The total is held in escrow and released to you in two stages.</p>
+      <button type="button" class="linkish" id="qbBack" hidden>← Choose a different customer</button>
       <div class="row2">
         <div><label for="qbName">Customer name</label><input id="qbName" type="text" placeholder="e.g. Ayo" autocomplete="off"></div>
         <div><label for="qbPhone">Phone</label><input id="qbPhone" type="tel" inputmode="tel" placeholder="080X XXX XXXX"></div>
@@ -1769,7 +1784,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <p class="ferr" id="qbEmailErr" aria-live="polite"></p>
       <label for="qbDesc">Job description</label>
       <input id="qbDesc" type="text" placeholder="e.g. Replace kitchen sink and fix the leak">
-      <label>Materials <span class="lbl-soft">(each item priced separately)</span></label>
+      <label id="qbMatLabel">Materials</label>
       <div id="qbMaterials"></div>
       <button type="button" class="linkish" id="qbAddMat">＋ Add material</button>
       <div class="row2">
@@ -2194,6 +2209,21 @@ const categorySkills={
   "Makeup Artists":["Bridal glam","Gele artistry","Event makeup","Photoshoot looks","Home service"],
   "Photographers":["Weddings","Events & parties","Portraits & studio","Corporate shoots","48-hour previews"]
 };
+
+/* Service-specific form examples — placeholders across Book-a-Pro, checkout,
+   the lead form and the quote builder always match the selected trade.
+   mat:null = a service-only trade (no parts list; "extras" instead). */
+const SERVICE_EXAMPLES={
+  "Electricians":  {desc:"Fix faulty wiring in the living room",     mat:"Cables, sockets",     labour:8000},
+  "Plumbers":      {desc:"Fix leaking kitchen sink",                 mat:"PVC pipes, fittings", labour:10000},
+  "Cleaners":      {desc:"Deep-clean a 3-bedroom flat",              mat:"Cleaning supplies",   labour:12000},
+  "AC Technicians":{desc:"AC not cooling — needs a gas refill",      mat:"Refrigerant gas",     labour:9000},
+  "Car Mechanics": {desc:"Car won’t start — check battery & starter",mat:"Battery, plugs",      labour:15000},
+  "Tutors":        {desc:"Teach Mathematics for a JSS1 student",     mat:null,                  labour:20000},
+  "Makeup Artists":{desc:"Bridal makeup for a wedding",              mat:"Lashes, foundation",  labour:18000},
+  "Photographers": {desc:"Cover a birthday party (4 hours)",         mat:null,                  labour:25000},
+};
+const svcExample=cat=>SERVICE_EXAMPLES[cat]||{desc:"Describe what you need done",mat:null,labour:10000};
 
 /* ================================================================
    ServoraAPI — now backed by the real REST API (see /backend).
@@ -2879,6 +2909,9 @@ function openContact(id){
 function showModal(){
   modal.classList.remove('done');
   resetLeadValidation();
+  /* example text matches the service being booked (neutral when unknown) */
+  const ex=modalService&&SERVICE_EXAMPLES[modalService];
+  document.getElementById('mDesc').placeholder=ex?'e.g. '+ex.desc:'Describe what you need done';
   /* Carry the wizard's answers into the lead form (job description + area) so
      the customer doesn't retype them when contacting a pro or posting a job. */
   if(window.bpPrefill){
@@ -2921,7 +2954,11 @@ modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
     dots.forEach((d,i)=>d.classList.toggle('on',i+1<=n));
     document.getElementById('bpSub').textContent=SUB[n]||'';
     if(n===2)document.getElementById('bpChosen1').textContent='🛠️ '+one(S.service);
-    if(n===3)document.getElementById('bpChosen2').textContent='🛠️ '+one(S.service)+' · 📍 '+S.area+', '+S.stateName;
+    if(n===3){
+      document.getElementById('bpChosen2').textContent='🛠️ '+one(S.service)+' · 📍 '+S.area+', '+S.stateName;
+      /* example text always matches the chosen trade */
+      document.getElementById('bpDesc').placeholder='e.g. '+svcExample(S.service).desc;
+    }
   }
   function renderServices(){
     document.getElementById('bpServices').innerHTML=services.map(s=>
@@ -3185,6 +3222,7 @@ function openCheckout(id){
     `<div class="avatar" style="background:${esc(p.c||'#0e7a4a')}">${esc(initials(p.n))}</div>`+
     `<div class="who"><b>${esc(p.n)}</b><span>${esc((p.cat||'').replace(/s$/,''))} · ${esc(p.pl||'')}</span></div>`;
   document.getElementById('coDesc').value='';
+  document.getElementById('coDesc').placeholder='e.g. '+svcExample(p.cat).desc;
   document.getElementById('coAmount').value=(Number.isFinite(p.price)&&p.price>0)?p.price:'';
   const g=guestProfile();   /* returning guests never retype their details */
   document.getElementById('coName').value=g.name||'';
@@ -3954,14 +3992,21 @@ function renderLeads(){
    <div class="lead-card">
      <div class="lc-top">
        <span class="lead-type ${l.type==='direct_contact'?'':'job'}">${l.type==='direct_contact'?'Direct contact':'Job post'}</span>
+       ${l.status==='quoted'?'<span class="bk-status ok">Quoted</span>':''}
        <time>${timeAgo(l.createdAt)}</time>
      </div>
      <div class="lc-desc">${esc(l.description||l.service||'Service request')}</div>
      <div class="lc-meta">📍 ${esc([l.area,l.state].filter(Boolean).join(', '))||'Location not given'}${l.when?' · '+esc(l.when):''}</div>
      <div class="lc-meta">👤 ${esc(l.name||'Customer')} · ${esc(l.phone||'no number left')}</div>
-     ${l.phone?`<div class="lc-cta"><a href="${waLink(l.phone)}" target="_blank" rel="noopener">💬 Reply on WhatsApp</a><a href="tel:${esc(l.phone)}">📞 Call</a></div>`:''}
+     ${(l.phone||l.email)?`<div class="lc-cta">${l.phone?`<a href="${waLink(l.phone)}" target="_blank" rel="noopener">💬 Reply on WhatsApp</a><a href="tel:${esc(l.phone)}">📞 Call</a>`:''}<button type="button" data-quotelead="${esc(l.id)}">📄 Send quote</button></div>`:''}
    </div>`).join(''):'<div class="leads-empty">No job requests match your search or filter.</div>';
 }
+/* one tap from a lead → quote form pre-filled with that customer */
+document.getElementById('leadsList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-quotelead]');if(!b)return;
+  const l=dashLeads.find(x=>String(x.id)===b.dataset.quotelead);
+  if(l)openQuoteBuilder(l);
+});
 /* search + filter — update the list in real time */
 document.getElementById('leadSearch').addEventListener('input',e=>{dashQuery=e.target.value.trim();renderLeads()});
 document.getElementById('leadChips').addEventListener('click',e=>{
@@ -4134,8 +4179,8 @@ async function loadProQuotes(){
   wrap.innerHTML=pending.map(q=>`<div class="quote-chip"><div><span class="bk-status warn">Quote Sent</span> <b>${koboFmt(q.totalKobo)}</b> · ${esc((q.service||'').replace(/s$/,''))} · ${esc(q.customer?.name||q.customer?.email||q.customer?.phone||'customer')}</div><button type="button" class="btn btn-ghost btn-sm" data-copyquote="${esc(q.id)}">Copy link</button></div>`).join('');
 }
 document.getElementById('dashJobs').addEventListener('toggle',e=>{ if(e.target.open)loadProJobs(); });
-document.getElementById('newQuoteBtn').onclick=openQuoteBuilder;
-document.getElementById('dashQuoteBtn').onclick=openQuoteBuilder;
+document.getElementById('newQuoteBtn').onclick=()=>openQuoteBuilder();
+document.getElementById('dashQuoteBtn').onclick=()=>openQuoteBuilder();
 document.getElementById('quotesList').addEventListener('click',e=>{
   const c=e.target.closest('[data-copyquote]');if(!c)return;
   copyQuoteLink(c.dataset.copyquote,c);
@@ -4167,7 +4212,7 @@ function copyQuoteLink(id,btn){
 const quoteBuilderBg=document.getElementById('quoteBuilderBg');
 function qbMatRow(){
   const div=document.createElement('div');div.className='qb-mat';
-  div.innerHTML=`<input class="qb-mat-label" type="text" placeholder="e.g. PVC pipes"><input class="qb-mat-amt" type="number" min="0" step="100" inputmode="numeric" placeholder="₦"><button type="button" class="qb-mat-rm" aria-label="Remove item">✕</button>`;
+  div.innerHTML=`<input class="qb-mat-label" type="text" placeholder="${esc(qbMatPlaceholder)}"><input class="qb-mat-amt" type="number" min="0" step="100" inputmode="numeric" placeholder="₦"><button type="button" class="qb-mat-rm" aria-label="Remove item">✕</button>`;
   div.querySelector('.qb-mat-rm').onclick=()=>{div.remove();qbUpdateTotal()};
   div.querySelector('.qb-mat-amt').addEventListener('input',qbUpdateTotal);
   return div;
@@ -4188,15 +4233,63 @@ function qbUpdateTotal(){
   const t=qbTotals();
   document.getElementById('qbSummary').innerHTML=t.total>0?`<span>Customer pays into escrow</span><b>${nairaFmt(t.total)}</b>`:'';
 }
-function openQuoteBuilder(){
-  if(!proSession)return;
+let qbLeadId=null,qbMatPlaceholder='e.g. PVC pipes',qbPickLeads=[];
+const leadPrefill=l=>({name:l.name,phone:l.phone,email:l.email,desc:l.description,leadId:l.id});
+/* Step 2 — the quote form, optionally pre-filled from a lead. */
+function qbShowForm(prefill,fromPicker){
+  const ex=svcExample(proSession.pro.category||proSession.pro.cat);
+  qbLeadId=(prefill&&prefill.leadId)||null;
+  document.getElementById('qbPick').hidden=true;
   document.getElementById('qbForm').hidden=false;document.getElementById('qbDone').hidden=true;
+  document.getElementById('qbBack').hidden=!fromPicker;
   ['qbName','qbPhone','qbEmail','qbDesc','qbLabour','qbInspection','qbNote'].forEach(id=>document.getElementById(id).value='');
+  if(prefill){
+    document.getElementById('qbName').value=prefill.name||'';
+    document.getElementById('qbPhone').value=prefill.phone||'';
+    document.getElementById('qbEmail').value=prefill.email||'';
+    document.getElementById('qbDesc').value=prefill.desc||'';
+  }
+  /* examples match the pro's own trade */
+  document.getElementById('qbDesc').placeholder='e.g. '+ex.desc;
+  document.getElementById('qbLabour').placeholder='e.g. '+ex.labour;
+  document.getElementById('qbMatLabel').innerHTML=ex.mat?'Materials':'Extras / materials <span class="lbl-soft">(optional)</span>';
+  qbMatPlaceholder=ex.mat?'e.g. '+ex.mat:'e.g. Transport, printouts';
   document.getElementById('qbEmailErr').textContent='';document.getElementById('qbMsg').textContent='';
   const mats=document.getElementById('qbMaterials');mats.innerHTML='';mats.appendChild(qbMatRow());
   qbUpdateTotal();
-  quoteBuilderBg.classList.add('open');document.body.style.overflow='hidden';
 }
+/* Step 1 — pick who the quote is for (skipped when opened from a lead card). */
+async function openQuoteBuilder(lead){
+  if(!proSession)return;
+  quoteBuilderBg.classList.add('open');document.body.style.overflow='hidden';
+  document.getElementById('qbDone').hidden=true;
+  if(lead){qbShowForm(leadPrefill(lead),false);return}
+  document.getElementById('qbForm').hidden=true;
+  document.getElementById('qbPick').hidden=false;
+  const listEl=document.getElementById('qbCustList');
+  listEl.innerHTML='<div class="leads-empty">Loading your customers…</div>';
+  const data=await ServoraAPI.getProLeads(proSession.pro.id);
+  const leads=((data&&data.leads)||[]).filter(l=>l.phone||l.email);
+  /* dedupe by phone/email — newest first, so the freshest request wins */
+  const seen=new Set();qbPickLeads=[];
+  for(const l of leads){
+    const key=(l.phone||'').replace(/\D/g,'').slice(-10)||String(l.email||'').toLowerCase();
+    if(seen.has(key))continue;seen.add(key);qbPickLeads.push(l);
+  }
+  listEl.innerHTML=qbPickLeads.length?qbPickLeads.slice(0,12).map(l=>`
+    <button type="button" class="qb-cust" data-qblead="${esc(l.id)}">
+      <span class="qb-cust-top"><b>${esc(l.name||'Customer')}</b>${l.status==='quoted'?'<span class="bk-status ok">Quoted</span>':`<span class="lead-type ${l.type==='direct_contact'?'':'job'}">${l.type==='direct_contact'?'Direct contact':'Job post'}</span>`}</span>
+      <span class="qb-cust-meta">${esc(l.phone||l.email||'')}${l.description?' · '+esc(l.description.slice(0,48)):''}</span>
+    </button>`).join('')
+    :'<div class="leads-empty">No customers yet — add one above.</div>';
+}
+document.getElementById('qbNewCust').onclick=()=>qbShowForm(null,true);
+document.getElementById('qbBack').onclick=()=>openQuoteBuilder();
+document.getElementById('qbCustList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-qblead]');if(!b)return;
+  const l=qbPickLeads.find(x=>String(x.id)===b.dataset.qblead);
+  if(l)qbShowForm(leadPrefill(l),true);
+});
 function closeQuoteBuilder(){
   quoteBuilderBg.classList.remove('open');
   /* the dashboard may still be open behind this layered modal */
@@ -4230,7 +4323,8 @@ document.getElementById('qbSend').onclick=async()=>{
     materials:qbReadMaterials(),
     labourNaira:t.labour||undefined,
     inspectionNaira:t.insp||undefined,
-    note:note||undefined
+    note:note||undefined,
+    leadId:qbLeadId||undefined
   },proSession.token);
   btn.disabled=false;btn.textContent='Create quote →';
   if(!res||!res.ok){msg.className='de-msg err';msg.textContent=(res&&res.error)||'Could not create the quote.';return}
@@ -4252,6 +4346,11 @@ document.getElementById('qbSend').onclick=async()=>{
     (phone?`<a href="https://wa.me/${wa}?text=${enc}" target="_blank" rel="noopener">💬 WhatsApp</a><a href="sms:${esc(phone)}?body=${enc}">📱 SMS</a>`:'')+
     (email?`<a href="mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${enc}">✉️ Email</a>`:'');
   document.getElementById('qbForm').hidden=true;document.getElementById('qbDone').hidden=false;
+  /* reflect "Quoted" on the lead this quote came from, without a refetch */
+  if(qbLeadId){
+    const l=dashLeads.find(x=>String(x.id)===String(qbLeadId));
+    if(l){l.status='quoted';renderLeads();}
+  }
   loadProQuotes();
 };
 document.getElementById('qbCopy').onclick=()=>{const i=document.getElementById('qbLink');i.select();navigator.clipboard?.writeText(i.value);document.getElementById('qbCopy').textContent='Copied ✓'};
