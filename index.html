@@ -705,14 +705,27 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .pay-return .pr-alt button{color:var(--green);font-weight:700;text-decoration:underline}
 /* my bookings (customer) */
 .bk-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;max-height:56vh;overflow-y:auto;overscroll-behavior:contain}
-.bk-card{background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:13px 15px}
+.bk-card{background:var(--soft);border:1px solid var(--line2);border-radius:14px;padding:15px 16px}
 .bk-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .bk-top b{font-size:14.5px}
-.bk-status{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;background:var(--soft);border:1px solid var(--line);color:var(--muted)}
+.bk-status{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:3px 10px;border-radius:999px;white-space:nowrap;background:var(--soft);border:1px solid var(--line);color:var(--muted)}
+.bk-status::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.75}
 .bk-status.ok{background:var(--chip-green-bg);color:var(--green);border-color:transparent}
 .bk-status.done{background:var(--chip-green-bg);color:var(--green);border-color:transparent}
 .bk-status.warn{background:var(--gold-soft);color:var(--gold-deep);border-color:transparent}
 [data-theme="dark"] .bk-status.warn{color:var(--gold-hi)}
+/* ===== job progress stepper (quote flow) ===== */
+.bk-steps{display:flex;margin:11px 0 6px}
+.stp{flex:1;text-align:center;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);position:relative}
+.stp i{display:block;width:8px;height:8px;border-radius:50%;background:var(--line2);border:1.5px solid var(--line2);margin:0 auto 4px;position:relative;z-index:1;box-sizing:border-box}
+.stp::before{content:'';position:absolute;top:3px;left:-50%;width:100%;height:2px;background:var(--line2)}
+.stp:first-child::before{display:none}
+.stp.done i{background:var(--green);border-color:var(--green)}
+.stp.done::before{background:var(--green)}
+.stp.done{color:var(--muted)}
+.stp.cur i{background:var(--card);border-color:var(--green);box-shadow:0 0 0 3px var(--chip-green-bg)}
+.stp.cur::before{background:var(--green)}
+.stp.cur{color:var(--green)}
 .bk-meta{font-size:12.5px;color:var(--muted);margin-top:5px}
 .bk-act{margin-top:11px}
 .bk-act .btn{width:100%}
@@ -725,7 +738,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .bk-prompt{font-size:12.5px;color:var(--ink2);margin-bottom:8px;line-height:1.45}
 /* pro "my jobs" */
 .jobs-list{display:flex;flex-direction:column;gap:9px;margin-top:8px;max-height:44vh;overflow-y:auto;overscroll-behavior:contain}
-.job-card{background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:12px 14px}
+.job-card{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:14px 16px}
 .job-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:5px}
 .job-top b{font-size:14px}
 .job-meta{font-size:12px;color:var(--muted);margin-bottom:2px}
@@ -959,7 +972,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .q-reason{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;background:var(--card);color:var(--ink);resize:vertical;margin:6px 0}
 /* pro: quotes list + job tags */
 .quotes-list{display:flex;flex-direction:column;gap:7px;margin:10px 0 4px}
-.quote-chip{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px dashed var(--gold);border-radius:10px;padding:8px 11px;font-size:13px;background:var(--gold-soft)}
+.quote-chip{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line2);border-radius:12px;padding:9px 12px;font-size:13px;background:var(--card)}
+.quote-chip .bk-status{margin-right:2px}
 .quote-chip>div{min-width:0}
 .job-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-soft);border:1px solid var(--gold);border-radius:6px;padding:1px 6px;vertical-align:middle}
 .job-split{font-size:12.5px;color:var(--muted);margin:6px 0}
@@ -972,6 +986,10 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .qb-mat-rm{border:1.5px solid var(--line);background:var(--card);border-radius:8px;color:var(--muted);cursor:pointer;font-size:13px}
 .qb-mat-rm:hover{color:#c2452f;border-color:#c2452f}
 .q-link{display:flex;gap:6px;margin:12px 0}
+/* one-tap quote share row (WhatsApp / SMS / Email) */
+.q-share{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 4px}
+.q-share a{flex:1;min-width:104px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 10px;border-radius:12px;border:1.5px solid var(--line2);background:var(--soft);font-size:13px;font-weight:700;color:var(--ink);text-decoration:none;transition:border-color .18s,transform .18s}
+.q-share a:hover{border-color:var(--gold);transform:translateY(-1px)}
 .q-link input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12.5px;background:var(--soft);color:var(--ink2)}
 .big.ok{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--green);color:#fff;font-size:26px;margin:0 auto 10px}
 /* evidence uploader */
@@ -1766,8 +1784,9 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     </div>
     <div class="form-view" id="qbDone" hidden>
       <div class="big ok">✓</div>
-      <h3>Quote ready to send</h3>
-      <p class="sub">Share this link with your customer (WhatsApp, SMS, email). When they accept and pay, the job appears in “My jobs”.</p>
+      <h3 id="qbDoneTitle">Quote sent</h3>
+      <p class="sub" id="qbDoneSub">Send it to your customer with one tap:</p>
+      <div class="q-share" id="qbShare"></div>
       <div class="q-link"><input id="qbLink" readonly><button type="button" class="btn btn-ghost btn-sm" id="qbCopy">Copy</button></div>
       <button class="btn btn-primary" id="qbFinish">Done</button>
     </div>
@@ -3292,21 +3311,35 @@ function updateMyBookingsNav(){
   const has=loadMyBookings().length>0;
   document.querySelectorAll('[data-mybookings]').forEach(el=>el.style.display=has?'':'none');
 }
-const BK_STATUS={
-  pending_payment:['Awaiting payment','warn'],
-  funded:['Paid · your pro will start soon','ok'],
-  awaiting_material_approval:['Approve the material cost','warn'],
-  in_progress:['In progress','ok'],
-  awaiting_completion_review:['Review the finished work','warn'],
-  redo_in_progress:['Redo in progress','ok'],
-  awaiting_redo_review:['Review the redo','warn'],
-  completed:['Completed & paid','done'],
-  awaiting_confirmation:['Please confirm it’s done','warn'],
-  confirmed:['Confirmed · releasing payment','done'],
-  closed:['Completed & paid','done'],
-  cancelled:['Cancelled / refunded','warn'],
-  disputed:['Under Support review','warn'],
+/* ============ JOB STATUS — single source of truth ============
+   One audience-aware vocabulary for every status pill, card and timeline:
+   c = what the CUSTOMER sees, p = what the PROVIDER sees, step = position on
+   the quote-flow progress stepper (-1 / undefined = no stepper). */
+const STATUS={
+  pending_payment:            {c:['Awaiting Payment','warn'],            p:['Awaiting Payment','warn'],               step:-1},
+  funded:                     {c:['Paid — In Escrow','ok'],              p:['Pending Inspection','warn'],             step:0},
+  awaiting_material_approval: {c:['Approve Material Cost','warn'],       p:['Ready to Start','ok'],                   step:1},
+  in_progress:                {c:['In Progress','ok'],                   p:['In Progress','ok'],                      step:2},
+  awaiting_completion_review: {c:['Completed by Provider','warn'],       p:['Awaiting Customer Confirmation','warn'], step:3},
+  redo_in_progress:           {c:['Redo Requested','warn'],              p:['Redo Requested','warn'],                 step:2},
+  awaiting_redo_review:       {c:['Review the Redo','warn'],             p:['Awaiting Customer Confirmation','warn'], step:3},
+  completed:                  {c:['Job Completed','done'],               p:['Paid Out ✓','ok'],                       step:4},
+  awaiting_confirmation:      {c:['Awaiting Your Confirmation','warn'],  p:['Awaiting Customer Confirmation','warn'], step:3},
+  confirmed:                  {c:['Job Completed','done'],               p:['Confirmed — Releasing','ok'],            step:4},
+  closed:                     {c:['Job Completed','done'],               p:['Paid Out ✓','ok'],                       step:4},
+  cancelled:                  {c:['Cancelled / Refunded','warn'],        p:['Cancelled','warn'],                      step:-1},
+  disputed:                   {c:['Under Review','warn'],                p:['Under Review','warn'],                   step:-1},
 };
+const BK_STATUS=Object.fromEntries(Object.entries(STATUS).map(([k,v])=>[k,v.c]));
+const JOB_STATUS=Object.fromEntries(Object.entries(STATUS).map(([k,v])=>[k,v.p]));
+/* Compact progress stepper for quote jobs (both sides). */
+const BK_STEPS=['Paid','Inspection','Work','Review','Done'];
+function bkStepper(st){
+  const s=STATUS[st];
+  if(!s||!(s.step>=0))return'';
+  return `<div class="bk-steps" aria-hidden="true">${BK_STEPS.map((n,i)=>
+    `<span class="stp${i<s.step?' done':i===s.step?' cur':''}"><i></i>${n}</span>`).join('')}</div>`;
+}
 /* Currency helper for kobo → ₦. */
 const koboFmt=k=>nairaFmt(Math.round((k||0)/100));
 /* Shared: render an evidence gallery (photos + videos) read-only. */
@@ -3331,7 +3364,7 @@ function evidenceSections(evidence){
 function fmtWhen(at){ try{return new Date(at).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return''} }
 function bkTimeline(history){
   if(!history||!history.length)return '';
-  const rows=history.map(h=>`<li><span class="tl-dot"></span><div>${esc(h.note||String(h.status).replace(/_/g,' '))}<span class="tl-when">${esc(fmtWhen(h.at))}</span></div></li>`).join('');
+  const rows=history.map(h=>`<li><span class="tl-dot"></span><div>${esc(h.note||(STATUS[h.status]?STATUS[h.status].c[0]:String(h.status).replace(/_/g,' ')))}<span class="tl-when">${esc(fmtWhen(h.at))}</span></div></li>`).join('');
   return `<details class="bk-timeline"><summary>Timeline</summary><ul class="tl">${rows}</ul></details>`;
 }
 /* Quote (split-escrow) booking card — the customer's side of the flow. */
@@ -3378,6 +3411,7 @@ function renderQuoteBkCard(b){
   return `<div class="bk-card" data-bk="${esc(id)}">
     <div class="bk-top"><b>${esc(b.proName||bk.proName||'Your pro')}</b><span class="bk-status ${cls}">${esc(label)}</span></div>
     <div class="bk-meta">${esc((b.service||bk.service||'').replace(/s$/,''))} · quote job</div>
+    ${bkStepper(st)}
     ${breakdown}${body}
     ${bkTimeline(bk.history)}
     <p class="bk-msg" id="bkmsg-${esc(id)}" aria-live="polite"></p>
@@ -4002,21 +4036,7 @@ document.getElementById('payoutSave').onclick=async()=>{
 
 /* ---- pro "my jobs" (start / complete / dispute) ---- */
 const jobsList=document.getElementById('jobsList');
-const JOB_STATUS={
-  pending_payment:['Awaiting payment','warn'],
-  funded:['Paid · document the site','ok'],
-  awaiting_material_approval:['Awaiting material approval','warn'],
-  in_progress:['In progress','ok'],
-  awaiting_completion_review:['Awaiting customer review','warn'],
-  redo_in_progress:['Redo requested','warn'],
-  awaiting_redo_review:['Awaiting review of redo','warn'],
-  completed:['Paid out ✓','ok'],
-  awaiting_confirmation:['Awaiting customer confirmation','warn'],
-  confirmed:['Confirmed · releasing','ok'],
-  closed:['Paid out ✓','ok'],
-  cancelled:['Cancelled / refunded','warn'],
-  disputed:['Under Support review','warn'],
-};
+/* Provider-side labels come from the shared STATUS map (see BK_STATUS above). */
 function resetJobsCard(){ document.getElementById('dashJobs').open=false; }
 const EV_REQ={pre_job:{p:2,v:1},completion:{p:2,v:0},redo:{p:2,v:0}};
 function evCount(ev,phase){let p=0,v=0;(ev||[]).filter(e=>e.phase===phase).forEach(e=>{p+=(e.photos||[]).length;v+=(e.videos||[]).length});return {p,v}}
@@ -4029,25 +4049,25 @@ function renderQuoteJobCard(b){
   const evBadge=(phase)=>{const c=evCount(ev,phase),r=EV_REQ[phase];const ok=c.p>=r.p&&c.v>=r.v;return `<span class="ev-badge ${ok?'ok':''}">${c.p} photo${c.p===1?'':'s'}${r.v?` · ${c.v} video`:''} · need ${evReqText(phase)}</span>`};
   let actions='';
   if(st==='funded'){
-    actions=`<div class="job-note">Upload <b>before-work evidence</b> (${evReqText('pre_job')}) then confirm you're ready. The customer approves the material cost next.</div>`+
-      `<div class="job-act">${evBadge('pre_job')}<button type="button" class="btn btn-ghost btn-sm" data-evphase="pre_job" data-job="${esc(id)}">Upload before-work evidence</button><button type="button" class="btn btn-gold btn-sm" data-job="${esc(id)}" data-jobaction="ready">I’m ready to begin →</button></div>`;
+    actions=`<div class="job-act">${evBadge('pre_job')}<button type="button" class="btn btn-ghost btn-sm" data-evphase="pre_job" data-job="${esc(id)}">Upload before-work evidence</button><button type="button" class="btn btn-gold btn-sm" data-job="${esc(id)}" data-jobaction="ready">I’m ready to begin →</button></div>`;
   }else if(st==='awaiting_material_approval'){
-    actions='<div class="job-note warn">Waiting for the customer to approve & release the material cost.</div>';
+    actions='<div class="job-note warn">Customer is approving the material cost.</div>';
   }else if(st==='in_progress'){
-    actions=`<div class="job-note ok">✓ Material cost received. Upload <b>completion evidence</b> (${evReqText('completion')}) then mark the job complete.</div>`+
+    actions=`<div class="job-note ok">✓ Material cost received.</div>`+
       `<div class="job-act">${evBadge('completion')}<button type="button" class="btn btn-ghost btn-sm" data-evphase="completion" data-job="${esc(id)}">Upload completion evidence</button><button type="button" class="btn btn-gold btn-sm" data-job="${esc(id)}" data-jobaction="complete">Mark complete</button></div>`;
   }else if(st==='awaiting_completion_review'){
-    actions='<div class="job-note warn">Waiting for the customer to review. They release the labour fee or request one redo.</div>';
+    actions='<div class="job-note warn">Customer is reviewing the finished work.</div>';
   }else if(st==='redo_in_progress'){
-    actions=`<div class="job-note warn">🔁 Redo requested${b.redoReason?': '+esc(b.redoReason):''}. Perfect the work, upload <b>redo evidence</b> (${evReqText('redo')}), then mark complete.</div>`+
+    actions=`<div class="job-note warn">🔁 Redo requested${b.redoReason?': '+esc(b.redoReason):''}.</div>`+
       `<div class="job-act">${evBadge('redo')}<button type="button" class="btn btn-ghost btn-sm" data-evphase="redo" data-job="${esc(id)}">Upload redo evidence</button><button type="button" class="btn btn-gold btn-sm" data-job="${esc(id)}" data-jobaction="complete">Mark complete</button></div>`;
   }else if(st==='awaiting_redo_review'){
-    actions='<div class="job-note warn">Waiting for the customer to review the redo.</div>';
-  }else if(st==='disputed'){ actions='<div class="job-note warn">⚖ Under Servora Support review. The labour fee stays held.</div>'; }
-  else if(st==='completed'){ actions='<div class="job-note ok">✓ Job completed. Labour fee released to you.</div>'; }
+    actions='<div class="job-note warn">Customer is reviewing the redo.</div>';
+  }else if(st==='disputed'){ actions='<div class="job-note warn">⚖ Under review — labour fee held.</div>'; }
+  else if(st==='completed'){ actions='<div class="job-note ok">✓ Labour fee released to you.</div>'; }
   else if(st==='cancelled'){ actions='<div class="job-note warn">Cancelled / refunded.</div>'; }
   return `<div class="job-card">
     <div class="job-top"><b>${esc((b.service||'').replace(/s$/,''))} · ${nairaFmt((b.agreedAmountKobo||0)/100)} <span class="job-tag">quote</span></b><span class="bk-status ${cls}">${esc(label)}</span></div>
+    ${bkStepper(st)}
     <div class="job-meta">${esc(b.description||'No description')}</div>
     <div class="job-cust">👤 ${esc(cust.name||'Customer')}${cust.phone?' · '+esc(cust.phone):''}</div>
     ${payLine}${actions}
@@ -4111,7 +4131,7 @@ async function loadProQuotes(){
   if(!wrap||!proSession)return;
   const data=await ServoraAPI.listQuotes(proSession.pro.id,proSession.token);
   const pending=(data&&data.ok?data.quotes:[]).filter(q=>q.status==='sent');
-  wrap.innerHTML=pending.map(q=>`<div class="quote-chip"><div><b>${koboFmt(q.totalKobo)}</b> · ${esc((q.service||'').replace(/s$/,''))} · ${esc(q.customer?.name||q.customer?.email||q.customer?.phone||'customer')}</div><button type="button" class="btn btn-ghost btn-sm" data-copyquote="${esc(q.id)}">Copy link</button></div>`).join('');
+  wrap.innerHTML=pending.map(q=>`<div class="quote-chip"><div><span class="bk-status warn">Quote Sent</span> <b>${koboFmt(q.totalKobo)}</b> · ${esc((q.service||'').replace(/s$/,''))} · ${esc(q.customer?.name||q.customer?.email||q.customer?.phone||'customer')}</div><button type="button" class="btn btn-ghost btn-sm" data-copyquote="${esc(q.id)}">Copy link</button></div>`).join('');
 }
 document.getElementById('dashJobs').addEventListener('toggle',e=>{ if(e.target.open)loadProJobs(); });
 document.getElementById('newQuoteBtn').onclick=openQuoteBuilder;
@@ -4214,7 +4234,23 @@ document.getElementById('qbSend').onclick=async()=>{
   },proSession.token);
   btn.disabled=false;btn.textContent='Create quote →';
   if(!res||!res.ok){msg.className='de-msg err';msg.textContent=(res&&res.error)||'Could not create the quote.';return}
-  document.getElementById('qbLink').value=location.origin+location.pathname+'?servora_quote='+encodeURIComponent(res.quote.id);
+  const link=location.origin+location.pathname+'?servora_quote='+encodeURIComponent(res.quote.id);
+  document.getElementById('qbLink').value=link;
+  /* Auto-send happened server-side (email/SMS/WhatsApp where configured);
+     also offer one-tap share links carrying the same composed message. */
+  const dm=res.delivery&&res.delivery.message;
+  const text=(dm&&dm.text)||`${proSession.pro.name} sent you a quote on Servora. Total: ${nairaFmt(t.total)}. Review & accept securely: ${link}`;
+  const subject=(dm&&dm.subject)||'Your Servora quote';
+  const sent=((res.delivery&&res.delivery.channels)||[]).filter(c=>c.status==='sent').map(c=>c.channel);
+  document.getElementById('qbDoneTitle').textContent=sent.length?'Quote sent ✓':'Quote ready to send';
+  document.getElementById('qbDoneSub').textContent=sent.length
+    ?`Delivered to your customer via ${sent.join(' + ')}. You can also share it directly:`
+    :'Send it to your customer with one tap:';
+  const enc=encodeURIComponent(text);
+  const wa=phone.replace(/\D/g,'').replace(/^0/,'234');
+  document.getElementById('qbShare').innerHTML=
+    (phone?`<a href="https://wa.me/${wa}?text=${enc}" target="_blank" rel="noopener">💬 WhatsApp</a><a href="sms:${esc(phone)}?body=${enc}">📱 SMS</a>`:'')+
+    (email?`<a href="mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${enc}">✉️ Email</a>`:'');
   document.getElementById('qbForm').hidden=true;document.getElementById('qbDone').hidden=false;
   loadProQuotes();
 };
