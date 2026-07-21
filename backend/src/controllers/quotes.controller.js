@@ -46,7 +46,7 @@ function toKobo(kobo, naira) {
  */
 export async function createQuote(req, res) {
   const b = req.body || {};
-  const { proId, service, description, customer, materials, labourLabel, note } = b;
+  const { proId, service, description, customer, materials, labourLabel, note, leadId } = b;
 
   const db = loadDB();
   const pro = db.professionals.find((p) => String(p.id) === String(proId) && p.status === 'verified');
@@ -120,7 +120,15 @@ export async function createQuote(req, res) {
     declinedAt: null,
   };
 
-  await mutate((d) => d.quotes.push(quote));
+  await mutate((d) => {
+    d.quotes.push(quote);
+    // Quoting from a lead: mark it so the pro's inbox shows "Quoted" and the
+    // same request isn't quoted twice blindly. Additive — no state machine.
+    if (leadId) {
+      const l = d.leads.find((x) => String(x.id) === String(leadId));
+      if (l) { l.status = 'quoted'; l.quoteId = quote.id; l.quotedAt = now(); }
+    }
+  });
 
   // Auto-send to the customer (email / SMS / WhatsApp — whichever their contact
   // details and configured providers allow). Never fails the quote itself.

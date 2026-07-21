@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { loadDB, saveDB } from '../store/store.js';
 
 export function createLead(req, res) {
-  const { type, proId, service, description, area, name, phone, when, state } = req.body || {};
+  const { type, proId, service, description, area, name, phone, email, when, state } = req.body || {};
 
   if (!description?.toString().trim() && !service) {
     return res.status(400).json({ ok: false, error: 'Tell us what you need done (description or service).' });
@@ -23,6 +23,7 @@ export function createLead(req, res) {
     state: state ?? null,
     name: name ?? null,
     phone: phone ?? null,
+    email: email ?? null,
     when: when ?? null,
     status: 'open',
     createdAt: new Date().toISOString(),
