@@ -24,7 +24,10 @@ npm start          # → http://localhost:8321  (frontend + API)
 | GET    | `/api/health`        | Liveness check                                            |
 | GET    | `/api/pros`          | Verified pros. Query: `category`, `state`, `sort` (`rating`/`resp`/`price`/`jobs`). Returns `{ pros, stateCovered }` — falls back nationwide when a state has no pros yet. |
 | GET    | `/api/pros/featured` | Paid placement: Elite subscribers first, then Pro, by rating |
-| POST   | `/api/pros/register` | Body: `{ name, phone, trade, state, lga, plan, idFileName, idFileSizeKB }`. ID upload is **simulated** (metadata only). Auto-verifies in demo mode (`AUTO_VERIFY=false` to disable). |
+| POST   | `/api/pros/register` | Body: `{ name, phone, trade, state, lga, plan, idType, idImage, selfieImage, … }`. **Real KYC:** the ID photo + live selfie go to Dojah `/api/v1/kyc/photoid/verify`. Pass → `verified` + `idVerified:true`; fail/inconclusive → `pending_review` (never auto-rejected). |
+| GET    | `/api/admin/kyc?status=` | Manual review queue. Requires `x-admin-key`. |
+| GET    | `/api/admin/kyc/:id/image/:kind` | `idDocument` \| `selfie`. Admin-only; KYC media is stored in `backend/private/kyc/` and is never statically served. |
+| POST   | `/api/admin/kyc/:id/decision` | `{ decision: 'approve'\|'reject', reason? }`. Approve grants the ✓ ID Verified badge. |
 | GET    | `/api/services`      | Service taxonomy                                          |
 | POST   | `/api/leads`         | Customer job request — no account needed                  |
 

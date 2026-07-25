@@ -8,3 +8,5 @@ node_modules/
 backend/data/db.json
 # user-uploaded portfolio photos
 uploads/
+# KYC media — government IDs and selfies. NEVER commit.
+backend/private/

@@ -5,9 +5,11 @@
 import { randomUUID } from 'node:crypto';
 import { loadDB, saveDB, mutate } from '../store/store.js';
 import { persistPortfolio, deleteStored } from '../store/uploads.js';
+import { saveKycImage } from '../store/kycStore.js';
 import * as paystack from '../services/paystack.js';
 import { hashPassword } from '../services/passwords.js';
-import { AUTO_VERIFY, AVATAR_PALETTE } from '../config.js';
+import { verifyPhotoIdWithSelfie } from '../services/dojah.js';
+import { AVATAR_PALETTE } from '../config.js';
 
 const TIER_RANK = { elite: 0, pro: 1, starter: 2 };
 
@@ -16,8 +18,15 @@ const titleCase = s => String(s || '').trim().replace(/\s+/g, ' ').split(' ')
   .map(w => /^[A-Z0-9]{2,4}$/.test(w) ? w : (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
   .join(' ');
 
-/** Public listing shape — never expose credentials, contact, or bank/payout data. */
-const publicPro = ({ password, phone, email, idDocument, payout, ...rest }) => rest;
+/**
+ * Public listing shape — never expose credentials, contact, bank/payout data,
+ * the KYC images, or the raw verification payload. `idVerified` is a plain
+ * boolean the UI uses to decide whether the "✓ ID Verified" badge is shown.
+ */
+const publicPro = ({ password, phone, email, idDocument, payout, kycMedia, idVerification, ...rest }) => ({
+  ...rest,
+  idVerified: rest.idVerified === true,
+});
 
 /** Compare phone numbers by their last 10 digits (0803… === +234803…). */
 const normPhone = s => String(s || '').replace(/\D/g, '').slice(-10);
@@ -271,26 +280,41 @@ export async function setPayoutAccount(req, res) {
 
 /**
  * POST /api/pros/register
- * Body: { name, phone, trade, state, lga, plan, idFileName, idFileSizeKB }
- * The ID upload is simulated for v1 — we store the file metadata only.
- * Real implementation: multipart upload (multer) to object storage,
- * then a verification queue flips status to 'verified'.
+ * Body: { name, phone, trade, state, lga, plan, idType, idImage, selfieImage, ... }
+ *
+ * ID verification is real: the ID document photo and a live selfie are sent to
+ * Dojah's photoid/verify endpoint, which checks the document and face-matches
+ * the selfie against the ID photo.
+ *
+ *   verified     → status 'verified',       idVerified true  (badge granted)
+ *   rejected     → status 'pending_review', idVerified false (human decides)
+ *   inconclusive → status 'pending_review', idVerified false (human decides)
+ *
+ * A professional is NEVER auto-rejected by the machine, and the ID-verified
+ * badge is NEVER granted without an actual pass (or an explicit admin approval).
  */
 const ID_TYPES = ["NIN", "Driver's Licence", "International Passport"];
 
-export function registerPro(req, res) {
-  const { name, phone, email, trade, state, lga, plan, idType, idFileName, idFileSizeKB, portfolio, password } = req.body || {};
+export async function registerPro(req, res) {
+  const { name, phone, email, trade, state, lga, plan, idType, idImage, selfieImage,
+          idFileName, idFileSizeKB, portfolio, password } = req.body || {};
 
   const missing = ['name', 'phone', 'trade', 'state'].filter(f => !req.body?.[f]?.toString().trim());
   if (missing.length) {
     return res.status(400).json({ ok: false, error: `Missing required fields: ${missing.join(', ')}` });
   }
 
-  // ID verification is MANDATORY. A registration must carry a recognised ID
-  // type and an uploaded document (we keep only its metadata, never the image).
+  // ID verification is MANDATORY: a recognised ID type, the document photo,
+  // AND a live selfie to match against it.
   const cleanIdType = idType?.toString().trim() || '';
-  if (!ID_TYPES.includes(cleanIdType) || !idFileName?.toString().trim()) {
-    return res.status(422).json({ ok: false, field: 'id', error: 'A valid government ID (NIN, driver’s licence or international passport) must be uploaded to register.' });
+  if (!ID_TYPES.includes(cleanIdType)) {
+    return res.status(422).json({ ok: false, field: 'id', error: 'Select a valid ID type (NIN, driver’s licence or international passport).' });
+  }
+  if (!idImage?.toString().trim()) {
+    return res.status(422).json({ ok: false, field: 'id', error: 'A photo of your government ID is required to register.' });
+  }
+  if (!selfieImage?.toString().trim()) {
+    return res.status(422).json({ ok: false, field: 'selfie', error: 'A live selfie is required so we can match it to your ID.' });
   }
 
   const db = loadDB();
@@ -305,6 +329,24 @@ export function registerPro(req, res) {
   if (cleanEmail && db.professionals.some(p => p.email && String(p.email).toLowerCase() === cleanEmail)) {
     return res.status(409).json({ ok: false, field: 'email', error: 'This email is already in use. Try signing in instead.' });
   }
+
+  // Persist both images to PRIVATE storage (never /uploads) so a reviewer can
+  // see exactly what was submitted if the automated check doesn't pass.
+  const storedId = saveKycImage(idImage, 'id');
+  const storedSelfie = saveKycImage(selfieImage, 'selfie');
+  if (!storedId || !storedSelfie) {
+    return res.status(422).json({ ok: false, field: 'id', error: 'Those images could not be read. Upload clear JPG or PNG photos under 10MB.' });
+  }
+
+  // Run the real check. Never throws — a failure becomes a review, not a 500.
+  const nameParts = name.trim().split(/\s+/);
+  const verification = await verifyPhotoIdWithSelfie({
+    selfieImage,
+    photoIdImage: idImage,
+    firstName: nameParts[0],
+    lastName: nameParts.length > 1 ? nameParts[nameParts.length - 1] : undefined,
+  });
+  const passed = verification.outcome === 'verified';
 
   // Location fields: lga holds the title-cased LGA, city holds the state —
   // the UI displays "LGA, State" (never "Ikeja, Ikeja").
@@ -326,29 +368,56 @@ export function registerPro(req, res) {
     priceLabel: 'Quote on request',
     responseMins: 20,
     avatarColor: AVATAR_PALETTE[Math.floor(Math.random() * AVATAR_PALETTE.length)],
-    badges: ['v'],
+    // The ID-verified badge is granted ONLY by a real pass (or admin approval).
+    badges: passed ? ['v'] : [],
     tier: (plan || 'Starter').toLowerCase(),
     // scrypt hash — the raw value is never stored (null → shared fallback on login).
     password: password?.toString().trim() ? hashPassword(password.toString().trim()) : null,
     bio: `New on Servora — ID-verified ${trade.replace(/s$/, '').toLowerCase()} serving ${cleanLga ? cleanLga + ', ' : ''}${state}.`,
     review: null,
     skills: null,
-    status: AUTO_VERIFY ? 'verified' : 'pending_verification',
-    idDocument: { type: cleanIdType, fileName: idFileName, sizeKB: idFileSizeKB ?? null, note: 'metadata only — ID image not stored' },
+    // Only a real pass makes a pro live/bookable; everything else waits for a human.
+    status: passed ? 'verified' : 'pending_review',
+    idVerified: passed,
+    idDocument: { type: cleanIdType, fileName: idFileName ?? null, sizeKB: idFileSizeKB ?? null },
+    // Private filenames only — served exclusively via the admin-authed endpoint.
+    kycMedia: { idDocument: storedId.file, selfie: storedSelfie.file },
+    idVerification: {
+      provider: verification.provider,
+      outcome: verification.outcome,          // verified | rejected | inconclusive
+      confidence: verification.confidence,
+      match: verification.match,
+      reasons: verification.reasons,
+      checks: verification.checks,
+      checkedAt: verification.checkedAt,
+      error: verification.error ?? null,
+      decidedBy: null, decidedAt: null, decisionReason: null,
+    },
     // Optional past-work photos (max 5) — written to /uploads, stored as URLs
     portfolio: persistPortfolio(portfolio),
     createdAt: new Date().toISOString(),
   };
 
-  db.professionals.push(pro);
-  saveDB(db);
+  // Written through mutate(): the Dojah call above is an async gap, so a plain
+  // load→save could clobber a concurrent write.
+  const added = await mutate((d) => {
+    // Re-check uniqueness inside the lock in case a duplicate landed meanwhile.
+    if (d.professionals.some(p => normPhone(p.phone) === normPhone(phone))) return false;
+    d.professionals.push(pro);
+    return true;
+  });
+  if (!added) {
+    return res.status(409).json({ ok: false, field: 'phone', error: 'This phone number is already registered. Try signing in instead.' });
+  }
 
   res.status(201).json({
     ok: true,
     status: pro.status,
+    idVerified: pro.idVerified,
+    verification: { outcome: verification.outcome, confidence: verification.confidence, reasons: verification.reasons },
     pro: publicPro(pro),
-    message: AUTO_VERIFY
-      ? 'Auto-verified (demo mode) — your profile is live in listings now.'
-      : 'Application received — verification takes ~48 hours.',
+    message: passed
+      ? 'ID verified — your profile is live in listings now.'
+      : 'Application received. Your ID needs a quick manual check by our team, usually within 24 hours. Your profile stays hidden until then.',
   });
 }

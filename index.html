@@ -552,6 +552,13 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .linkish{color:var(--green);font-weight:700;text-decoration:underline;font-size:inherit;padding:0}
 .lbl-soft{font-weight:500;color:var(--faint)}
 .lbl-req{font-weight:700;color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-left:4px}
+/* ===== KYC: ID photo + live selfie capture ===== */
+.kyc-preview{margin-top:9px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--soft)}
+.kyc-preview img{display:block;width:100%;max-height:220px;object-fit:contain;background:#000}
+.kyc-selfie video{display:block;width:100%;max-height:260px;border-radius:12px;background:#000;margin-top:9px;transform:scaleX(-1)}
+.kyc-selfie-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.kyc-selfie-actions .btn{flex:1;min-width:130px}
+.kyc-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45}
 .dash-id{display:flex;align-items:center;gap:11px;background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:10px 12px;margin-top:4px}
 .dash-id .avatar{width:38px;height:38px;font-size:13px}
 .dash-id .who b{font-size:13.5px;display:block;line-height:1.25}
@@ -1895,9 +1902,25 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
         <option value="Driver's Licence">Driver’s Licence</option>
         <option value="International Passport">International Passport</option>
       </select>
-      <label for="rId" class="lbl-soft" style="margin-top:10px">Upload a clear photo of your ID <span class="lbl-soft">(max 5MB)</span></label>
-      <input type="file" id="rId" accept="image/*,.pdf" required aria-required="true" aria-describedby="rIdErr">
+      <label for="rId" class="lbl-soft" style="margin-top:10px">Photo of your ID <span class="lbl-soft">(max 5MB)</span></label>
+      <input type="file" id="rId" accept="image/*" required aria-required="true" aria-describedby="rIdErr">
+      <div class="kyc-preview" id="rIdPreview" hidden></div>
       <p class="ferr" id="rIdErr" aria-live="polite"></p>
+
+      <!-- Live selfie — face-matched against the ID photo by our KYC provider. -->
+      <label class="lbl-soft" style="margin-top:12px">Selfie <span class="lbl-soft">(we match it to your ID)</span></label>
+      <div class="kyc-selfie">
+        <video id="rSelfieCam" playsinline muted hidden></video>
+        <div class="kyc-preview" id="rSelfiePreview" hidden></div>
+        <div class="kyc-selfie-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="rSelfieStart">📷 Take a selfie</button>
+          <button type="button" class="btn btn-gold btn-sm" id="rSelfieSnap" hidden>Capture</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="rSelfieRetake" hidden>Retake</button>
+          <label class="btn btn-ghost btn-sm" for="rSelfieFile" id="rSelfieUploadLbl">Upload instead</label>
+          <input type="file" id="rSelfieFile" accept="image/*" capture="user" hidden>
+        </div>
+      </div>
+      <p class="ferr" id="rSelfieErr" aria-live="polite"></p>
       <!-- Portfolio / past work — OPTIONAL. Files are previewed locally;
            only metadata is sent for now (simulated upload, like the ID). -->
       <div class="pf-sec">
@@ -2193,7 +2216,10 @@ const cachePros=list=>{list.forEach(p=>proCache[String(p.id)]=p);return list};
 const proById=id=>proCache[String(id)]||pros.find(p=>String(p.id)===String(id));
 
 /* Adapter: API record (backend/data/db.json shape) → internal card shape */
-const mapApiPro=a=>({id:a.id,n:a.name,cat:a.category,area:a.area||a.lga||a.state,city:a.city||a.state,state:a.state,lga:a.lga||null,r:a.rating,j:a.jobsDone||0,price:a.priceFrom,pl:a.priceLabel||'Quote on request',resp:a.responseMins||20,c:a.avatarColor||'#0e7a4a',b:(a.badges&&a.badges.length)?a.badges:['v'],tier:a.tier||'starter',bio:a.bio||'',rev:a.review?a.review.text:null,who:a.review?a.review.by:null,skills:a.skills||null,portfolio:a.portfolio||[]});
+/* NOTE: badges are taken verbatim from the server — never defaulted. The
+   "✓ ID Verified" badge ('v') is only ever present after a real Dojah pass or
+   an explicit admin approval, so it can't be shown to an unverified pro. */
+const mapApiPro=a=>({id:a.id,n:a.name,cat:a.category,area:a.area||a.lga||a.state,city:a.city||a.state,state:a.state,lga:a.lga||null,r:a.rating,j:a.jobsDone||0,price:a.priceFrom,pl:a.priceLabel||'Quote on request',resp:a.responseMins||20,c:a.avatarColor||'#0e7a4a',b:(a.idVerified?['v']:[]).concat((a.badges||[]).filter(x=>x!=='v')),idVerified:a.idVerified===true,tier:a.tier||'starter',bio:a.bio||'',rev:a.review?a.review.text:null,who:a.review?a.review.by:null,skills:a.skills||null,portfolio:a.portfolio||[]});
 
 /* Thin fetch wrapper — returns null on any failure so callers can fall
    back to bundled seed data (page must work from file:// too). */
@@ -3697,25 +3723,103 @@ function downscaleImage(file,maxDim=1200,quality=.82){
 }
 
 /* ID upload — same 5MB ceiling; blocks submission until it's fixed */
-/* ID verification is MANDATORY: a valid ID type must be chosen AND a file
-   uploaded (within the size limit) before an application can be submitted. */
+/* ============ KYC: ID photo + live selfie ============
+   Both images are downscaled client-side and sent as data URLs. The server
+   forwards them to Dojah, which checks the document and face-matches the
+   selfie to the ID photo. */
+let regIdDataUrl=null,regSelfieDataUrl=null,selfieStream=null;
+
+const showPreview=(boxId,dataUrl)=>{
+  const box=document.getElementById(boxId);
+  box.innerHTML=`<img src="${dataUrl}" alt="">`;box.hidden=false;
+};
+/* Read the chosen ID photo so we can send the actual image, not just metadata. */
+document.getElementById('rId').addEventListener('change',async e=>{
+  const f=e.target.files[0];regIdDataUrl=null;
+  document.getElementById('rIdPreview').hidden=true;
+  if(f&&f.size<=MAX_FILE_BYTES){
+    try{regIdDataUrl=await downscaleImage(f,1600,.86);showPreview('rIdPreview',regIdDataUrl);}catch(_){}
+  }
+  validateIdFile();
+});
+document.getElementById('rIdType').addEventListener('change',validateIdFile);
+
+/* Live camera capture (preferred), with an upload fallback for desktops
+   without a webcam or when permission is denied. */
+function stopSelfieCam(){
+  if(selfieStream){selfieStream.getTracks().forEach(t=>t.stop());selfieStream=null}
+  const v=document.getElementById('rSelfieCam');v.hidden=true;v.srcObject=null;
+  document.getElementById('rSelfieSnap').hidden=true;
+}
+document.getElementById('rSelfieStart').onclick=async()=>{
+  const err=document.getElementById('rSelfieErr');err.textContent='';
+  try{
+    selfieStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960}},audio:false});
+    const v=document.getElementById('rSelfieCam');
+    v.srcObject=selfieStream;v.hidden=false;await v.play();
+    document.getElementById('rSelfieSnap').hidden=false;
+    document.getElementById('rSelfieStart').hidden=true;
+    document.getElementById('rSelfiePreview').hidden=true;
+  }catch(_){
+    err.textContent='Camera unavailable — use “Upload instead” to add a clear photo of your face.';
+  }
+};
+document.getElementById('rSelfieSnap').onclick=()=>{
+  const v=document.getElementById('rSelfieCam');
+  const c=document.createElement('canvas');
+  const scale=Math.min(1,960/Math.max(v.videoWidth||960,v.videoHeight||960));
+  c.width=Math.round((v.videoWidth||960)*scale);c.height=Math.round((v.videoHeight||720)*scale);
+  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  regSelfieDataUrl=c.toDataURL('image/jpeg',.88);
+  stopSelfieCam();
+  showPreview('rSelfiePreview',regSelfieDataUrl);
+  document.getElementById('rSelfieRetake').hidden=false;
+  document.getElementById('rSelfieStart').hidden=true;
+  validateIdFile();
+};
+document.getElementById('rSelfieRetake').onclick=()=>{
+  regSelfieDataUrl=null;
+  document.getElementById('rSelfiePreview').hidden=true;
+  document.getElementById('rSelfieRetake').hidden=true;
+  document.getElementById('rSelfieStart').hidden=false;
+  validateIdFile();
+};
+document.getElementById('rSelfieFile').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  const err=document.getElementById('rSelfieErr');
+  if(f.size>MAX_FILE_BYTES){err.textContent=`That photo is over ${MAX_FILE_MB}MB.`;return}
+  try{
+    regSelfieDataUrl=await downscaleImage(f,960,.88);
+    stopSelfieCam();
+    showPreview('rSelfiePreview',regSelfieDataUrl);
+    document.getElementById('rSelfieRetake').hidden=false;
+    document.getElementById('rSelfieStart').hidden=true;
+    err.textContent='';
+  }catch(_){err.textContent='That image could not be read. Try another photo.'}
+  validateIdFile();
+});
+
+/* ID verification is MANDATORY: an ID type, a readable ID photo AND a selfie. */
 function validateIdFile(){
   const typeEl=document.getElementById('rIdType');
   const el=document.getElementById('rId'),err=document.getElementById('rIdErr'),f=el.files[0];
+  const selfieErr=document.getElementById('rSelfieErr');
   let msg='';
   if(!typeEl.value)msg='Select your ID type — NIN, driver’s licence or international passport.';
   else if(!f)msg=`Upload a clear photo of your ${typeEl.value} to verify your identity.`;
   else if(f.size>MAX_FILE_BYTES)msg=`File is too large. Maximum allowed size is ${MAX_FILE_MB}MB. (“${f.name}” is ${(f.size/1024/1024).toFixed(1)}MB.)`;
+  else if(!regIdDataUrl)msg='That ID image could not be read. Try another photo.';
   err.textContent=msg;
   const invalid=!!msg;
   el.setAttribute('aria-invalid',invalid?'true':'false');
   el.classList.toggle('invalid',invalid&&!!typeEl.value);
   typeEl.setAttribute('aria-invalid',invalid&&!typeEl.value?'true':'false');
   typeEl.classList.toggle('invalid',invalid&&!typeEl.value);
+  /* selfie is reported on its own line so the two errors don't fight */
+  if(!msg&&!regSelfieDataUrl){selfieErr.textContent='Take or upload a selfie so we can match it to your ID.';return false}
+  if(regSelfieDataUrl)selfieErr.textContent='';
   return !msg;
 }
-document.getElementById('rId').addEventListener('change',validateIdFile);
-document.getElementById('rIdType').addEventListener('change',validateIdFile);
 const pfInput=document.getElementById('rPortfolio'),pfGrid=document.getElementById('pfGrid'),
       pfDrop=document.getElementById('pfDrop'),pfCount=document.getElementById('pfCount'),
       pfDropText=document.getElementById('pfDropText');
@@ -3845,31 +3949,46 @@ document.getElementById('rSubmit').onclick=async()=>{
     plan:regPlan,
     /* DEMO: plain-text password (or null → shared demo password) */
     password:document.getElementById('rPw').value.trim()||null,
-    /* ID upload is mandatory. The government-ID image itself is NOT uploaded
-       (privacy) — we send the type + file metadata, which the server requires. */
+    /* ID verification is mandatory: the ID photo and a live selfie go to the
+       server, which face-matches them via our KYC provider. Both are stored
+       privately (never publicly served) for manual review if the check fails. */
     idType,
+    idImage:regIdDataUrl,
+    selfieImage:regSelfieDataUrl,
     idFileName:idFile?idFile.name:null,
     idFileSizeKB:idFile?Math.round(idFile.size/1024):null,
     /* real image data — the server writes these to /uploads */
     portfolio:pfFiles.map(f=>f.dataUrl)
   };
   const btn=document.getElementById('rSubmit');
-  btn.disabled=true;btn.textContent='Submitting…';
+  btn.disabled=true;btn.textContent='Verifying your ID…';
   const res=await ServoraAPI.registerPro(app);
   btn.disabled=false;btn.textContent='Apply, go live in 48 hours';
-  /* 3. duplicate phone/email → show the server's message on the field */
+  /* 3. duplicate phone/email, or a rejected ID → show it on the right field */
   if(res&&res.ok===false){
+    if(res.field==='id'||res.field==='selfie'){
+      document.getElementById(res.field==='selfie'?'rSelfieErr':'rIdErr').textContent=res.error||'ID verification failed.';
+      document.getElementById(res.field==='selfie'?'rSelfieStart':'rId').focus();
+      return;
+    }
     const field=res.field==='email'?'rEmail':'rPhone';
     setRegError(field,res.error||'That account already exists.');
     document.getElementById(field).focus();
     return;
   }
   document.getElementById('regSuccessMsg').innerHTML=(res&&res.status==='verified')
-    ?`You’re verified and <b>live on Servora right now</b>. Search <b>${app.trade}</b> in <b>${app.state}</b> and you’ll find yourself.`
-    :`Once verification passes, in about 48 hours, your profile appears automatically in <b>${app.trade}</b> listings for <b>${app.state}</b>. Our team will WhatsApp you, so have your NIN and two guarantor contacts ready.`;
+    ?`✅ <b>ID verified.</b> You’re <b>live on Servora right now</b>. Search <b>${app.trade}</b> in <b>${app.state}</b> and you’ll find yourself.`
+    :`We couldn’t auto-match your selfie to your ID, so a member of our team is reviewing it by hand — usually within 24 hours. We’ll WhatsApp you as soon as you’re approved, and your profile goes live in <b>${app.trade}</b> listings for <b>${app.state}</b> then.`;
   regModal.classList.add('done');
   /* application sent — clear the temporary uploads + credentials for a fresh form */
   pfFiles=[];renderPortfolio();
+  stopSelfieCam();
+  regIdDataUrl=null;regSelfieDataUrl=null;
+  document.getElementById('rIdPreview').hidden=true;
+  document.getElementById('rSelfiePreview').hidden=true;
+  document.getElementById('rSelfieRetake').hidden=true;
+  document.getElementById('rSelfieStart').hidden=false;
+  document.getElementById('rSelfieErr').textContent='';
   document.getElementById('rId').value='';
   document.getElementById('rIdType').value='';
   document.getElementById('rPw').value='';

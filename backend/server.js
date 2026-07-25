@@ -31,6 +31,7 @@ import bookingsRouter from './src/routes/bookings.routes.js';
 import quotesRouter from './src/routes/quotes.routes.js';
 import paymentsRouter from './src/routes/payments.routes.js';
 import disputesRouter from './src/routes/disputes.routes.js';
+import kycRouter from './src/routes/kyc.routes.js';
 import { paystackWebhook } from './src/controllers/payments.controller.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -57,9 +58,24 @@ app.use('/api/bookings', bookingsRouter);
 app.use('/api/quotes', quotesRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/disputes', disputesRouter);
+app.use('/api/admin', kycRouter);
+
+/**
+ * SECURITY: the frontend lives in the project root, so express.static below
+ * would otherwise serve server-side files too — backend/data/db.json (the whole
+ * database), source, node_modules and any stray key file. Block those paths
+ * BEFORE the static handler. Only the frontend assets remain reachable.
+ */
+const BLOCKED = /^\/(?:backend|node_modules|\.git|private)(?:\/|$)/i;
+app.use((req, res, next) => {
+  if (BLOCKED.test(req.path) || /\/\.(?!well-known)/.test(req.path)) {
+    return res.status(404).send('Not found');
+  }
+  next();
+});
 
 // Serve the frontend from the project root (index.html lives one level up)
-app.use(express.static(path.join(__dirname, '..')));
+app.use(express.static(path.join(__dirname, '..'), { dotfiles: 'deny' }));
 
 // JSON 404 for unknown API routes (instead of the HTML fallback)
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, error: 'Not found' }));

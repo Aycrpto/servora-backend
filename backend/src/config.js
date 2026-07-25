@@ -24,11 +24,12 @@ if (existsSync(ENV_PATH)) {
 export const PORT = process.env.PORT || 8321;
 
 /**
- * In production, registrations stay 'pending_verification' until the
- * 4-stage check (NIN/ID, skill test, guarantors, address) passes.
- * In dev/demo we auto-verify so new pros appear in listings immediately.
+ * DEPRECATED — pro verification is now driven by the real Dojah ID+selfie
+ * check in pros.controller.js (pass → verified, anything else → manual review).
+ * Kept only so older tooling that reads it doesn't break; it no longer grants
+ * verified status to anyone.
  */
-export const AUTO_VERIFY = process.env.AUTO_VERIFY !== 'false';
+export const AUTO_VERIFY = false;
 
 /** Avatar colors assigned to new pros (brand palette). */
 export const AVATAR_PALETTE = ['#0e7a4a', '#b0731a', '#4655c4', '#c2452f', '#7a3fa0', '#12876f', '#2f6ec2'];
@@ -50,6 +51,25 @@ export const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT
 
 /** Guards the money-moving admin endpoints (release/list). Empty = locked. */
 export const ADMIN_API_KEY = process.env.ADMIN_API_KEY || '';
+
+/* ============ DOJAH KYC (ID document + selfie verification) ============ */
+
+/** Server-side only. Never sent to the browser. */
+export const DOJAH_APP_ID = process.env.DOJAH_APP_ID || '';
+export const DOJAH_PRIVATE_KEY = process.env.DOJAH_PRIVATE_KEY || '';
+export const DOJAH_PUBLIC_KEY = process.env.DOJAH_PUBLIC_KEY || '';
+/** 'sandbox' (default) hits sandbox.dojah.io; anything else hits api.dojah.io. */
+export const DOJAH_ENV = process.env.DOJAH_ENV || 'sandbox';
+export const DOJAH_BASE_URL = process.env.DOJAH_BASE_URL ||
+  (DOJAH_ENV === 'sandbox' ? 'https://sandbox.dojah.io' : 'https://api.dojah.io');
+/** True only when both credentials are present, so we can fail safe. */
+export const DOJAH_CONFIGURED = Boolean(DOJAH_APP_ID && DOJAH_PRIVATE_KEY);
+/**
+ * Selfie↔ID match threshold. Dojah returns confidence 0-100 and its own
+ * `match` boolean (true at >= 90). We require BOTH, so a borderline score
+ * never auto-verifies — it goes to manual review instead.
+ */
+export const DOJAH_MATCH_THRESHOLD = parseInt(process.env.DOJAH_MATCH_THRESHOLD || '90', 10);
 
 /** True only when a secret key is present, so we can fail loudly-but-safely. */
 export const PAYSTACK_CONFIGURED = Boolean(PAYSTACK_SECRET_KEY);

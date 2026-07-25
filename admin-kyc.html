@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Servora · ID Verification Review</title>
+<style>
+:root{
+  --bg:#f6f7f5;--card:#fff;--ink:#0e1a14;--ink2:#33453c;--muted:#6b7d74;--faint:#93a29a;
+  --line:#e3e8e4;--line2:#eceff0;--green:#0e7a4a;--green-bg:#e7f4ed;--gold:#b0731a;
+  --gold-bg:#fdf4e3;--red:#c2452f;--red-bg:#fdecea;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0d1411;--card:#141d19;--ink:#eef3f0;--ink2:#c6d4cd;--muted:#8fa39a;--faint:#6f837a;
+  --line:#233029;--line2:#1d2823;--green:#4ec08a;--green-bg:#12271d;
+  --gold:#e0a842;--gold-bg:#2a2113;--red:#e0604a;--red-bg:#2b1614;}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);
+  font-size:15px;line-height:1.5;padding:24px 16px 64px}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13.5px;margin-top:4px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.gate{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;max-width:440px}
+label{display:block;font-size:12.5px;font-weight:700;color:var(--ink2);margin-bottom:6px}
+input,select{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);
+  color:var(--ink);font:inherit;font-size:14px;outline:none}
+input:focus,select:focus{border-color:var(--green)}
+.btn{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  min-height:44px;transition:opacity .15s}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-primary{background:var(--green);color:#fff}
+.btn-approve{background:var(--green);color:#fff}
+.btn-reject{background:var(--red);color:#fff}
+.btn-ghost{background:transparent;color:var(--ink2);border:1.5px solid var(--line)}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.toolbar select{width:auto;min-width:180px}
+.count{color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+.card-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.who b{font-size:16px}
+.who .meta{color:var(--muted);font-size:13px;margin-top:3px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;
+  text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+.pill.pending{background:var(--gold-bg);color:var(--gold)}
+.pill.verified{background:var(--green-bg);color:var(--green)}
+.pill.rejected{background:var(--red-bg);color:var(--red)}
+.result{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--line2);font-size:13.5px}
+.result .row{display:flex;gap:8px;margin-bottom:4px}
+.result .row:last-child{margin-bottom:0}
+.result .k{color:var(--muted);min-width:110px}
+.reasons{margin:8px 0 0 18px;color:var(--ink2);font-size:13px}
+.imgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px}
+.imgbox{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.imgbox h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 10px;
+  border-bottom:1px solid var(--line2)}
+.imgbox img{display:block;width:100%;max-height:280px;object-fit:contain;background:#000}
+.imgbox .none{padding:22px 10px;text-align:center;color:var(--faint);font-size:13px}
+.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
+.actions input{flex:1;min-width:200px}
+.msg{font-size:13px;margin-top:10px}
+.msg.err{color:var(--red)}
+.msg.ok{color:var(--green)}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:40px 20px;text-align:center;color:var(--muted)}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Key gate: the admin key is kept in sessionStorage only, never in the URL -->
+  <div id="gate" class="gate">
+    <h1>ID Verification Review</h1>
+    <p class="sub" style="margin-bottom:16px">Enter your admin API key to continue.</p>
+    <label for="key">ADMIN_API_KEY</label>
+    <input type="password" id="key" autocomplete="off" placeholder="paste your key">
+    <p class="msg err" id="gateErr"></p>
+    <button class="btn btn-primary" id="gateGo" style="width:100%;margin-top:12px">Unlock</button>
+  </div>
+
+  <div id="app" class="hide">
+    <header>
+      <div>
+        <h1>ID Verification Review</h1>
+        <p class="sub">Professionals whose automated ID + selfie check needs a human decision.</p>
+      </div>
+      <button class="btn btn-ghost" id="lock">Lock</button>
+    </header>
+
+    <div class="toolbar">
+      <select id="status">
+        <option value="pending_review">Pending manual review</option>
+        <option value="verified">Verified</option>
+        <option value="rejected">Rejected</option>
+        <option value="all">All with a check on file</option>
+      </select>
+      <button class="btn btn-ghost" id="refresh">Refresh</button>
+      <span class="count" id="count"></span>
+    </div>
+
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let KEY = sessionStorage.getItem('servora-admin-key') || '';
+
+const api = (path, opts = {}) => fetch('/api/admin' + path, {
+  ...opts,
+  headers: { 'Content-Type': 'application/json', 'x-admin-key': KEY, ...(opts.headers || {}) },
+});
+
+/* Images are behind the admin key, so they're fetched as blobs rather than
+   dropped into a plain <img src> (which couldn't send the header). */
+async function loadImage(proId, kind, el) {
+  try {
+    const r = await api(`/kyc/${encodeURIComponent(proId)}/image/${kind}`);
+    if (!r.ok) { el.innerHTML = '<div class="none">No image on file</div>'; return; }
+    const url = URL.createObjectURL(await r.blob());
+    const img = new Image();
+    img.src = url; img.alt = kind === 'selfie' ? 'Submitted selfie' : 'Submitted ID document';
+    img.onload = () => URL.revokeObjectURL(url);
+    el.innerHTML = ''; el.appendChild(img);
+  } catch { el.innerHTML = '<div class="none">Could not load</div>'; }
+}
+
+const pillFor = p => p.status === 'verified' ? '<span class="pill verified">✓ ID Verified</span>'
+  : p.status === 'rejected' ? '<span class="pill rejected">Rejected</span>'
+  : '<span class="pill pending">Pending review</span>';
+
+function card(p) {
+  const v = p.idVerification || {};
+  const reasons = (v.reasons || []).length
+    ? `<ul class="reasons">${v.reasons.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : '';
+  const checks = v.checks || {};
+  const flags = Object.entries({
+    'Selfie blurry': checks.selfieBlurry, 'ID blurry': checks.photoIdBlurry,
+    'Selfie glare': checks.selfieGlare, 'ID glare': checks.photoIdGlare,
+    'Sunglasses': checks.sunglasses,
+  }).filter(([, on]) => on).map(([k]) => k);
+  const decided = v.decidedBy
+    ? `<div class="row"><span class="k">Decision</span><span>${esc(v.outcome)} by ${esc(v.decidedBy)}${v.decisionReason ? ' — ' + esc(v.decisionReason) : ''}</span></div>` : '';
+  const canDecide = p.status !== 'verified';
+
+  return `<div class="card" data-pro="${esc(p.id)}">
+    <div class="card-top">
+      <div class="who">
+        <b>${esc(p.name)}</b>
+        <div class="meta">${esc(p.category || '')} · ${esc([p.lga, p.state].filter(Boolean).join(', '))}</div>
+        <div class="meta">${esc(p.phone || 'no phone')}${p.email ? ' · ' + esc(p.email) : ''}</div>
+      </div>
+      ${pillFor(p)}
+    </div>
+    <div class="result">
+      <div class="row"><span class="k">ID type</span><span>${esc(p.idDocument?.type || '—')}</span></div>
+      <div class="row"><span class="k">Check result</span><span>${esc(v.outcome || 'none')}${v.error ? ' (' + esc(v.error) + ')' : ''}</span></div>
+      <div class="row"><span class="k">Face match</span><span>${v.confidence == null ? '—' : esc(v.confidence) + '% confidence'}${v.match === true ? ' · matched' : v.match === false ? ' · no match' : ''}</span></div>
+      ${checks.cardType ? `<div class="row"><span class="k">Card detected</span><span>${esc(checks.cardType)}</span></div>` : ''}
+      ${flags.length ? `<div class="row"><span class="k">Image issues</span><span>${esc(flags.join(', '))}</span></div>` : ''}
+      ${decided}
+      ${reasons}
+    </div>
+    <div class="imgs">
+      <div class="imgbox"><h4>ID document</h4><div data-img="idDocument"><div class="none">Loading…</div></div></div>
+      <div class="imgbox"><h4>Selfie</h4><div data-img="selfie"><div class="none">Loading…</div></div></div>
+    </div>
+    ${canDecide ? `<div class="actions">
+      <input type="text" data-reason placeholder="Reason (optional, saved with the decision)">
+      <button class="btn btn-approve" data-act="approve">Approve &amp; grant badge</button>
+      <button class="btn btn-reject" data-act="reject">Reject</button>
+    </div>` : ''}
+    <p class="msg" data-msg></p>
+  </div>`;
+}
+
+async function load() {
+  const status = $('status').value;
+  $('list').innerHTML = '<div class="empty">Loading…</div>';
+  let data;
+  try { data = await (await api('/kyc?status=' + encodeURIComponent(status))).json(); }
+  catch { $('list').innerHTML = '<div class="empty">Could not reach the server.</div>'; return; }
+  if (!data.ok) { $('list').innerHTML = `<div class="empty">${esc(data.error || 'Unauthorized')}</div>`; return; }
+
+  $('count').textContent = `${data.count} professional${data.count === 1 ? '' : 's'}`;
+  $('list').innerHTML = data.pros.length ? data.pros.map(card).join('')
+    : '<div class="empty">Nothing in this queue.</div>';
+
+  for (const p of data.pros) {
+    const el = $('list').querySelector(`[data-pro="${CSS.escape(p.id)}"]`);
+    if (!el) continue;
+    loadImage(p.id, 'idDocument', el.querySelector('[data-img="idDocument"]'));
+    loadImage(p.id, 'selfie', el.querySelector('[data-img="selfie"]'));
+  }
+}
+
+/* Two-step confirm — approving grants a public trust badge, so no accidental taps. */
+$('list').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const card = btn.closest('[data-pro]');
+  const id = card.dataset.pro, act = btn.dataset.act, msg = card.querySelector('[data-msg]');
+
+  if (btn.dataset.arm !== '1') {
+    btn.dataset.arm = '1';
+    btn.textContent = act === 'approve' ? 'Tap again to approve' : 'Tap again to reject';
+    return;
+  }
+  card.querySelectorAll('[data-act]').forEach(b => b.disabled = true);
+  msg.className = 'msg'; msg.textContent = 'Saving…';
+  const reason = card.querySelector('[data-reason]')?.value.trim() || undefined;
+  try {
+    const r = await api(`/kyc/${encodeURIComponent(id)}/decision`, {
+      method: 'POST', body: JSON.stringify({ decision: act, reason }),
+    });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || 'Failed');
+    msg.className = 'msg ok'; msg.textContent = data.message;
+    setTimeout(load, 700);
+  } catch (err) {
+    msg.className = 'msg err'; msg.textContent = err.message;
+    card.querySelectorAll('[data-act]').forEach(b => { b.disabled = false; b.dataset.arm = ''; });
+    card.querySelector('[data-act="approve"]').textContent = 'Approve & grant badge';
+    card.querySelector('[data-act="reject"]').textContent = 'Reject';
+  }
+});
+
+async function unlock(key) {
+  KEY = key;
+  const r = await api('/kyc?status=pending_review').catch(() => null);
+  if (!r || !r.ok) {
+    $('gateErr').textContent = r && r.status === 401 ? 'That key was rejected.' : 'Could not reach the server.';
+    KEY = ''; return;
+  }
+  sessionStorage.setItem('servora-admin-key', key);
+  $('gate').classList.add('hide'); $('app').classList.remove('hide');
+  load();
+}
+
+$('gateGo').onclick = () => { const k = $('key').value.trim(); if (k) unlock(k); };
+$('key').addEventListener('keydown', e => { if (e.key === 'Enter') $('gateGo').click(); });
+$('refresh').onclick = load;
+$('status').onchange = load;
+$('lock').onclick = () => { sessionStorage.removeItem('servora-admin-key'); location.reload(); };
+
+if (KEY) unlock(KEY); else $('key').focus();
+</script>
+</body>
+</html>
