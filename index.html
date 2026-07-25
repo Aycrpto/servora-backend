@@ -61,6 +61,9 @@ section{position:relative}
 /* ============ ANNOUNCEMENT ============ */
 .annc{background:var(--green-ink);color:#cfe8da;font-size:13px;text-align:center;padding:9px 16px;letter-spacing:.01em}
 .annc b{color:var(--gold-hi);font-weight:600}
+/* one clean line on phones: drop the secondary phrases instead of wrapping */
+@media(max-width:760px){.annc-more{display:none}}
+@media(max-width:440px){.annc-mid{display:none}}
 
 /* ============ NAV ============ */
 .nav{position:sticky;top:0;z-index:80;background:color-mix(in srgb,var(--paper) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .3s,box-shadow .3s,background .3s}
@@ -117,6 +120,8 @@ section{position:relative}
 .search{background:var(--card);border-radius:18px;padding:8px;display:flex;gap:8px;box-shadow:0 24px 60px rgba(0,0,0,.35);position:relative;max-width:640px;border:1px solid var(--line2)}
 .search input,.search select{border:none;outline:none;font-family:inherit;font-size:16px;color:var(--ink);background:transparent}
 .search .field{flex:1;display:flex;align-items:center;gap:10px;padding:10px 14px;min-width:0}
+/* the input fills the field's full height so the whole box is tappable */
+.search .field input{align-self:stretch;min-height:44px}
 .search .field svg{flex:none;color:var(--faint)}
 .search input{width:100%}
 .search input::placeholder{color:var(--faint)}
@@ -287,8 +292,10 @@ section{position:relative}
 [data-theme="dark"] .cat:hover .go{color:#04150d}
 .cat .pop{position:absolute;top:12px;right:12px;z-index:2;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--card);color:var(--gold-deep);padding:5px 10px;border-radius:999px;box-shadow:0 4px 12px -2px rgba(6,32,21,.4)}
 [data-theme="dark"] .cat .pop{color:var(--gold-hi)}
-/* touch devices: replace hover lift with press feedback */
+/* touch devices: replace hover lift with press feedback + comfortable targets */
 @media(hover:none){
+  .btn{min-height:48px}
+  .btn-sm{min-height:44px}
   .cat:hover,.pro:hover,.step:hover,.tier:hover{transform:none;box-shadow:none}
   .cat:hover{border-color:var(--line)}
   .cat:hover h3{color:var(--ink)}
@@ -853,6 +860,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 @media(max-width:880px){
   .nav-links,.nav-cta .btn-ghost{display:none}
   .hamburger{display:flex}
+  /* hamburger band = touch-first: keep the header CTA comfortably tappable */
+  .nav-cta .btn{min-height:46px}
 }
 @media(max-width:760px){
   .nav-cta .btn-primary{display:none}
@@ -1014,7 +1023,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 <body>
 
 <!-- ============ ANNOUNCEMENT ============ -->
-<div class="annc">🇳🇬 <b>Always free for customers.</b> No signup, no booking fees · Now live in <b>all 36 states + FCT Abuja</b></div>
+<div class="annc">🇳🇬 <b>Always free for customers.</b><span class="annc-mid"> No signup, no booking fees</span><span class="annc-more"> · Now live in <b>all 36 states + FCT Abuja</b></span></div>
 
 <!-- ============ NAV ============ -->
 <nav class="nav" id="nav">
