@@ -16,7 +16,7 @@
  * inconclusive check is a normal outcome that routes the pro to manual review.
  * It only reports transport/config problems via outcome 'inconclusive'.
  */
-import { DOJAH_APP_ID, DOJAH_PRIVATE_KEY, DOJAH_BASE_URL, DOJAH_CONFIGURED, DOJAH_MATCH_THRESHOLD } from '../config.js';
+import { DOJAH_APP_ID, DOJAH_PRIVATE_KEY, DOJAH_BASE_URL, DOJAH_CONFIGURED, DOJAH_MATCH_THRESHOLD, DOJAH_ENV } from '../config.js';
 
 const TIMEOUT_MS = 30000;
 
@@ -40,7 +40,14 @@ export function toRawBase64(image) {
  * routed to a human — we never auto-reject a professional.
  */
 export async function verifyPhotoIdWithSelfie({ selfieImage, photoIdImage, firstName, lastName } = {}) {
-  const base = { provider: 'dojah', checkedAt: new Date().toISOString(), confidence: null, match: null, checks: {}, raw: null };
+  const endpoint = `${DOJAH_BASE_URL}/api/v1/kyc/photoid/verify`;
+  // Audit context: recorded with every result so a disputed decision can be
+  // reconstructed exactly — including WHICH threshold was in force at the time.
+  const base = {
+    provider: 'dojah', checkedAt: new Date().toISOString(),
+    confidence: null, match: null, checks: {}, raw: null,
+    endpoint, environment: DOJAH_ENV, thresholdUsed: DOJAH_MATCH_THRESHOLD, httpStatus: null,
+  };
 
   if (!DOJAH_CONFIGURED) {
     return { ...base, outcome: 'inconclusive', reasons: ['Dojah is not configured on the server.'], error: 'DOJAH_NOT_CONFIGURED' };
@@ -60,7 +67,7 @@ export async function verifyPhotoIdWithSelfie({ selfieImage, photoIdImage, first
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
     try {
-      res = await fetch(`${DOJAH_BASE_URL}/api/v1/kyc/photoid/verify`, {
+      res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,6 +83,8 @@ export async function verifyPhotoIdWithSelfie({ selfieImage, photoIdImage, first
     // Network failure / timeout — a human decides, we never reject on our own.
     return { ...base, outcome: 'inconclusive', reasons: ['Could not reach the verification service.'], error: err.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR' };
   }
+
+  base.httpStatus = res.status;
 
   if (!res.ok) {
     const msg = payload?.error || payload?.message || `HTTP ${res.status}`;

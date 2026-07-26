@@ -12,10 +12,12 @@
  */
 import { loadDB, mutate } from '../store/store.js';
 import { readKycImage } from '../store/kycStore.js';
-import { ADMIN_API_KEY } from '../config.js';
+import { isAdmin } from '../middleware/adminAuth.js';
 
 const now = () => new Date().toISOString();
-const adminOk = (req) => Boolean(ADMIN_API_KEY) && req.headers['x-admin-key'] === ADMIN_API_KEY;
+// The router already enforces requireAdmin; this second check is defence in
+// depth so a handler re-mounted elsewhere can never serve KYC data unguarded.
+const adminOk = (req) => isAdmin(req);
 
 /** Reviewer-facing view of a pro — contact details included (needed to follow up),
  *  but never the password hash or the raw provider payload. */
@@ -34,11 +36,19 @@ const reviewPro = (p) => ({
   idVerification: p.idVerification ? {
     provider: p.idVerification.provider,
     outcome: p.idVerification.outcome,
+    autoOutcome: p.idVerification.autoOutcome ?? null,   // provider's original verdict
     confidence: p.idVerification.confidence,
     match: p.idVerification.match,
     reasons: p.idVerification.reasons || [],
     checks: p.idVerification.checks || {},
     checkedAt: p.idVerification.checkedAt,
+    error: p.idVerification.error ?? null,
+    // Full audit trail for disputes — admin-only, never in a public response.
+    raw: p.idVerification.raw ?? null,
+    endpoint: p.idVerification.endpoint ?? null,
+    environment: p.idVerification.environment ?? null,
+    thresholdUsed: p.idVerification.thresholdUsed ?? null,
+    httpStatus: p.idVerification.httpStatus ?? null,
     decidedBy: p.idVerification.decidedBy ?? null,
     decidedAt: p.idVerification.decidedAt ?? null,
     decisionReason: p.idVerification.decisionReason ?? null,
@@ -114,8 +124,12 @@ export async function decideKyc(req, res) {
     p.badges = approved
       ? Array.from(new Set([...(p.badges || []), 'v']))
       : (p.badges || []).filter((b) => b !== 'v');
+    const prev = p.idVerification || {};
     p.idVerification = {
-      ...(p.idVerification || {}),
+      ...prev,
+      // Preserve what the provider originally said — a manual decision must
+      // never erase the automated verdict it overrode.
+      autoOutcome: prev.autoOutcome ?? prev.outcome ?? null,
       outcome: approved ? 'manually_approved' : 'manually_rejected',
       decidedBy: 'admin',
       decidedAt: now(),

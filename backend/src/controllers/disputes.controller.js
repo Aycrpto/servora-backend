@@ -9,12 +9,12 @@
  */
 import { loadDB, mutate } from '../store/store.js';
 import { persistPortfolio } from '../store/uploads.js';
-import { ADMIN_API_KEY } from '../config.js';
+import { isAdmin } from '../middleware/adminAuth.js';
 import { TX_STATUS } from '../services/escrow.js';
 import { releaseEscrow, releaseLabour, refundEscrow } from '../services/escrowActions.js';
 
 const now = () => new Date().toISOString();
-const adminOk = (req) => Boolean(ADMIN_API_KEY) && req.headers['x-admin-key'] === ADMIN_API_KEY;
+const adminOk = (req) => isAdmin(req);   // constant-time compare, see adminAuth.js
 
 /** GET /api/disputes?status=   (Support) — the review queue. */
 export function listDisputes(req, res) {

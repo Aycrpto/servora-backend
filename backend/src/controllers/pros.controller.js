@@ -391,6 +391,14 @@ export async function registerPro(req, res) {
       checks: verification.checks,
       checkedAt: verification.checkedAt,
       error: verification.error ?? null,
+      // Audit trail: the provider's untouched response plus the exact context
+      // the decision was made in. Kept so a disputed rejection can be
+      // reconstructed later — including which threshold applied at the time.
+      raw: verification.raw ?? null,
+      endpoint: verification.endpoint ?? null,
+      environment: verification.environment ?? null,
+      thresholdUsed: verification.thresholdUsed ?? null,
+      httpStatus: verification.httpStatus ?? null,
       decidedBy: null, decidedAt: null, decisionReason: null,
     },
     // Optional past-work photos (max 5) — written to /uploads, stored as URLs

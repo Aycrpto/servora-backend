@@ -12,7 +12,8 @@
  */
 import { randomUUID } from 'node:crypto';
 import { loadDB, mutate } from '../store/store.js';
-import { APP_BASE_URL, ADMIN_API_KEY, PAYSTACK_CONFIGURED } from '../config.js';
+import { APP_BASE_URL, PAYSTACK_CONFIGURED } from '../config.js';
+import { isAdmin } from '../middleware/adminAuth.js';
 import * as paystack from '../services/paystack.js';
 import {
   TX_STATUS, BOOKING_STATUS, computeSplit, computeQuoteSplit, genReference, canTransition, recordEvent, pushBookingHistory,
@@ -21,7 +22,7 @@ import { releaseEscrow } from '../services/escrowActions.js';
 
 const now = () => new Date().toISOString();
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const adminOk = (req) => Boolean(ADMIN_API_KEY) && req.headers['x-admin-key'] === ADMIN_API_KEY;
+const adminOk = (req) => isAdmin(req);   // constant-time compare, see adminAuth.js
 
 /** Map thrown gateway errors to sensible HTTP responses (no secrets leaked). */
 function gatewayError(res, err) {

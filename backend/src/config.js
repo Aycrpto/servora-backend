@@ -65,11 +65,28 @@ export const DOJAH_BASE_URL = process.env.DOJAH_BASE_URL ||
 /** True only when both credentials are present, so we can fail safe. */
 export const DOJAH_CONFIGURED = Boolean(DOJAH_APP_ID && DOJAH_PRIVATE_KEY);
 /**
- * Selfie↔ID match threshold. Dojah returns confidence 0-100 and its own
- * `match` boolean (true at >= 90). We require BOTH, so a borderline score
+ * Selfie↔ID match threshold (percent). Dojah returns confidence 0-100 plus its
+ * own `match` boolean (true at >= 90). We require BOTH, so a borderline score
  * never auto-verifies — it goes to manual review instead.
+ *
+ * Defaults to 90, matching Dojah's own match cutoff. Guarded: a missing or
+ * malformed value falls back to 90 rather than silently becoming NaN (which
+ * would make every comparison false and block ALL auto-approvals).
  */
-export const DOJAH_MATCH_THRESHOLD = parseInt(process.env.DOJAH_MATCH_THRESHOLD || '90', 10);
+const DEFAULT_MATCH_THRESHOLD = 90;
+function resolveMatchThreshold(raw) {
+  if (raw === undefined || raw === '') return DEFAULT_MATCH_THRESHOLD;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0 || n > 100) {
+    console.warn(`[config] DOJAH_MATCH_THRESHOLD="${raw}" is not a valid 0-100 percentage — using ${DEFAULT_MATCH_THRESHOLD}.`);
+    return DEFAULT_MATCH_THRESHOLD;
+  }
+  if (n > 99) {
+    console.warn(`[config] DOJAH_MATCH_THRESHOLD=${n} is above any realistic score — every applicant will go to manual review.`);
+  }
+  return n;
+}
+export const DOJAH_MATCH_THRESHOLD = resolveMatchThreshold(process.env.DOJAH_MATCH_THRESHOLD);
 
 /** True only when a secret key is present, so we can fail loudly-but-safely. */
 export const PAYSTACK_CONFIGURED = Boolean(PAYSTACK_SECRET_KEY);
