@@ -64,6 +64,19 @@ input:focus,select:focus{border-color:var(--green)}
 .msg.err{color:var(--red)}
 .msg.ok{color:var(--green)}
 .empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:40px 20px;text-align:center;color:var(--muted)}
+/* raw provider response — full audit trail for disputes */
+.raw{margin-top:12px;border:1px solid var(--line2);border-radius:10px;background:var(--bg)}
+.raw summary{cursor:pointer;padding:10px 12px;font-size:12.5px;font-weight:700;color:var(--ink2);list-style:none}
+.raw summary::-webkit-details-marker{display:none}
+.raw summary::before{content:'▸ ';color:var(--muted)}
+.raw[open] summary::before{content:'▾ '}
+.raw-body{padding:0 12px 12px}
+.raw-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.raw-meta span{font-size:11px;background:var(--card);border:1px solid var(--line2);border-radius:6px;padding:3px 8px;color:var(--muted)}
+.raw pre{margin:0;padding:11px;background:var(--card);border:1px solid var(--line2);border-radius:8px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.5;
+  color:var(--ink2);overflow-x:auto;max-height:320px;overflow-y:auto;white-space:pre}
+.raw .copy{margin-top:8px;font-size:12px;padding:7px 12px;min-height:0}
 .hide{display:none}
 </style>
 </head>
@@ -109,10 +122,54 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let KEY = sessionStorage.getItem('servora-admin-key') || '';
 
-const api = (path, opts = {}) => fetch('/api/admin' + path, {
-  ...opts,
-  headers: { 'Content-Type': 'application/json', 'x-admin-key': KEY, ...(opts.headers || {}) },
-});
+/* API base.
+   A relative "/api/..." only works when this page is served BY the API server.
+   Opened straight from disk (file://) it would resolve to file:///C:/api/...
+   and every call dies with an opaque "Failed to fetch". So: default to the
+   page's own origin when that's http(s), otherwise require an explicit base
+   (?api=http://host:port, remembered in sessionStorage). */
+const API_BASE = (() => {
+  const q = new URLSearchParams(location.search).get('api');
+  if (q) { sessionStorage.setItem('servora-api-base', q.replace(/\/+$/, '')); }
+  const saved = sessionStorage.getItem('servora-api-base');
+  if (saved) return saved;
+  return /^https?:$/.test(location.protocol) ? location.origin : '';
+})();
+const SERVED_FROM_DISK = !/^https?:$/.test(location.protocol);
+
+/** Wraps fetch so callers get a typed failure instead of a bare TypeError. */
+async function api(path, opts = {}) {
+  if (!API_BASE) {
+    const e = new Error('This page is open from a file, not from the server. Open it at http://<your-server>/admin-kyc.html');
+    e.kind = 'no-base'; throw e;
+  }
+  let r;
+  try {
+    r = await fetch(API_BASE + '/api/admin' + path, {
+      ...opts,
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': KEY, ...(opts.headers || {}) },
+    });
+  } catch (netErr) {
+    // TypeError from fetch: server down, wrong port, DNS, CORS, offline.
+    const e = new Error(`Cannot reach the API at ${API_BASE}. Is the server running? (${netErr.message})`);
+    e.kind = 'network'; throw e;
+  }
+  if (r.status === 401) { const e = new Error('Your admin key was rejected or has expired.'); e.kind = 'auth'; throw e; }
+  if (r.status === 429) { const e = new Error('Too many requests — wait a moment and retry.'); e.kind = 'rate'; throw e; }
+  return r;
+}
+
+/** Parse a JSON body, turning a non-JSON/error response into a clear message. */
+async function apiJson(path, opts) {
+  const r = await api(path, opts);
+  let data;
+  try { data = await r.json(); }
+  catch { const e = new Error(`Server returned ${r.status} ${r.statusText} (not JSON).`); e.kind = 'bad-body'; throw e; }
+  if (!r.ok || data.ok === false) {
+    const e = new Error(data?.error || `Request failed (HTTP ${r.status}).`); e.kind = 'api'; throw e;
+  }
+  return data;
+}
 
 /* Images are behind the admin key, so they're fetched as blobs rather than
    dropped into a plain <img src> (which couldn't send the header). */
@@ -125,7 +182,20 @@ async function loadImage(proId, kind, el) {
     img.src = url; img.alt = kind === 'selfie' ? 'Submitted selfie' : 'Submitted ID document';
     img.onload = () => URL.revokeObjectURL(url);
     el.innerHTML = ''; el.appendChild(img);
-  } catch { el.innerHTML = '<div class="none">Could not load</div>'; }
+  } catch (err) {
+    if (err.kind === 'auth') return relock('Your admin key was rejected — sign in again.');
+    el.innerHTML = `<div class="none">${esc(err.message)}</div>`;
+  }
+}
+
+/** Drop back to the key gate and wipe the stored key (session expired/revoked). */
+function relock(message) {
+  KEY = '';
+  sessionStorage.removeItem('servora-admin-key');
+  $('app').classList.add('hide');
+  $('gate').classList.remove('hide');
+  $('gateErr').textContent = message || 'Please enter your admin key.';
+  $('key').value = ''; $('key').focus();
 }
 
 const pillFor = p => p.status === 'verified' ? '<span class="pill verified">✓ ID Verified</span>'
@@ -144,7 +214,26 @@ function card(p) {
   }).filter(([, on]) => on).map(([k]) => k);
   const decided = v.decidedBy
     ? `<div class="row"><span class="k">Decision</span><span>${esc(v.outcome)} by ${esc(v.decidedBy)}${v.decisionReason ? ' — ' + esc(v.decisionReason) : ''}</span></div>` : '';
+  const autoRow = v.autoOutcome && v.autoOutcome !== v.outcome
+    ? `<div class="row"><span class="k">Original verdict</span><span>${esc(v.autoOutcome)} (overridden)</span></div>` : '';
   const canDecide = p.status !== 'verified';
+
+  /* Full provider payload — the audit record if a pro disputes a rejection. */
+  const raw = v.raw ? `<details class="raw">
+      <summary>Raw provider response</summary>
+      <div class="raw-body">
+        <div class="raw-meta">
+          ${v.provider ? `<span>provider: ${esc(v.provider)}</span>` : ''}
+          ${v.environment ? `<span>env: ${esc(v.environment)}</span>` : ''}
+          ${v.httpStatus ? `<span>HTTP ${esc(v.httpStatus)}</span>` : ''}
+          ${v.thresholdUsed != null ? `<span>threshold in force: ${esc(v.thresholdUsed)}%</span>` : ''}
+          ${v.checkedAt ? `<span>${esc(new Date(v.checkedAt).toLocaleString())}</span>` : ''}
+        </div>
+        ${v.endpoint ? `<div class="raw-meta"><span>${esc(v.endpoint)}</span></div>` : ''}
+        <pre>${esc(JSON.stringify(v.raw, null, 2))}</pre>
+        <button class="btn btn-ghost copy" data-copyraw>Copy JSON</button>
+      </div>
+    </details>` : '';
 
   return `<div class="card" data-pro="${esc(p.id)}">
     <div class="card-top">
@@ -161,9 +250,11 @@ function card(p) {
       <div class="row"><span class="k">Face match</span><span>${v.confidence == null ? '—' : esc(v.confidence) + '% confidence'}${v.match === true ? ' · matched' : v.match === false ? ' · no match' : ''}</span></div>
       ${checks.cardType ? `<div class="row"><span class="k">Card detected</span><span>${esc(checks.cardType)}</span></div>` : ''}
       ${flags.length ? `<div class="row"><span class="k">Image issues</span><span>${esc(flags.join(', '))}</span></div>` : ''}
+      ${autoRow}
       ${decided}
       ${reasons}
     </div>
+    ${raw}
     <div class="imgs">
       <div class="imgbox"><h4>ID document</h4><div data-img="idDocument"><div class="none">Loading…</div></div></div>
       <div class="imgbox"><h4>Selfie</h4><div data-img="selfie"><div class="none">Loading…</div></div></div>
@@ -181,9 +272,12 @@ async function load() {
   const status = $('status').value;
   $('list').innerHTML = '<div class="empty">Loading…</div>';
   let data;
-  try { data = await (await api('/kyc?status=' + encodeURIComponent(status))).json(); }
-  catch { $('list').innerHTML = '<div class="empty">Could not reach the server.</div>'; return; }
-  if (!data.ok) { $('list').innerHTML = `<div class="empty">${esc(data.error || 'Unauthorized')}</div>`; return; }
+  try { data = await apiJson('/kyc?status=' + encodeURIComponent(status)); }
+  catch (err) {
+    if (err.kind === 'auth') return relock('Your admin key was rejected — sign in again.');
+    $('list').innerHTML = `<div class="empty">${esc(err.message)}</div>`;
+    return;
+  }
 
   $('count').textContent = `${data.count} professional${data.count === 1 ? '' : 's'}`;
   $('list').innerHTML = data.pros.length ? data.pros.map(card).join('')
@@ -199,6 +293,15 @@ async function load() {
 
 /* Two-step confirm — approving grants a public trust badge, so no accidental taps. */
 $('list').addEventListener('click', async e => {
+  const copyBtn = e.target.closest('[data-copyraw]');
+  if (copyBtn) {
+    const json = copyBtn.closest('.raw-body').querySelector('pre').textContent;
+    navigator.clipboard?.writeText(json).then(() => {
+      copyBtn.textContent = 'Copied ✓';
+      setTimeout(() => copyBtn.textContent = 'Copy JSON', 1500);
+    });
+    return;
+  }
   const btn = e.target.closest('[data-act]');
   if (!btn) return;
   const card = btn.closest('[data-pro]');
@@ -213,14 +316,16 @@ $('list').addEventListener('click', async e => {
   msg.className = 'msg'; msg.textContent = 'Saving…';
   const reason = card.querySelector('[data-reason]')?.value.trim() || undefined;
   try {
-    const r = await api(`/kyc/${encodeURIComponent(id)}/decision`, {
+    const data = await apiJson(`/kyc/${encodeURIComponent(id)}/decision`, {
       method: 'POST', body: JSON.stringify({ decision: act, reason }),
     });
-    const data = await r.json();
-    if (!data.ok) throw new Error(data.error || 'Failed');
     msg.className = 'msg ok'; msg.textContent = data.message;
     setTimeout(load, 700);
   } catch (err) {
+    // Session died mid-review: re-lock rather than silently failing forever.
+    if (err.kind === 'auth') return relock('Your admin key was rejected — sign in again, your decision was not saved.');
+    // Everything else: say exactly what went wrong and leave the decision
+    // re-tryable with the typed reason still in the box.
     msg.className = 'msg err'; msg.textContent = err.message;
     card.querySelectorAll('[data-act]').forEach(b => { b.disabled = false; b.dataset.arm = ''; });
     card.querySelector('[data-act="approve"]').textContent = 'Approve & grant badge';
@@ -228,25 +333,54 @@ $('list').addEventListener('click', async e => {
   }
 });
 
+/**
+ * The gate. Nothing in #app is revealed — and no ID photo or selfie is even
+ * requested — until this call comes back 200 with the key. The server enforces
+ * the same check on every endpoint, so hiding the UI is the convenience layer,
+ * not the security boundary.
+ */
 async function unlock(key) {
   KEY = key;
-  const r = await api('/kyc?status=pending_review').catch(() => null);
-  if (!r || !r.ok) {
-    $('gateErr').textContent = r && r.status === 401 ? 'That key was rejected.' : 'Could not reach the server.';
-    KEY = ''; return;
+  $('gateErr').textContent = '';
+  $('gateGo').disabled = true; $('gateGo').textContent = 'Checking…';
+  try {
+    await apiJson('/kyc?status=pending_review');
+  } catch (err) {
+    KEY = '';
+    sessionStorage.removeItem('servora-admin-key');
+    $('gateErr').textContent = err.kind === 'auth' ? 'That key was rejected.' : err.message;
+    return;
+  } finally {
+    $('gateGo').disabled = false; $('gateGo').textContent = 'Unlock';
   }
   sessionStorage.setItem('servora-admin-key', key);
   $('gate').classList.add('hide'); $('app').classList.remove('hide');
   load();
 }
 
-$('gateGo').onclick = () => { const k = $('key').value.trim(); if (k) unlock(k); };
+/* Forgive the common copy-paste mistakes that otherwise look like a bad key:
+   pasting the whole "ADMIN_API_KEY=..." line, surrounding quotes, or stray
+   whitespace/newlines from a terminal or .env file. */
+function cleanKey(raw) {
+  return String(raw || '')
+    .trim()
+    .replace(/^ADMIN_API_KEY\s*=\s*/i, '')   // whole .env line pasted
+    .replace(/^["']|["']$/g, '')             // wrapped in quotes
+    .trim();
+}
+$('gateGo').onclick = () => { const k = cleanKey($('key').value); if (k) unlock(k); };
 $('key').addEventListener('keydown', e => { if (e.key === 'Enter') $('gateGo').click(); });
 $('refresh').onclick = load;
 $('status').onchange = load;
 $('lock').onclick = () => { sessionStorage.removeItem('servora-admin-key'); location.reload(); };
 
-if (KEY) unlock(KEY); else $('key').focus();
+/* Opened from disk there is no server to talk to — say so plainly instead of
+   letting every click fail with "Failed to fetch". */
+if (SERVED_FROM_DISK && !API_BASE) {
+  $('gateErr').innerHTML = 'This page is open from a file, so it cannot reach the API.<br>' +
+    'Open it from the server instead: <b>http://localhost:8321/admin-kyc.html</b>';
+  $('gateGo').disabled = true;
+} else if (KEY) unlock(KEY); else $('key').focus();
 </script>
 </body>
 </html>
