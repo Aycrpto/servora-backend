@@ -571,6 +571,20 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .dash-stat{background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:11px 8px;text-align:center}
 .dash-stat b{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em}
 .dash-stat span{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+/* ===== pro availability toggle ===== */
+.avail-card{margin-top:11px;background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:13px 15px}
+.avail-card.on{border-color:var(--green);background:var(--chip-green-bg)}
+.avail-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.avail-title{font-size:14.5px;font-weight:800;letter-spacing:-.01em}
+.avail-sub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4}
+.avail-switch{flex:none;width:52px;height:30px;border-radius:999px;background:var(--line2);border:none;position:relative;cursor:pointer;transition:background .2s;min-height:30px;padding:0}
+.avail-switch .knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.avail-switch[aria-checked="true"]{background:var(--green)}
+.avail-switch[aria-checked="true"] .knob{transform:translateX(22px)}
+.avail-switch:disabled{opacity:.55;cursor:default}
+.avail-msg{font-size:12px;margin-top:9px;color:var(--muted)}
+.avail-msg:empty{display:none}
+.avail-msg.err{color:#c2452f}
 .dash-quote-cta{width:100%;margin-top:11px}
 .dash-edit{margin-top:9px;background:var(--soft);border:1px solid var(--line2);border-radius:12px;overflow:hidden}
 .dash-edit summary{list-style:none;cursor:pointer;padding:12px 15px;font-size:13px;font-weight:700;min-height:44px;display:flex;align-items:center;gap:7px;transition:color .2s}
@@ -641,6 +655,28 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
 .bp-empty h4{font-size:15px;margin-bottom:4px}
 .bp-empty p{color:var(--muted);font-size:12.5px;margin-bottom:14px}
 .bp-nearby{margin-top:20px;padding-top:16px;border-top:1px solid var(--line2)}
+/* ===== availability + distance on pro cards ===== */
+.match-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px}
+.mt-avail{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;letter-spacing:.01em;
+  color:var(--green);background:var(--chip-green-bg);border-radius:999px;padding:4px 10px}
+.mt-avail .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);position:relative}
+.mt-avail .pulse::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:var(--green);
+  opacity:.35;animation:availPulse 1.8s ease-out infinite}
+@keyframes availPulse{0%{transform:scale(.6);opacity:.5}100%{transform:scale(1.5);opacity:0}}
+@media (prefers-reduced-motion:reduce){.mt-avail .pulse::after{animation:none}}
+.mt-dist{font-size:11.5px;font-weight:700;color:var(--muted);background:var(--soft);
+  border:1px solid var(--line2);border-radius:999px;padding:4px 10px}
+/* live-refresh footer on the results step */
+.bp-live{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;
+  padding-top:12px;border-top:1px solid var(--line2);font-size:11.5px;color:var(--faint)}
+.bp-live button{font-size:11.5px;font-weight:700;color:var(--green);text-decoration:underline}
+/* ===== GPS location step ===== */
+.bp-geo{display:flex;gap:12px;align-items:flex-start;background:var(--soft);border:1px solid var(--line2);border-radius:14px;padding:14px 15px}
+.bp-geo.ok{border-color:var(--green);background:var(--chip-green-bg)}
+.bp-geo-ico{font-size:20px;line-height:1.2;flex:none}
+.bp-geo-title{font-size:14.5px;font-weight:800;letter-spacing:-.01em}
+.bp-geo-sub{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+#bpGeoErr:not(:empty){margin-top:10px}
 /* ===== skeleton loading (listings) ===== */
 .sk-card{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
 .sk{position:relative;overflow:hidden;background:var(--soft);border-radius:8px;min-height:12px}
@@ -1625,17 +1661,49 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
       <div class="bp-services" id="bpServices" role="listbox" aria-label="Choose a service"></div>
     </div>
 
-    <!-- Step 2 · location -->
+    <!-- Step 2 · location. GPS first (most accurate ranking), with the manual
+         State/LGA picker as the fallback when it's denied or unavailable. -->
     <div class="bp-step" id="bpStep2" hidden>
       <div class="bp-chosen" id="bpChosen1"></div>
-      <label for="bpState">Which state are you in?</label>
-      <select id="bpState"></select>
-      <label for="bpArea" style="margin-top:12px">Area / LGA</label>
-      <input type="text" id="bpArea" placeholder="e.g. Lekki, Ikeja, Wuse…" autocomplete="address-level2" aria-describedby="bpLocErr">
-      <p class="ferr" id="bpLocErr" aria-live="polite"></p>
+
+      <!-- 2a: the GPS offer -->
+      <div id="bpGeoAsk">
+        <div class="bp-geo">
+          <span class="bp-geo-ico" aria-hidden="true">📍</span>
+          <div>
+            <div class="bp-geo-title">Find pros closest to you</div>
+            <div class="bp-geo-sub">We use your location once to rank pros by distance. It isn’t stored or shared.</div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" id="bpUseGps" style="width:100%;margin-top:12px">Use my current location</button>
+        <button type="button" class="linkish" id="bpManualLink" style="display:block;margin:12px auto 0">Enter my area manually instead</button>
+        <p class="ferr" id="bpGeoErr" aria-live="polite"></p>
+      </div>
+
+      <!-- 2b: located via GPS -->
+      <div id="bpGeoOk" hidden>
+        <div class="bp-geo ok">
+          <span class="bp-geo-ico" aria-hidden="true">✓</span>
+          <div>
+            <div class="bp-geo-title">Using your current location</div>
+            <div class="bp-geo-sub" id="bpGeoAccuracy"></div>
+          </div>
+        </div>
+        <button type="button" class="linkish" id="bpGeoRedo" style="display:block;margin:12px auto 0">Use a different area instead</button>
+      </div>
+
+      <!-- 2c: manual fallback (the original picker) -->
+      <div id="bpManual" hidden>
+        <label for="bpState">Which state are you in?</label>
+        <select id="bpState"></select>
+        <label for="bpArea" style="margin-top:12px">Area / LGA</label>
+        <input type="text" id="bpArea" placeholder="e.g. Lekki, Ikeja, Wuse…" autocomplete="address-level2" aria-describedby="bpLocErr">
+        <p class="ferr" id="bpLocErr" aria-live="polite"></p>
+      </div>
+
       <div class="bp-nav">
         <button type="button" class="btn btn-ghost btn-sm" data-bp-back>← Back</button>
-        <button type="button" class="btn btn-primary" id="bpToStep3">Continue →</button>
+        <button type="button" class="btn btn-primary" id="bpToStep3" hidden>Continue →</button>
       </div>
     </div>
 
@@ -2072,6 +2140,21 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:96px;padding:72px 0 
     <h3>My dashboard</h3>
     <div class="dash-id" id="dashWho"></div>
     <div class="dash-stats" id="dashStats"></div>
+    <!-- Availability: what puts a pro at the top of "near me" results.
+         Lives inside the existing signed-in dashboard, so it reuses the
+         phone/password login already in place — no second auth flow. -->
+    <div class="avail-card" id="availCard" hidden>
+      <div class="avail-row">
+        <div>
+          <div class="avail-title">Available now</div>
+          <div class="avail-sub" id="availSub">Customers nearby see available pros first.</div>
+        </div>
+        <button type="button" class="avail-switch" id="availToggle" role="switch" aria-checked="false" aria-label="Toggle availability">
+          <span class="knob"></span>
+        </button>
+      </div>
+      <p class="avail-msg" id="availMsg" aria-live="polite"></p>
+    </div>
     <!-- Always-visible primary action: opens the quote builder on one click,
          no need to expand "My jobs" first. -->
     <button type="button" class="btn btn-primary dash-quote-cta" id="dashQuoteBtn">＋ Send a quote to a customer</button>
@@ -2219,7 +2302,9 @@ const proById=id=>proCache[String(id)]||pros.find(p=>String(p.id)===String(id));
 /* NOTE: badges are taken verbatim from the server — never defaulted. The
    "✓ ID Verified" badge ('v') is only ever present after a real Dojah pass or
    an explicit admin approval, so it can't be shown to an unverified pro. */
-const mapApiPro=a=>({id:a.id,n:a.name,cat:a.category,area:a.area||a.lga||a.state,city:a.city||a.state,state:a.state,lga:a.lga||null,r:a.rating,j:a.jobsDone||0,price:a.priceFrom,pl:a.priceLabel||'Quote on request',resp:a.responseMins||20,c:a.avatarColor||'#0e7a4a',b:(a.idVerified?['v']:[]).concat((a.badges||[]).filter(x=>x!=='v')),idVerified:a.idVerified===true,tier:a.tier||'starter',bio:a.bio||'',rev:a.review?a.review.text:null,who:a.review?a.review.by:null,skills:a.skills||null,portfolio:a.portfolio||[]});
+const mapApiPro=a=>({id:a.id,n:a.name,cat:a.category,area:a.area||a.lga||a.state,city:a.city||a.state,state:a.state,lga:a.lga||null,r:a.rating,j:a.jobsDone||0,price:a.priceFrom,pl:a.priceLabel||'Quote on request',resp:a.responseMins||20,c:a.avatarColor||'#0e7a4a',b:(a.idVerified?['v']:[]).concat((a.badges||[]).filter(x=>x!=='v')),idVerified:a.idVerified===true,tier:a.tier||'starter',bio:a.bio||'',rev:a.review?a.review.text:null,who:a.review?a.review.by:null,skills:a.skills||null,portfolio:a.portfolio||[],
+  /* set only in GPS mode / when the pro has toggled availability */
+  distanceKm:(typeof a.distanceKm==='number')?a.distanceKm:null,availableNow:a.availableNow===true});
 
 /* Thin fetch wrapper — returns null on any failure so callers can fall
    back to bundled seed data (page must work from file:// too). */
@@ -2273,11 +2358,13 @@ const ServoraAPI={
   async getServices(){return services},
 
   /* GET /api/pros?category=&state=&area=&sort= */
-  async getPros({category=null,state=null,area=null,sort='rating'}={}){
+  async getPros({category=null,state=null,area=null,lat=null,lng=null,sort='rating'}={}){
     const qs=new URLSearchParams();
     if(category)qs.set('category',category);
     if(state)qs.set('state',state);
     if(area)qs.set('area',area);
+    /* GPS mode: the server ranks by distance from these coordinates. */
+    if(Number.isFinite(lat)&&Number.isFinite(lng)){qs.set('lat',lat);qs.set('lng',lng);}
     qs.set('sort',sort);
     const live=await apiFetch('/api/pros?'+qs);
     if(live&&live.pros)return{pros:cachePros(live.pros.map(mapApiPro)),stateCovered:!!live.stateCovered,areaCovered:!!live.areaCovered};
@@ -2375,6 +2462,25 @@ const ServoraAPI={
     return apiFetch('/api/payments/banks');
   },
   /* GET /api/pros/:id/payout — the pro's saved payout status (masked). */
+  /* GET /api/pros/:id/availability — the pro's own "Available now" state. */
+  async getAvailability(id,token){
+    try{
+      const r=await fetch('/api/pros/'+encodeURIComponent(id)+'/availability',{headers:{Authorization:'Bearer '+(token||'')}});
+      return await r.json();
+    }catch(e){return null}
+  },
+  /* POST /api/pros/:id/availability — flip it on or off. */
+  async setAvailability(id,token,availableNow){
+    try{
+      const r=await fetch('/api/pros/'+encodeURIComponent(id)+'/availability',{
+        method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},
+        body:JSON.stringify({availableNow})
+      });
+      return await r.json();
+    }catch(e){return null}
+  },
+
   async getPayoutAccount(id,token){
     try{
       const r=await fetch('/api/pros/'+encodeURIComponent(id)+'/payout',{headers:{Authorization:'Bearer '+(token||'')}});
@@ -2568,6 +2674,23 @@ ServoraAPI.getServices().then(list=>{
   document.querySelectorAll('#cats .rv').forEach(el=>io.observe(el));
 });
 
+/* Distance in human terms — metres under 1km, one decimal under 10km. */
+function distanceLabel(km){
+  if(typeof km!=='number'||!isFinite(km))return '';
+  if(km<1)return Math.max(50,Math.round(km*1000/50)*50)+' m away';
+  if(km<10)return km.toFixed(1).replace(/\.0$/,'')+' km away';
+  return Math.round(km)+' km away';
+}
+/* "Available now" + distance line. Renders nothing on the homepage listings,
+   where neither field is set — only the near-me results carry them. */
+function matchLine(p){
+  const bits=[];
+  if(p.availableNow)bits.push('<span class="mt-avail"><span class="pulse"></span>Available now</span>');
+  const d=distanceLabel(p.distanceKm);
+  if(d)bits.push(`<span class="mt-dist">📍 ${esc(d)}</span>`);
+  return bits.length?`<div class="match-line">${bits.join('')}</div>`:'';
+}
+
 /* ============ PRO CARD TEMPLATE ============
    Renders one pro profile record (see schema above). Cards reference
    pros by id, so server-fetched lists plug straight in. */
@@ -2579,6 +2702,7 @@ function proCard(p){
    </div>
    <div class="rating"><span class="s">${p.r?'★ '+Number(p.r).toFixed(1):'✦ New'}</span><span class="n">(${p.j||0} jobs)</span></div>
    <div class="badges">${p.b.map(b=>badgeMap[b]).join('')}</div>
+   ${matchLine(p)}
    <div class="resp"><span class="dot"></span>Responds in ~${p.resp} min</div>
    ${(sh=>sh.length?`<div class="pro-shots">${sh.slice(0,2).map((s,i)=>`<img src="${esc(s)}" alt="${esc(p.n)}, past work ${i+1}" decoding="async">`).join('')}</div>`:'')(proPhotos(p))}
    <div class="statline"><span>Starting price</span><b>${p.pl}</b></div>
@@ -2977,7 +3101,9 @@ modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
 (function(){
   const bg=document.getElementById('bookProBg');
   if(!bg)return;
-  const S={service:null,stateName:'',area:'',desc:'',step:1};
+  /* coords is set only when the browser gives us GPS; otherwise we fall back
+     to stateName/area text matching. mode tells the results step which to use. */
+  const S={service:null,stateName:'',area:'',desc:'',coords:null,mode:'manual',step:1};
   const steps=[1,2,3,4].map(n=>document.getElementById('bpStep'+n));
   const dots=[...document.querySelectorAll('#bpSteps .bp-dot')];
   const SUB={1:'First, what do you need done?',2:'Where do you need them?',3:'Tell the pro what to expect.',4:'Available verified pros near you'};
@@ -2988,9 +3114,12 @@ modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
     steps.forEach((el,i)=>el.hidden=(i+1)!==n);
     dots.forEach((d,i)=>d.classList.toggle('on',i+1<=n));
     document.getElementById('bpSub').textContent=SUB[n]||'';
+    /* Availability changes minute to minute, so results refresh while they're
+       on screen — and stop the moment they aren't. */
+    if(n===4)startPolling(); else stopPolling();
     if(n===2)document.getElementById('bpChosen1').textContent='🛠️ '+one(S.service);
     if(n===3){
-      document.getElementById('bpChosen2').textContent='🛠️ '+one(S.service)+' · 📍 '+S.area+', '+S.stateName;
+      document.getElementById('bpChosen2').textContent='🛠️ '+one(S.service)+' · 📍 '+locationLabel();
       /* example text always matches the chosen trade */
       document.getElementById('bpDesc').placeholder='e.g. '+svcExample(S.service).desc;
     }
@@ -3007,40 +3136,145 @@ modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
       '<optgroup label="Popular">'+POPULAR_STATES.map(s=>`<option>${s}</option>`).join('')+'</optgroup>'+
       '<optgroup label="All states (A–Z)">'+NIGERIAN_STATES.map(s=>`<option>${s}</option>`).join('')+'</optgroup>';
   }
+
+  /* ---------- live refresh (polling) ----------
+     30s is frequent enough to reflect a pro going available, cheap enough
+     that we don't need websockets yet. Paused while the tab is hidden so a
+     forgotten background tab doesn't poll forever. */
+  const POLL_MS=30000;
+  let pollTimer=null,lastUpdated=null,refreshing=false;
+  function startPolling(){
+    stopPolling();
+    pollTimer=setInterval(()=>{
+      if(document.hidden)return;            /* skip while backgrounded */
+      renderResults({silent:true});
+    },POLL_MS);
+  }
+  function stopPolling(){ if(pollTimer){clearInterval(pollTimer);pollTimer=null} }
+  /* Belt and braces: never leave a timer running if the modal goes away. */
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&S.step===4&&bg.classList.contains('open'))renderResults({silent:true});
+  });
+  function freshnessText(){
+    if(!lastUpdated)return '';
+    const s=Math.round((Date.now()-lastUpdated)/1000);
+    return s<10?'Updated just now':s<60?`Updated ${s}s ago`:`Updated ${Math.round(s/60)}m ago`;
+  }
+
+  /* ---------- location step: GPS first, manual fallback ---------- */
+  const $g=id=>document.getElementById(id);
+  /** Human label for wherever we ended up. */
+  function locationLabel(){
+    if(S.mode==='gps')return 'Your current location';
+    return [S.area,S.stateName].filter(Boolean).join(', ');
+  }
+  /** Show one of the three sub-panels of step 2. */
+  function geoView(v){
+    $g('bpGeoAsk').hidden=v!=='ask';
+    $g('bpGeoOk').hidden=v!=='located';
+    $g('bpManual').hidden=v!=='manual';
+    /* Continue is only meaningful once there's something to continue with. */
+    $g('bpToStep3').hidden=v==='ask';
+  }
+  function useManual(){
+    S.mode='manual';S.coords=null;
+    geoView('manual');
+    setTimeout(()=>$g('bpState').focus(),40);
+  }
+  $g('bpManualLink').onclick=useManual;
+  $g('bpGeoRedo').onclick=useManual;
+
+  /**
+   * Ask the browser for coordinates. Every failure path lands the customer on
+   * the manual picker with a plain explanation — GPS is an accelerator, never
+   * a requirement. Note geolocation only works in a secure context (https or
+   * localhost), which we detect up front rather than waiting for a timeout.
+   */
+  $g('bpUseGps').onclick=()=>{
+    const btn=$g('bpUseGps'),err=$g('bpGeoErr');
+    err.textContent='';
+    if(!navigator.geolocation){
+      err.textContent='This browser can’t share location. Enter your area instead.';
+      useManual();return;
+    }
+    if(!window.isSecureContext){
+      err.textContent='Location needs a secure (https) connection. Enter your area instead.';
+      useManual();return;
+    }
+    btn.disabled=true;btn.textContent='Getting your location…';
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        btn.disabled=false;btn.textContent='Use my current location';
+        S.coords={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy??null};
+        S.mode='gps';
+        const acc=pos.coords.accuracy;
+        $g('bpGeoAccuracy').textContent=acc
+          ? `Accurate to about ${acc<1000?Math.round(acc)+' m':(acc/1000).toFixed(1)+' km'}. We’ll rank pros by distance from here.`
+          : 'We’ll rank pros by distance from here.';
+        geoView('located');
+      },
+      geoErr=>{
+        btn.disabled=false;btn.textContent='Use my current location';
+        const msg={
+          1:'No problem — location permission was declined. Enter your area instead.',
+          2:'Your location isn’t available right now. Enter your area instead.',
+          3:'That took too long. Enter your area instead.',
+        }[geoErr.code]||'Couldn’t get your location. Enter your area instead.';
+        err.textContent=msg;
+        useManual();
+      },
+      {enableHighAccuracy:true,timeout:10000,maximumAge:300000}
+    );
+  };
   window.openBookPro=function(preService){
-    S.service=preService||null;S.stateName='';S.area='';S.desc='';
+    S.service=preService||null;S.stateName='';S.area='';S.desc='';S.coords=null;S.mode='manual';
     renderServices();
     if(!document.getElementById('bpState').options.length)buildStates();
     document.getElementById('bpState').value='';
     document.getElementById('bpArea').value='';
     document.getElementById('bpDesc').value='';
     document.getElementById('bpLocErr').textContent='';
+    document.getElementById('bpGeoErr').textContent='';
+    geoView('ask');   /* every new session starts by offering GPS */
     document.getElementById('bpDescErr').textContent='';
     document.getElementById('bpResults').innerHTML='';
     bg.classList.add('open');document.body.style.overflow='hidden';
     if(typeof closeProfile==='function')closeProfile();
     show(preService?2:1);
   };
-  function closeBookPro(){bg.classList.remove('open');document.body.style.overflow='';window.bpPrefill=null}
+  function closeBookPro(){
+    stopPolling();                 /* never leave a timer polling in the background */
+    bg.classList.remove('open');document.body.style.overflow='';window.bpPrefill=null;
+  }
   window.closeBookPro=closeBookPro;
   document.getElementById('bookProClose').onclick=closeBookPro;
   bg.addEventListener('click',e=>{
     if(e.target===bg){closeBookPro();return}
     if(e.target.closest('[data-bp-back]'))show(Math.max(1,S.step-1));
     if(e.target.closest('[data-bp-post]'))postJob();
+    if(e.target.closest('[data-bp-refresh]'))renderResults({silent:true});
   });
+  /* Keep the "Updated Xs ago" label honest between polls. */
+  setInterval(()=>{
+    const el=document.getElementById('bpFresh');
+    if(el&&S.step===4&&bg.classList.contains('open'))el.textContent=freshnessText();
+  },5000);
   document.getElementById('bpServices').addEventListener('click',e=>{
     const b=e.target.closest('[data-bp-svc]');if(!b)return;
     S.service=b.dataset.bpSvc;renderServices();show(2);
     setTimeout(()=>document.getElementById('bpState').focus(),40);
   });
   document.getElementById('bpToStep3').onclick=()=>{
+    /* GPS mode needs no text — coordinates are already captured. */
+    if(S.mode==='gps'&&S.coords){
+      show(3);setTimeout(()=>document.getElementById('bpDesc').focus(),40);return;
+    }
     const st=document.getElementById('bpState').value.trim();
     const ar=document.getElementById('bpArea').value.trim();
     const err=document.getElementById('bpLocErr');
     if(!st){err.textContent='Please select your state.';return}
     if(ar.length<2){err.textContent='Enter your area or LGA (e.g. Lekki, Ikeja, Wuse).';return}
-    err.textContent='';S.stateName=st;S.area=ar;show(3);
+    err.textContent='';S.stateName=st;S.area=ar;S.mode='manual';show(3);
     setTimeout(()=>document.getElementById('bpDesc').focus(),40);
   };
   document.getElementById('bpToResults').onclick=()=>{
@@ -3049,27 +3283,71 @@ modalBg.addEventListener('click',e=>{if(e.target===modalBg)closeModal()});
     if(d.length<5){err.textContent='Add a short description so pros know what you need (5+ characters).';return}
     err.textContent='';S.desc=d;show(4);renderResults();
   };
+  /* In GPS mode we have coordinates but no area text, so the lead form asks
+     the customer to type their area rather than prefilling something wrong. */
+  function prefillPayload(){
+    return S.mode==='gps'
+      ? {desc:S.desc,area:'',state:''}
+      : {desc:S.desc,area:S.area+', '+S.stateName,state:S.stateName};
+  }
   function postJob(){
-    window.bpPrefill={desc:S.desc,area:S.area+', '+S.stateName,state:S.stateName};
+    window.bpPrefill=prefillPayload();
     openPostJob(S.service);   /* showModal() closes this wizard + consumes the prefill */
   }
-  async function renderResults(){
+  async function renderResults({silent=false}={}){
     const box=document.getElementById('bpResults');
-    box.innerHTML=`<div class="bp-rsub">Finding verified ${many()} in ${esc(S.area)}…</div><div class="bp-grid">${skeletonCards(2)}</div>`;
+    if(refreshing)return;                    /* don't stack overlapping polls */
+    refreshing=true;
+    const where=S.mode==='gps'?'near you':`in ${esc(S.area)}`;
+    /* A background refresh must not blank the list the customer is reading. */
+    if(!silent)box.innerHTML=`<div class="bp-rsub">Finding verified ${many()} ${where}…</div><div class="bp-grid">${skeletonCards(2)}</div>`;
     /* Carry the job description + location into whatever the customer clicks
        next — Contact a pro or Post a job — so they never retype it. */
-    window.bpPrefill={desc:S.desc,area:S.area+', '+S.stateName,state:S.stateName};
-    const {pros:list,stateCovered,areaCovered}=await ServoraAPI.getPros({category:S.service,state:S.stateName,area:S.area,sort:'rating'});
+    window.bpPrefill=prefillPayload();
+    let list=[],stateCovered=false,areaCovered=false;
+    try{
+      ({pros:list,stateCovered,areaCovered}=await ServoraAPI.getPros({
+        category:S.service,
+        state:S.mode==='gps'?null:S.stateName,
+        area:S.mode==='gps'?null:S.area,
+        lat:S.coords?.lat, lng:S.coords?.lng,
+        sort:'rating',
+      }));
+    }catch(_){
+      /* A failed poll must never wedge future refreshes, nor wipe the list. */
+      refreshing=false;
+      if(!silent)box.innerHTML='<div class="bp-empty">Couldn’t load pros just now. <button type="button" class="linkish" data-bp-refresh>Try again</button></div>';
+      return;
+    }
+    refreshing=false;lastUpdated=Date.now();
+    const svcOne=esc(one(S.service));
+    const nAvail=list.filter(p=>p.availableNow).length;
+    /* Footer: proves the list is live and offers a manual nudge. */
+    const live=`<div class="bp-live"><span id="bpFresh">${freshnessText()}</span>`+
+               `<button type="button" data-bp-refresh>Refresh now</button></div>`;
+
+    /* GPS mode: the server already ranked available-first, then distance,
+       then rating — so render in the order it gave us. */
+    if(S.mode==='gps'){
+      box.innerHTML=list.length
+        ? `<div class="bp-rhead">${list.length} verified ${list.length>1?many():svcOne} near you</div>`+
+          `<div class="bp-rsub">${nAvail?`${nAvail} available right now · `:''}closest first · all ID-verified.</div>`+
+          `<div class="bp-grid">${list.map(proCard).join('')}</div>`+live
+        : `<div class="bp-empty"><span class="be-ico">📍</span><h4>No ${many()} near you yet</h4>`+
+          `<p>Post your job and we'll match you with an available ${svcOne.toLowerCase()} as soon as one covers your area.</p>`+
+          `<button type="button" class="btn btn-gold" data-bp-post>📝 Post this job, free</button></div>`;
+      return;
+    }
     const q=S.area.trim().toLowerCase();
     const matches=p=>[p.area,p.lga].some(v=>v&&String(v).toLowerCase().includes(q));
     const inArea=(stateCovered&&areaCovered)?list.filter(matches):[];
     const nearby=list.filter(p=>!inArea.includes(p));
-    const svcOne=esc(one(S.service));
     let html='';
     if(inArea.length){
+      const nA=inArea.filter(p=>p.availableNow).length;
       html+=`<div class="bp-rhead">${inArea.length} verified ${inArea.length>1?many():svcOne} in ${esc(S.area)}</div>`+
-            `<div class="bp-rsub">All ID-verified · contact free, no signup · pay only when the job's done.</div>`+
-            `<div class="bp-grid">${inArea.map(proCard).join('')}</div>`;
+            `<div class="bp-rsub">${nA?`${nA} available right now · `:''}all ID-verified · contact free, no signup.</div>`+
+            `<div class="bp-grid">${inArea.map(proCard).join('')}</div>`+live;
     }else{
       const scope=stateCovered?esc(S.area):esc(S.stateName);
       html+=`<div class="bp-empty"><span class="be-ico">📍</span>`+
@@ -4067,6 +4345,7 @@ function openLeadsDash(){
   document.getElementById('dashSaveMsg').textContent='';
   dashPhotos=proPhotos(p);dpfErr.textContent='';renderDashPhotos();
   resetPayoutCard();refreshPayoutStatus();
+  refreshAvailability();
   resetJobsCard();
   dashFilter='all';dashQuery='';
   document.getElementById('leadSearch').value='';
@@ -4307,6 +4586,51 @@ async function loadProQuotes(){
   wrap.innerHTML=pending.map(q=>`<div class="quote-chip"><div><span class="bk-status warn">Quote Sent</span> <b>${koboFmt(q.totalKobo)}</b> · ${esc((q.service||'').replace(/s$/,''))} · ${esc(q.customer?.name||q.customer?.email||q.customer?.phone||'customer')}</div><button type="button" class="btn btn-ghost btn-sm" data-copyquote="${esc(q.id)}">Copy link</button></div>`).join('');
 }
 document.getElementById('dashJobs').addEventListener('toggle',e=>{ if(e.target.open)loadProJobs(); });
+/* ============ PRO AVAILABILITY TOGGLE ============
+   Uses the session from the existing phone/password login. Optimistic UI with
+   rollback, because a failed write must never leave a pro shown as available
+   when the server disagrees. */
+const availCard=document.getElementById('availCard'),
+      availToggle=document.getElementById('availToggle'),
+      availMsg=document.getElementById('availMsg'),
+      availSub=document.getElementById('availSub');
+function paintAvailability(on){
+  availToggle.setAttribute('aria-checked',on?'true':'false');
+  availCard.classList.toggle('on',on);
+}
+async function refreshAvailability(){
+  if(!proSession){availCard.hidden=true;return}
+  availCard.hidden=false;availMsg.textContent='';availMsg.className='avail-msg';
+  const res=await ServoraAPI.getAvailability(proSession.pro.id,proSession.token);
+  if(!res||!res.ok){
+    availToggle.disabled=true;
+    availSub.textContent='Availability is unavailable right now.';
+    return;
+  }
+  availToggle.disabled=false;
+  paintAvailability(res.availableNow);
+  availSub.textContent=res.hasLocation
+    ? (res.availableNow?`Shown first to customers near ${res.area||'you'}.`:`Turn on to appear first for customers near ${res.area||'you'}.`)
+    : 'Customers nearby see available pros first.';
+}
+availToggle.onclick=async()=>{
+  if(!proSession||availToggle.disabled)return;
+  const next=availToggle.getAttribute('aria-checked')!=='true';
+  paintAvailability(next);                       // optimistic
+  availToggle.disabled=true;availMsg.className='avail-msg';availMsg.textContent='Saving…';
+  const res=await ServoraAPI.setAvailability(proSession.pro.id,proSession.token,next);
+  availToggle.disabled=false;
+  if(!res||!res.ok){
+    paintAvailability(!next);                    // roll back — server is the truth
+    availMsg.className='avail-msg err';
+    availMsg.textContent=(res&&res.error)||'Couldn’t save. Check your connection and try again.';
+    return;
+  }
+  paintAvailability(res.availableNow);
+  availMsg.textContent=res.message||'';
+  refreshAvailability();
+};
+
 document.getElementById('newQuoteBtn').onclick=()=>openQuoteBuilder();
 document.getElementById('dashQuoteBtn').onclick=()=>openQuoteBuilder();
 document.getElementById('quotesList').addEventListener('click',e=>{
