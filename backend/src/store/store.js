@@ -14,7 +14,7 @@
  * to a transactional DB. The mutate() helper below serializes writes within a
  * single process so concurrent webhook/release calls don't clobber each other.
  */
-import { readFileSync, writeFileSync, existsSync, copyFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, copyFileSync, statSync, renameSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -36,7 +36,19 @@ const EMPTY = {
   // Quote-based split-escrow flow: pro-issued quotes and the pre-job/completion
   // evidence attached to a booking. Backfilled into older db.json via the spread.
   quotes: [], evidence: [],
+  // Cached State/LGA -> coordinates lookups. Nominatim's usage policy REQUIRES
+  // caching; this keeps repeat geocodes off their servers entirely.
+  geocodeCache: [],
 };
+
+/**
+ * Read cache. The disk read dominates loadDB() (~32ms of ~45ms at 2.3MB), so we
+ * cache the file CONTENTS keyed on mtime+size and re-parse per call. Parsing per
+ * call is deliberate: several callers mutate the object they get back, so each
+ * one must receive its own copy — sharing a parsed object would let a reader
+ * corrupt the cache. (Re-parsing is still ~3.5x faster than re-reading.)
+ */
+let _cache = { key: null, text: null };
 
 export function loadDB() {
   // First run (or after a reset): start from the seed.
@@ -45,16 +57,36 @@ export function loadDB() {
   }
   if (!existsSync(DB_PATH)) return structuredClone(EMPTY);
   try {
+    const st = statSync(DB_PATH);
+    const key = `${st.mtimeMs}:${st.size}`;
+    if (_cache.key !== key) {
+      _cache = { key, text: readFileSync(DB_PATH, 'utf8') };
+    }
     // Spread order backfills any missing top-level collections (e.g. bookings).
-    return { ...structuredClone(EMPTY), ...JSON.parse(readFileSync(DB_PATH, 'utf8')) };
+    return { ...structuredClone(EMPTY), ...JSON.parse(_cache.text) };
   } catch {
     // Corrupt file — fail safe with an empty store rather than crashing.
+    _cache = { key: null, text: null };
     return structuredClone(EMPTY);
   }
 }
 
+/**
+ * ATOMIC write: serialise to a temp file in the same directory, then rename
+ * over the target. rename() is atomic on POSIX and Windows (same volume), so a
+ * crash mid-write can never leave a truncated db.json — readers see either the
+ * old file or the new one, never a half-written mix. The previous direct
+ * writeFileSync could destroy the entire database (bookings, transactions,
+ * escrow records) on a power cut.
+ */
 export function saveDB(db) {
-  writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
+  const text = JSON.stringify(db, null, 2);
+  const tmp = `${DB_PATH}.tmp-${process.pid}`;
+  writeFileSync(tmp, text, 'utf8');
+  renameSync(tmp, DB_PATH);
+  // Refresh the cache from what we just wrote instead of re-reading it.
+  try { const st = statSync(DB_PATH); _cache = { key: `${st.mtimeMs}:${st.size}`, text }; }
+  catch { _cache = { key: null, text: null }; }
 }
 
 /**
