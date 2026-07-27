@@ -9,6 +9,7 @@ import { saveKycImage } from '../store/kycStore.js';
 import * as paystack from '../services/paystack.js';
 import { hashPassword } from '../services/passwords.js';
 import { verifyPhotoIdWithSelfie } from '../services/dojah.js';
+import { cachedCoords, geocodePlace, haversineKm, hasCoords } from '../services/geocode.js';
 import { AVATAR_PALETTE } from '../config.js';
 
 const TIER_RANK = { elite: 0, pro: 1, starter: 2 };
@@ -31,6 +32,16 @@ const publicPro = ({ password, phone, email, idDocument, payout, kycMedia, idVer
 /** Compare phone numbers by their last 10 digits (0803… === +234803…). */
 const normPhone = s => String(s || '').replace(/\D/g, '').slice(-10);
 
+/** "Available now" pros rank above everyone else, in every mode. */
+const availFirst = (a, b) => (b.availableNow === true) - (a.availableNow === true);
+/** Closest first; pros we can't measure sort after those we can. */
+const distanceAsc = (a, b) => {
+  if (a.distanceKm == null && b.distanceKm == null) return 0;
+  if (a.distanceKm == null) return 1;
+  if (b.distanceKm == null) return -1;
+  return a.distanceKm - b.distanceKm;
+};
+
 const SORTERS = {
   rating: (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
   resp:   (a, b) => (a.responseMins ?? 999) - (b.responseMins ?? 999),
@@ -50,10 +61,34 @@ const SORTERS = {
  * Ranking rule: sort key first, then subscription tier (Elite > Pro > Starter).
  */
 export function listPros(req, res) {
-  const { category, state, area, sort = 'rating' } = req.query;
+  const { category, state, area, lat, lng, sort = 'rating' } = req.query;
   let pros = loadDB().professionals.filter(p => p.status === 'verified');
 
   if (category) pros = pros.filter(p => p.category === category);
+
+  // GPS mode: rank by real distance from the customer instead of by text.
+  // Pros without coordinates can't be measured, so they sort after those that can.
+  const cLat = Number(lat), cLng = Number(lng);
+  if (Number.isFinite(cLat) && Number.isFinite(cLng)) {
+    const withDistance = pros.map(p => {
+      const d = hasCoords(p.location)
+        ? haversineKm(cLat, cLng, p.location.lat, p.location.lng) : null;
+      return { ...p, distanceKm: d == null ? null : Math.round(d * 10) / 10 };
+    });
+    // Ranking: available now → closest → best rated. A pro with no coordinates
+    // can't be measured, so they fall to the end of their availability group
+    // rather than being dropped entirely.
+    withDistance.sort((a, b) =>
+      availFirst(a, b) ||
+      distanceAsc(a, b) ||
+      (b.rating ?? 0) - (a.rating ?? 0) ||
+      TIER_RANK[a.tier] - TIER_RANK[b.tier]);
+    return res.json({
+      pros: withDistance.map(p => ({ ...publicPro(p), distanceKm: p.distanceKm })),
+      mode: 'gps', origin: { lat: cLat, lng: cLng },
+      stateCovered: false, areaCovered: false,
+    });
+  }
 
   const inState = state ? pros.filter(p => p.state === state) : pros;
   const stateCovered = Boolean(state) && inState.length > 0;
@@ -65,7 +100,8 @@ export function listPros(req, res) {
   const areaCovered = stateCovered && q ? pros.some(matchesArea) : false;
 
   const sorter = SORTERS[sort] || SORTERS.rating;
-  const rank = (a, b) => sorter(a, b) || TIER_RANK[a.tier] - TIER_RANK[b.tier];
+  // Manual (text) mode has no distances, so it's: available now → sort key → tier.
+  const rank = (a, b) => availFirst(a, b) || sorter(a, b) || TIER_RANK[a.tier] - TIER_RANK[b.tier];
   // Surface area matches first, then the rest of the state, each ranked.
   if (areaCovered) {
     const inArea = pros.filter(matchesArea).sort(rank);
@@ -169,6 +205,63 @@ export function updatePro(req, res) {
 
 const BEARER = req => (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
 const NUBAN_RE = /^\d{10}$/;
+
+/**
+ * GET /api/pros/:id/availability   (pro, self only)
+ * Current "Available now" state plus whether we have coordinates for them.
+ */
+export function getAvailability(req, res) {
+  if (BEARER(req) !== 'demo-' + req.params.id) {
+    return res.status(403).json({ ok: false, error: 'Not authorised.' });
+  }
+  const pro = loadDB().professionals.find(p => String(p.id) === String(req.params.id));
+  if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
+  res.json({
+    ok: true,
+    availableNow: pro.availableNow === true,
+    availabilityUpdatedAt: pro.availabilityUpdatedAt ?? null,
+    hasLocation: Boolean(pro.location?.lat != null),
+    location: pro.location ? { lat: pro.location.lat, lng: pro.location.lng } : null,
+    area: [pro.lga, pro.state].filter(Boolean).join(', '),
+  });
+}
+
+/**
+ * POST /api/pros/:id/availability   (pro, self only)
+ * Body: { availableNow: boolean }
+ * Flipping this on is what puts a pro at the top of "near me" results, so it's
+ * self-service and instant. Only verified pros can advertise availability.
+ */
+export async function setAvailability(req, res) {
+  if (BEARER(req) !== 'demo-' + req.params.id) {
+    return res.status(403).json({ ok: false, error: 'Not authorised.' });
+  }
+  const { availableNow } = req.body || {};
+  if (typeof availableNow !== 'boolean') {
+    return res.status(400).json({ ok: false, error: 'availableNow must be true or false.' });
+  }
+
+  const result = await mutate(d => {
+    const p = d.professionals.find(x => String(x.id) === String(req.params.id));
+    if (!p) return { code: 404, error: 'Professional not found.' };
+    if (availableNow && p.status !== 'verified') {
+      return { code: 409, error: 'Your profile must be verified before you can go available.' };
+    }
+    p.availableNow = availableNow;
+    p.availabilityUpdatedAt = new Date().toISOString();
+    return { pro: p };
+  });
+  if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
+
+  res.json({
+    ok: true,
+    availableNow: result.pro.availableNow,
+    availabilityUpdatedAt: result.pro.availabilityUpdatedAt,
+    message: result.pro.availableNow
+      ? 'You’re now shown as available — customers nearby will see you first.'
+      : 'You’re now shown as unavailable.',
+  });
+}
 
 /**
  * GET /api/pros/:id/bookings   (pro, self only)
@@ -403,6 +496,14 @@ export async function registerPro(req, res) {
     },
     // Optional past-work photos (max 5) — written to /uploads, stored as URLs
     portfolio: persistPortfolio(portfolio),
+    // "Available now" — pros toggle this from their dashboard. Defaults off so
+    // nobody is advertised as available without opting in.
+    availableNow: false,
+    availabilityUpdatedAt: null,
+    // Approximate coordinates for distance ranking. Filled from the geocode
+    // cache instantly when the State/LGA has been seen before, otherwise
+    // resolved in the background right after we respond (see below).
+    location: cachedCoords(cleanLga, state),
     createdAt: new Date().toISOString(),
   };
 
@@ -416,6 +517,17 @@ export async function registerPro(req, res) {
   });
   if (!added) {
     return res.status(409).json({ ok: false, field: 'phone', error: 'This phone number is already registered. Try signing in instead.' });
+  }
+
+  // Resolve coordinates in the BACKGROUND when the place wasn't already cached.
+  // Registration never waits on (or fails because of) a third-party geocoder.
+  if (!pro.location && cleanLga) {
+    geocodePlace(cleanLga, state)
+      .then((coords) => coords && mutate((d) => {
+        const p = d.professionals.find((x) => String(x.id) === String(pro.id));
+        if (p && !p.location) p.location = coords;
+      }))
+      .catch(() => { /* soft failure: pro stays matchable by State/LGA text */ });
   }
 
   res.status(201).json({
