@@ -14,6 +14,8 @@
 import { APP_BASE_URL } from '../config.js';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+// Overridable so tests can point at a local stub instead of spending money.
+const RESEND_BASE = process.env.RESEND_BASE_URL || 'https://api.resend.com';
 const EMAIL_FROM = process.env.EMAIL_FROM || 'Servora <quotes@servora.ng>';
 const TERMII_API_KEY = process.env.TERMII_API_KEY || '';
 const TERMII_SENDER_ID = process.env.TERMII_SENDER_ID || 'Servora';
@@ -29,11 +31,22 @@ export function intlPhone(phone) {
   return d.length >= 10 ? d : null;
 }
 
+/**
+ * Click-to-WhatsApp link to the PRO, pre-filled so the customer can reply in
+ * one tap. Built from the pro's own number (passed in by the caller), not the
+ * customer's. Returns null when we have no usable number for them.
+ */
+export function waLink(proPhone, text = 'Hi, I saw your quote on Servora') {
+  const n = intlPhone(proPhone);
+  return n ? `https://wa.me/${n}?text=${encodeURIComponent(text)}` : null;
+}
+
 /** Compose the quote message once — every channel sends the same content. */
-export function composeQuoteMessage(quote) {
+export function composeQuoteMessage(quote, proPhone = null) {
   const link = `${APP_BASE_URL}/?servora_quote=${encodeURIComponent(quote.id)}`;
   const service = String(quote.service || '').replace(/s$/, '');
   const mats = (quote.items || []).filter((i) => i.kind === 'material');
+  const chat = waLink(proPhone);
   const lines = [
     `${quote.proName} sent you a quote on Servora — ${service}${quote.description ? ': ' + quote.description : ''}`,
     '',
@@ -43,15 +56,19 @@ export function composeQuoteMessage(quote) {
     '',
     `TOTAL: ${naira(quote.totalKobo)}`,
     '',
-    'Review and accept securely (escrow-protected — pay only when satisfied):',
+    'Review and accept it here. Your payment is held in escrow and released only at the stages you approve:',
     link,
+    ...(chat ? ['', `Chat with ${quote.proName.split(' ')[0]} on WhatsApp:`, chat] : []),
   ];
-  return { subject: `Your ${service} quote from ${quote.proName} — ${naira(quote.totalKobo)}`, text: lines.join('\n'), link };
+  return {
+    subject: `Your ${service} quote from ${quote.proName} — ${naira(quote.totalKobo)}`,
+    text: lines.join('\n'), link, waLink: chat,
+  };
 }
 
 async function sendEmail(to, { subject, text }) {
   if (!RESEND_API_KEY) return { channel: 'email', to, status: 'logged' };
-  const r = await fetch('https://api.resend.com/emails', {
+  const r = await fetch(`${RESEND_BASE}/emails`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, text }),
@@ -80,19 +97,21 @@ async function sendTermii(channel, to, { text }) {
  * 'sent' (provider accepted), 'logged' (no provider configured — composed
  * message logged for the share buttons), 'failed', or 'skipped'.
  */
-export async function deliverQuote(quote) {
-  const message = composeQuoteMessage(quote);
+export async function deliverQuote(quote, proPhone = null) {
+  const message = composeQuoteMessage(quote, proPhone);
   const email = quote.customer?.email || null;
   const phone = intlPhone(quote.customer?.phone);
 
+  // Email and SMS both go out whenever we have the address/number. A customer
+  // who left only an email simply gets no SMS — the WhatsApp link is embedded
+  // in the message body itself, so it reaches them either way.
   const attempts = [
     email ? sendEmail(email, message) : Promise.resolve({ channel: 'email', to: null, status: 'skipped' }),
     phone ? sendTermii('sms', phone, message) : Promise.resolve({ channel: 'sms', to: null, status: 'skipped' }),
-    phone ? sendTermii('whatsapp', phone, message) : Promise.resolve({ channel: 'whatsapp', to: null, status: 'skipped' }),
   ];
   const channels = (await Promise.allSettled(attempts)).map((r, i) =>
     r.status === 'fulfilled' ? r.value
-      : { channel: ['email', 'sms', 'whatsapp'][i], to: null, status: 'failed', error: r.reason?.message });
+      : { channel: ['email', 'sms'][i], to: null, status: 'failed', error: r.reason?.message });
 
   if (channels.some((c) => c.status === 'logged')) {
     console.log(`[notify] quote ${quote.id} composed for ${email || ''} ${phone || ''}:\n${message.text}`);

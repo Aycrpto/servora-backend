@@ -1,13 +1,13 @@
 /**
  * Support controller — customer support messages.
  *
- * v1 stores messages in db.json so nothing is lost. Later this should
+ * v1 stores messages in the database so nothing is lost. Later this should
  * forward to the real support inbox (email/helpdesk/WhatsApp Business).
  */
 import { randomUUID } from 'node:crypto';
-import { loadDB, saveDB } from '../store/store.js';
+import { insertSupportMessage } from '../store/leads.js';
 
-export function createSupportMessage(req, res) {
+export async function createSupportMessage(req, res) {
   const { name, email, topic, message } = req.body || {};
 
   const missing = ['name', 'email', 'message'].filter(f => !req.body?.[f]?.toString().trim());
@@ -28,10 +28,7 @@ export function createSupportMessage(req, res) {
     createdAt: new Date().toISOString(),
   };
 
-  const db = loadDB();
-  db.supportMessages = db.supportMessages || [];
-  db.supportMessages.push(entry);
-  saveDB(db);
+  await insertSupportMessage(entry);
 
   res.status(201).json({
     ok: true,

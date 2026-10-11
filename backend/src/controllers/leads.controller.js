@@ -4,9 +4,9 @@
  * Future: route the lead to matching pros (category + state) via WhatsApp/SMS.
  */
 import { randomUUID } from 'node:crypto';
-import { loadDB, saveDB } from '../store/store.js';
+import { insertLead } from '../store/leads.js';
 
-export function createLead(req, res) {
+export async function createLead(req, res) {
   const { type, proId, service, description, area, name, phone, email, when, state } = req.body || {};
 
   if (!description?.toString().trim() && !service) {
@@ -29,9 +29,7 @@ export function createLead(req, res) {
     createdAt: new Date().toISOString(),
   };
 
-  const db = loadDB();
-  db.leads.push(lead);
-  saveDB(db);
+  await insertLead(lead);
 
-  res.status(201).json({ ok: true, id: lead.id, message: 'Lead captured — matching pros will be notified.' });
+  res.status(201).json({ ok: true, id: lead.id, message: 'Request received.' });
 }

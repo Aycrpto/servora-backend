@@ -6,81 +6,70 @@
  * place.
  *
  * Each returns a plain result object: { ok, code?, error?, ...data } — callers
- * map it to HTTP. All state changes go through mutate() and the audit log.
+ * map it to HTTP.
+ *
+ * Concurrency: every release CLAIMS its row with a compare-and-set UPDATE
+ * (e.g. in_escrow → release_pending) in a committed transaction BEFORE calling
+ * Paystack, so two simultaneous requests can never both send money. Paystack
+ * calls always happen outside a database transaction.
  */
-import { loadDB, mutate } from '../store/store.js';
+import { withTransaction } from '../db/pool.js';
 import * as paystack from './paystack.js';
+import { TX_STATUS, BOOKING_STATUS, genReference, canTransition } from './escrow.js';
+import { getPro } from '../store/professionals.js';
+import { getBooking, transitionBooking } from '../store/bookings.js';
 import {
-  TX_STATUS, BOOKING_STATUS, genReference, canTransition, recordEvent, pushBookingHistory,
-} from './escrow.js';
+  getTxByReference, updateTx, claimTxStatus, updateStage, recordEvent,
+} from '../store/transactions.js';
 
 const now = () => new Date().toISOString();
 
 /**
- * Resolve a pro's Paystack transfer recipient — reuse a stored recipient_code
- * or create (and persist) one from their payout bank account. Shared by every
- * payout path. Returns { ok, recipientCode } or an error result.
+ * The pro's Paystack transfer recipient, set when they saved a payout account
+ * (POST /api/pros/:id/payout). The full account number is never stored, so
+ * there is nothing to create a recipient from here — no recipient, no payout.
  */
-async function resolveRecipientCode(pro) {
-  let recipientCode = pro.payout?.recipientCode || null;
-  if (recipientCode) return { ok: true, recipientCode };
-
-  const bank = pro.payout || {};
-  if (!bank.accountNumber || !bank.bankCode) {
-    return { ok: false, code: 422, error: 'Professional has no payout bank account on file.' };
-  }
-  try {
-    const recip = await paystack.createTransferRecipient({
-      name: pro.name, accountNumber: bank.accountNumber, bankCode: bank.bankCode,
-    });
-    recipientCode = recip.recipient_code;
-    await mutate((d) => {
-      const p = d.professionals.find((x) => String(x.id) === String(pro.id));
-      if (p) p.payout = { ...(p.payout || {}), recipientCode, verified: true, updatedAt: now() };
-    });
-    return { ok: true, recipientCode };
-  } catch {
-    return { ok: false, code: 502, error: 'Payment gateway error creating payout recipient.' };
-  }
+function recipientFor(pro) {
+  const recipientCode = pro?.payout?.recipientCode || null;
+  return recipientCode
+    ? { ok: true, recipientCode }
+    : { ok: false, code: 422, error: 'Professional has no payout bank account on file.' };
 }
 
 /**
  * Release the pro's share for an in-escrow SINGLE-AMOUNT transaction whose
  * booking is confirmed. Commission stays in Servora's balance; only
- * proPayoutKobo is transferred. Guarded + idempotent (claims the row under lock
- * before the transfer, keeps the transfer reference so retries can't double-send).
+ * proPayoutKobo is transferred. Idempotent: the row is claimed before the
+ * transfer and keeps its transfer reference, so a retry can't double-send.
  */
 export async function releaseEscrow(reference, actor = 'admin', { requireConfirmed = true } = {}) {
-  const db = loadDB();
-  const tx = db.transactions.find((t) => t.reference === reference);
+  const tx = await getTxByReference(reference);
   if (!tx) return { ok: false, code: 404, error: 'Transaction not found.' };
   if (tx.status !== TX_STATUS.IN_ESCROW) {
     return { ok: false, code: 409, error: `Funds are not in escrow (status: ${tx.status}).` };
   }
-  const booking = db.bookings.find((b) => b.id === tx.bookingId);
+  const booking = await getBooking(tx.bookingId);
   if (!booking) return { ok: false, code: 404, error: 'Booking not found.' };
   // Dispute resolution releases a 'disputed' booking, so it opts out of this check.
   if (requireConfirmed && booking.status !== BOOKING_STATUS.CONFIRMED) {
     return { ok: false, code: 409, error: `Job not confirmed yet (booking status: ${booking.status}).` };
   }
-  const pro = db.professionals.find((p) => String(p.id) === String(tx.proId));
+  const pro = await getPro(tx.proId);
   if (!pro) return { ok: false, code: 404, error: 'Professional not found.' };
-
-  const recip = await resolveRecipientCode(pro);
+  const recip = recipientFor(pro);
   if (!recip.ok) return recip;
   const { recipientCode } = recip;
 
-  // Claim the row (in_escrow → release_pending) UNDER LOCK before transferring.
+  // Claim the row (in_escrow → release_pending) before transferring.
   const transferReference = genReference('TRF');
-  const claimed = await mutate((d) => {
-    const t = d.transactions.find((x) => x.reference === reference);
-    if (!t || t.status !== TX_STATUS.IN_ESCROW || !canTransition(t.status, TX_STATUS.RELEASE_PENDING)) return false;
-    t.status = TX_STATUS.RELEASE_PENDING;
-    t.payout.recipientCode = recipientCode;
-    t.payout.transferReference = transferReference;
-    t.updatedAt = now();
-    recordEvent(d, t, { type: 'release_initiated', fromStatus: TX_STATUS.IN_ESCROW, toStatus: TX_STATUS.RELEASE_PENDING, actor, data: { payoutKobo: t.proPayoutKobo } });
-    return true;
+  const claimed = await withTransaction(async (c) => {
+    const won = await claimTxStatus(c, tx.id, TX_STATUS.IN_ESCROW, TX_STATUS.RELEASE_PENDING,
+      { payout: { recipientCode, transferReference } });
+    if (won) {
+      await recordEvent(c, tx, { type: 'release_initiated', fromStatus: TX_STATUS.IN_ESCROW,
+        toStatus: TX_STATUS.RELEASE_PENDING, actor, data: { payoutKobo: tx.proPayoutKobo } });
+    }
+    return won;
   });
   if (!claimed) return { ok: false, code: 409, error: 'Funds are no longer releasable (already processing).' };
 
@@ -89,18 +78,19 @@ export async function releaseEscrow(reference, actor = 'admin', { requireConfirm
       amountKobo: tx.proPayoutKobo, recipientCode, reference: transferReference,
       reason: `Servora payout for booking ${tx.bookingId}`,
     });
-    await mutate((d) => {
-      const t = d.transactions.find((x) => x.reference === reference);
-      if (!t) return;
-      t.payout.transferCode = transfer.transfer_code || null;
-      t.updatedAt = now();
-      // OTP-off integrations return 'success' synchronously; else the webhook finalizes.
-      if (transfer.status === 'success') {
-        t.status = TX_STATUS.RELEASED;
-        t.payout.transferredAt = now();
-        recordEvent(d, t, { type: 'transfer_success', fromStatus: TX_STATUS.RELEASE_PENDING, toStatus: TX_STATUS.RELEASED, actor: 'system' });
-        const b = d.bookings.find((x) => x.id === t.bookingId);
-        if (b) { b.status = BOOKING_STATUS.CLOSED; b.updatedAt = now(); pushBookingHistory(b, BOOKING_STATUS.CLOSED, 'system', 'Payment released to professional'); }
+    await withTransaction(async (c) => {
+      const transferCode = transfer.transfer_code || null;
+      // Integrations without transfer OTP answer 'success' immediately; otherwise
+      // the transfer.success webhook finalises it.
+      if (transfer.status === 'success' &&
+          await claimTxStatus(c, tx.id, TX_STATUS.RELEASE_PENDING, TX_STATUS.RELEASED,
+            { payout: { transferCode, transferredAt: now() } })) {
+        await recordEvent(c, tx, { type: 'transfer_success', fromStatus: TX_STATUS.RELEASE_PENDING,
+          toStatus: TX_STATUS.RELEASED, actor: 'system' });
+        await transitionBooking(c, tx.bookingId, BOOKING_STATUS.CLOSED,
+          { actor: 'system', note: 'Payment released to professional' });
+      } else {
+        await updateTx(c, tx.id, { payout: { transferCode } });
       }
     });
     return {
@@ -108,15 +98,13 @@ export async function releaseEscrow(reference, actor = 'admin', { requireConfirm
       payoutKobo: tx.proPayoutKobo, commissionKobo: tx.commissionKobo,
     };
   } catch (transferErr) {
-    // Mark release_failed (retryable) — keep the same transferReference so a
+    // Mark release_failed (retryable). The same transferReference is kept so a
     // retry is idempotent on Paystack's side (no double payout).
-    await mutate((d) => {
-      const t = d.transactions.find((x) => x.reference === reference);
-      if (t && t.status === TX_STATUS.RELEASE_PENDING) {
-        t.status = TX_STATUS.RELEASE_FAILED;
-        t.payout.failureReason = transferErr.message;
-        t.updatedAt = now();
-        recordEvent(d, t, { type: 'transfer_failed', fromStatus: TX_STATUS.RELEASE_PENDING, toStatus: TX_STATUS.RELEASE_FAILED, actor: 'system', data: { reason: transferErr.message } });
+    await withTransaction(async (c) => {
+      if (await claimTxStatus(c, tx.id, TX_STATUS.RELEASE_PENDING, TX_STATUS.RELEASE_FAILED,
+        { payout: { failureReason: transferErr.message } })) {
+        await recordEvent(c, tx, { type: 'transfer_failed', fromStatus: TX_STATUS.RELEASE_PENDING,
+          toStatus: TX_STATUS.RELEASE_FAILED, actor: 'system', data: { reason: transferErr.message } });
       }
     });
     return { ok: false, code: 502, error: 'Payment gateway error during transfer.' };
@@ -129,13 +117,12 @@ export async function releaseEscrow(reference, actor = 'admin', { requireConfirm
  *   stage1 (materials milestone): in_escrow → partially_released, booking → in_progress
  *   stage2 (completion milestone): partially_released → released, booking → completed
  *
- * Each stage carries its own micro-status ('held' → 'release_pending' →
- * 'released' | 'release_failed') claimed under lock, so a stage can never be
- * paid twice and a failed transfer is retryable with the same reference.
+ * Each stage has its own micro-status ('held' → 'release_pending' →
+ * 'released' | 'release_failed'), claimed by compare-and-set, so a stage can
+ * never be paid twice and a failed transfer is retryable.
  */
 async function releaseStage(reference, stageKey, { requireTxStatus, nextTxStatus, bookingStatusOnSuccess, actor }) {
-  const db = loadDB();
-  const tx = db.transactions.find((t) => t.reference === reference);
+  const tx = await getTxByReference(reference);
   if (!tx) return { ok: false, code: 404, error: 'Transaction not found.' };
   if (!tx.split) return { ok: false, code: 409, error: 'Not a split-escrow transaction.' };
   if (tx.status !== requireTxStatus) {
@@ -146,45 +133,50 @@ async function releaseStage(reference, stageKey, { requireTxStatus, nextTxStatus
   if (stage.status === 'released') return { ok: false, code: 409, error: 'This stage was already released.' };
 
   const payoutKobo = stage.payoutKobo || 0;
+  const label = stageKey === 'stage1' ? 'Materials' : 'Labour';
 
-  // Nothing to send (e.g. a labour-only quote has no materials to release, or a
-  // materials-only quote has no labour). Advance the state without a transfer.
+  /** Log the released stage and move the job forward (same transaction as the money state). */
+  const afterRelease = async (c, eventData, historyNote, eventActor) => {
+    await recordEvent(c, tx, { type: `${stageKey}_released`, fromStatus: requireTxStatus,
+      toStatus: nextTxStatus, actor: eventActor, data: eventData });
+    if (bookingStatusOnSuccess) {
+      await transitionBooking(c, tx.bookingId, bookingStatusOnSuccess, { actor, note: historyNote });
+    }
+  };
+
+  // Nothing to send (a labour-only quote has no materials, or vice versa):
+  // advance the state without a transfer. Both claims must succeed, or the
+  // whole change rolls back.
   if (payoutKobo <= 0) {
-    await mutate((d) => {
-      const t = d.transactions.find((x) => x.reference === reference);
-      if (!t || t.status !== requireTxStatus) return;
-      const s = t.split[stageKey];
-      if (!s || s.status === 'released') return;
-      s.status = 'released';
-      s.transferredAt = now();
-      t.status = nextTxStatus;
-      t.updatedAt = now();
-      recordEvent(d, t, { type: `${stageKey}_released`, fromStatus: requireTxStatus, toStatus: nextTxStatus, actor, data: { payoutKobo: 0, note: 'nothing to transfer' } });
-      const b = d.bookings.find((x) => x.id === t.bookingId);
-      if (b && bookingStatusOnSuccess) { b.status = bookingStatusOnSuccess; b.updatedAt = now(); pushBookingHistory(b, bookingStatusOnSuccess, actor, `${stageKey} released (₦0)`); }
-    });
+    const stale = Symbol('stale');
+    const done = await withTransaction(async (c) => {
+      const stageWon = await updateStage(c, tx.id, stageKey, { status: 'released', transferredAt: now() },
+        { fromStatuses: ['held', 'release_failed'] });
+      if (!stageWon || !await claimTxStatus(c, tx.id, requireTxStatus, nextTxStatus)) throw stale;
+      await afterRelease(c, { payoutKobo: 0, note: 'nothing to transfer' }, `${stageKey} released (₦0)`, actor);
+      return true;
+    }).catch((err) => { if (err === stale) return false; throw err; });
+    if (!done) return { ok: false, code: 409, error: 'This stage is no longer releasable (already processing).' };
     return { ok: true, status: 'success', stage: stageKey, payoutKobo: 0 };
   }
 
-  const pro = db.professionals.find((p) => String(p.id) === String(tx.proId));
+  const pro = await getPro(tx.proId);
   if (!pro) return { ok: false, code: 404, error: 'Professional not found.' };
-  const recip = await resolveRecipientCode(pro);
+  const recip = recipientFor(pro);
   if (!recip.ok) return recip;
   const { recipientCode } = recip;
 
-  // Claim this stage under lock (held|release_failed → release_pending).
+  // Claim this stage (held|release_failed → release_pending) while the
+  // transaction is still at the required status.
   const transferReference = genReference('TRF');
-  const claimed = await mutate((d) => {
-    const t = d.transactions.find((x) => x.reference === reference);
+  const claimed = await withTransaction(async (c) => {
+    const t = await getTxByReference(reference, c, { forUpdate: true });
     if (!t || t.status !== requireTxStatus) return false;
-    const s = t.split?.[stageKey];
-    if (!s || (s.status !== 'held' && s.status !== 'release_failed')) return false;
-    s.status = 'release_pending';
-    s.recipientCode = recipientCode;
-    s.transferReference = transferReference;
-    t.updatedAt = now();
-    recordEvent(d, t, { type: `${stageKey}_release_initiated`, actor, data: { payoutKobo } });
-    return true;
+    const won = await updateStage(c, tx.id, stageKey,
+      { status: 'release_pending', recipientCode, transferReference },
+      { fromStatuses: ['held', 'release_failed'] });
+    if (won) await recordEvent(c, tx, { type: `${stageKey}_release_initiated`, actor, data: { payoutKobo } });
+    return won;
   });
   if (!claimed) return { ok: false, code: 409, error: 'This stage is no longer releasable (already processing).' };
 
@@ -193,31 +185,23 @@ async function releaseStage(reference, stageKey, { requireTxStatus, nextTxStatus
       amountKobo: payoutKobo, recipientCode, reference: transferReference,
       reason: `Servora ${stageKey === 'stage1' ? 'materials' : 'labour'} payout for booking ${tx.bookingId}`,
     });
-    await mutate((d) => {
-      const t = d.transactions.find((x) => x.reference === reference);
-      if (!t) return;
-      const s = t.split[stageKey];
-      s.transferCode = transfer.transfer_code || null;
-      t.updatedAt = now();
+    await withTransaction(async (c) => {
+      const transferCode = transfer.transfer_code || null;
       if (transfer.status === 'success') {
-        s.status = 'released';
-        s.transferredAt = now();
-        t.status = nextTxStatus;
-        recordEvent(d, t, { type: `${stageKey}_released`, fromStatus: requireTxStatus, toStatus: nextTxStatus, actor: 'system', data: { payoutKobo } });
-        const b = d.bookings.find((x) => x.id === t.bookingId);
-        if (b && bookingStatusOnSuccess) { b.status = bookingStatusOnSuccess; b.updatedAt = now(); pushBookingHistory(b, bookingStatusOnSuccess, actor, `${stageKey === 'stage1' ? 'Materials' : 'Labour'} released to professional`); }
+        // The money has moved: record it as released unconditionally.
+        await updateStage(c, tx.id, stageKey, { status: 'released', transferredAt: now(), transferCode });
+        await updateTx(c, tx.id, { status: nextTxStatus });
+        await afterRelease(c, { payoutKobo }, `${label} released to professional`, 'system');
+      } else {
+        await updateStage(c, tx.id, stageKey, { transferCode });
       }
     });
     return { ok: true, status: transfer.status, stage: stageKey, transferCode: transfer.transfer_code || null, payoutKobo };
   } catch (err) {
-    await mutate((d) => {
-      const t = d.transactions.find((x) => x.reference === reference);
-      const s = t?.split?.[stageKey];
-      if (s && s.status === 'release_pending') {
-        s.status = 'release_failed';
-        s.failureReason = err.message;
-        t.updatedAt = now();
-        recordEvent(d, t, { type: `${stageKey}_release_failed`, actor: 'system', data: { reason: err.message } });
+    await withTransaction(async (c) => {
+      if (await updateStage(c, tx.id, stageKey, { status: 'release_failed', failureReason: err.message },
+        { fromStatuses: ['release_pending'] })) {
+        await recordEvent(c, tx, { type: `${stageKey}_release_failed`, actor: 'system', data: { reason: err.message } });
       }
     });
     return { ok: false, code: 502, error: 'Payment gateway error during transfer.' };
@@ -251,8 +235,7 @@ export const releaseLabour = (reference, actor = 'customer') =>
  * the refund asynchronously; we record it as initiated here.
  */
 export async function refundEscrow(reference, { reason = 'Dispute resolved in customer favour', actor = 'admin' } = {}) {
-  const db = loadDB();
-  const tx = db.transactions.find((t) => t.reference === reference);
+  const tx = await getTxByReference(reference);
   if (!tx) return { ok: false, code: 404, error: 'Transaction not found.' };
 
   const isPartial = tx.status === TX_STATUS.PARTIALLY_RELEASED;
@@ -272,19 +255,14 @@ export async function refundEscrow(reference, { reason = 'Dispute resolved in cu
   } catch {
     return { ok: false, code: 502, error: 'Payment gateway error during refund.' };
   }
-  await mutate((d) => {
-    const t = d.transactions.find((x) => x.reference === reference);
-    if (!t) return;
-    const from = t.status;
-    t.status = TX_STATUS.REFUNDED;
-    t.refund = { refundedAt: now(), reason, amountKobo: refundKobo, partial: isPartial };
-    t.updatedAt = now();
-    recordEvent(d, t, { type: 'refunded', fromStatus: from, toStatus: TX_STATUS.REFUNDED, actor, data: { reason, amountKobo: refundKobo, partial: isPartial } });
-    const b = d.bookings.find((x) => x.id === t.bookingId);
-    if (b) {
-      b.status = BOOKING_STATUS.CANCELLED; b.updatedAt = now();
-      pushBookingHistory(b, BOOKING_STATUS.CANCELLED, actor, isPartial ? 'Labour refunded (materials already released)' : 'Refunded to customer');
-    }
+  await withTransaction(async (c) => {
+    const from = tx.status;
+    if (!await claimTxStatus(c, tx.id, from, TX_STATUS.REFUNDED,
+      { refund: { refundedAt: now(), reason, amountKobo: refundKobo, partial: isPartial } })) return;
+    await recordEvent(c, tx, { type: 'refunded', fromStatus: from, toStatus: TX_STATUS.REFUNDED, actor,
+      data: { reason, amountKobo: refundKobo, partial: isPartial } });
+    await transitionBooking(c, tx.bookingId, BOOKING_STATUS.CANCELLED,
+      { actor, note: isPartial ? 'Labour refunded (materials already released)' : 'Refunded to customer' });
   });
   return { ok: true, status: 'refunded', amountKobo: refundKobo, partial: isPartial };
 }

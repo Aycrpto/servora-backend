@@ -7,28 +7,29 @@
  * in escrow throughout — resolution either releases to the pro or refunds the
  * customer, reusing the shared escrow-actions service.
  */
-import { loadDB, mutate } from '../store/store.js';
+import { withTransaction } from '../db/pool.js';
 import { persistPortfolio } from '../store/uploads.js';
+import {
+  listDisputes as listDisputeRows, getDispute as loadDispute, addEvidenceRequest,
+  addDisputeEvidence, resolveDisputeRow,
+} from '../store/disputes.js';
+import { getTxByReference } from '../store/transactions.js';
 import { isAdmin } from '../middleware/adminAuth.js';
 import { TX_STATUS } from '../services/escrow.js';
 import { releaseEscrow, releaseLabour, refundEscrow } from '../services/escrowActions.js';
 
-const now = () => new Date().toISOString();
 const adminOk = (req) => isAdmin(req);   // constant-time compare, see adminAuth.js
 
 /** GET /api/disputes?status=   (Support) — the review queue. */
-export function listDisputes(req, res) {
+export async function listDisputes(req, res) {
   if (!adminOk(req)) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-  const { status } = req.query;
-  const disputes = loadDB().disputes
-    .filter((d) => !status || d.status === status)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const disputes = await listDisputeRows(req.query.status);
   res.json({ ok: true, count: disputes.length, disputes });
 }
 
 /** GET /api/disputes/:id   (capability by id — pro/customer/support can view). */
-export function getDispute(req, res) {
-  const dispute = loadDB().disputes.find((d) => d.id === req.params.id);
+export async function getDispute(req, res) {
+  const dispute = await loadDispute(req.params.id);
   if (!dispute) return res.status(404).json({ ok: false, error: 'Dispute not found.' });
   res.json({ ok: true, dispute });
 }
@@ -37,17 +38,16 @@ export function getDispute(req, res) {
 export async function requestEvidence(req, res) {
   if (!adminOk(req)) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
   const { note } = req.body || {};
-  const result = await mutate((db) => {
-    const d = db.disputes.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const d = await loadDispute(req.params.id, c, { forUpdate: true });
     if (!d) return { code: 404, error: 'Dispute not found.' };
     if (d.status === 'resolved') return { code: 409, error: 'Dispute already resolved.' };
-    d.evidenceRequests.push({ note: note ? String(note).slice(0, 500) : 'Please provide photos and a short description of the completed job.', at: now() });
-    d.status = 'evidence_requested';
-    d.updatedAt = now();
-    return { dispute: d };
+    await addEvidenceRequest(c, d.id,
+      note ? String(note).slice(0, 500) : 'Please provide photos and a short description of the completed job.');
+    return {};
   });
   if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
-  res.json({ ok: true, dispute: result.dispute });
+  res.json({ ok: true, dispute: await loadDispute(req.params.id) });
 }
 
 /** POST /api/disputes/:id/evidence   (Customer capability)
@@ -58,16 +58,15 @@ export async function submitEvidence(req, res) {
     return res.status(400).json({ ok: false, error: 'Add a description or at least one photo.' });
   }
   const storedPhotos = persistPortfolio(photos); // reuse the upload pipeline (max 5)
-  const result = await mutate((db) => {
-    const d = db.disputes.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const d = await loadDispute(req.params.id, c, { forUpdate: true });
     if (!d) return { code: 404, error: 'Dispute not found.' };
     if (d.status === 'resolved') return { code: 409, error: 'Dispute already resolved.' };
-    d.evidence.push({ text: text ? String(text).slice(0, 1000) : null, photos: storedPhotos, at: now() });
-    d.updatedAt = now();
-    return { dispute: d };
+    await addDisputeEvidence(c, d.id, { text: text ? String(text).slice(0, 1000) : null, photos: storedPhotos });
+    return {};
   });
   if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
-  res.json({ ok: true, dispute: result.dispute, message: 'Evidence submitted. Servora Support will review.' });
+  res.json({ ok: true, dispute: await loadDispute(req.params.id), message: 'Evidence submitted. Servora Support will review.' });
 }
 
 /**
@@ -83,8 +82,7 @@ export async function resolveDispute(req, res) {
     return res.status(400).json({ ok: false, error: "decision must be 'release_to_pro' or 'refund_customer'." });
   }
 
-  const db0 = loadDB();
-  const dispute = db0.disputes.find((d) => d.id === req.params.id);
+  const dispute = await loadDispute(req.params.id);
   if (!dispute) return res.status(404).json({ ok: false, error: 'Dispute not found.' });
   if (dispute.status === 'resolved') return res.status(409).json({ ok: false, error: 'Dispute already resolved.' });
   if (!dispute.reference) return res.status(409).json({ ok: false, error: 'Dispute has no linked transaction.' });
@@ -92,7 +90,7 @@ export async function resolveDispute(req, res) {
   // Split (quote) disputes escalate with only the labour still held, so releasing
   // to the pro means releasing that labour stage; refunds are handled partially
   // inside refundEscrow. Simple disputes release the single escrow amount.
-  const tx = db0.transactions.find((t) => t.reference === dispute.reference);
+  const tx = await getTxByReference(dispute.reference);
   const isSplit = Boolean(tx?.split) || tx?.status === TX_STATUS.PARTIALLY_RELEASED;
 
   let outcome;
@@ -108,14 +106,7 @@ export async function resolveDispute(req, res) {
   }
   if (!outcome.ok) return res.status(outcome.code || 502).json({ ok: false, error: outcome.error });
 
-  await mutate((db) => {
-    const d = db.disputes.find((x) => x.id === req.params.id);
-    if (d) {
-      d.status = 'resolved';
-      d.resolution = { decision, reason: reason || null, by: 'support', at: now() };
-      d.updatedAt = now();
-    }
-  });
+  await resolveDisputeRow(dispute.id, { decision, reason: reason || null, by: 'support' });
   res.json({
     ok: true,
     decision,

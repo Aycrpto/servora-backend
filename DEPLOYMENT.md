@@ -10,9 +10,11 @@ Paystack webhook on one trusted origin.
 
 ## 0. Prerequisites before real money
 
-The current store is a **JSON file** (`backend/data/db.json`) + local
-`uploads/`. On most PaaS hosts the filesystem is **ephemeral** — a deploy or
-restart wipes it. That is unacceptable for bookings/transactions. Do ONE of:
+Application data now lives in **Postgres (Neon)** via `DATABASE_URL`, so it
+survives deploys and restarts. Still on local disk (and therefore wiped on an
+ephemeral PaaS filesystem): KYC images (`backend/private/kyc/`) and media in
+`uploads/` — both planned to move to object storage. The notes below predate
+the Postgres move:
 
 - **Fast launch:** a VPS with a **persistent disk**; keep JSON, add nightly
   backups. Works, but no atomic transactions (a real concurrency risk for money).
@@ -34,7 +36,7 @@ migrate money tables to Postgres → then switch to **live** keys.
 | Option | Best for | Notes |
 |---|---|---|
 | **VPS** (Hetzner CX22 / DigitalOcean, ~$5–6/mo) — *recommended* | full control of disk, process, backups | you manage Nginx + PM2 + certbot |
-| **Render / Railway / Fly** | zero-ops PaaS | attach a **persistent disk/volume** for db.json + uploads, or use Postgres |
+| **Render / Railway / Fly** | zero-ops PaaS | set `DATABASE_URL` (Neon); media still needs object storage |
 
 Do **not** split frontend/backend across hosts — it would force CORS and an
 API base-URL rewrite for no benefit here.
@@ -139,7 +141,7 @@ Install and wire in `server.js` (all `npm i` on the backend):
 - Lock **`cors`** to `https://servora.ng` (currently open for dev).
 - **Force HTTPS + HSTS** (Nginx `return 301` on port 80; certbot adds this).
 - Static asset caching (`Cache-Control: max-age`) for images/CSS.
-- **Backups:** nightly copy of `db.json`/Postgres dump + `uploads/` off-box.
+- **Backups:** Neon point-in-time restore for the database; `uploads/` off-box until media moves to object storage.
 - **Monitoring:** host uptime check on `GET /api/health`; optionally Sentry.
 - Run under **PM2/systemd** (auto-restart, log rotation). Pin Node `>=18`.
 

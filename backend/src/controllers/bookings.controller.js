@@ -10,52 +10,37 @@
  *     redo before Support review.
  *
  * Customers still need no account; their capability is knowing the booking id.
+ * Every state change locks the booking row (SELECT … FOR UPDATE) and commits
+ * the new status, its timeline entry and any audit event together.
  */
 import { randomUUID } from 'node:crypto';
-import { loadDB, mutate } from '../store/store.js';
-import {
-  BOOKING_STATUS, TX_STATUS, DISPUTE_WINDOW_MS, EVIDENCE_RULES,
-  recordEvent, pushBookingHistory,
-} from '../services/escrow.js';
+import { withTransaction } from '../db/pool.js';
+import { BOOKING_STATUS, TX_STATUS, DISPUTE_WINDOW_MS, EVIDENCE_RULES } from '../services/escrow.js';
 import { releaseEscrow, releaseMaterials, releaseLabour } from '../services/escrowActions.js';
 import { persistEvidence } from '../store/uploads.js';
+import { getPro } from '../store/professionals.js';
+import {
+  getBooking as loadBooking, insertBooking, addHistory, transitionBooking, touchBooking,
+  insertEvidence, listEvidence, evidenceCounts,
+} from '../store/bookings.js';
+import { findBookingTx, latestBookingTx, recordEvent } from '../store/transactions.js';
+import { insertDispute, getDispute } from '../store/disputes.js';
 
 const now = () => new Date().toISOString();
 const isPosInt = (n) => Number.isInteger(n) && n > 0;
 const MIN_KOBO = 10000;          // ₦100 floor (sanity)
 const MAX_KOBO = 500000000;      // ₦5,000,000 ceiling (sanity guard against fat-finger)
 
-// A pro proves ownership of a booking with their demo bearer token.
-const BEARER = (req) => (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+// Pro-only routes run requirePro first; the signed-in pro must be the job's pro.
+const isAssignedPro = (req, b) => String(req.pro?.id) === String(b.proId);
 
-// The in-escrow transaction (nothing released yet) — used to release materials
-// and by the legacy confirm/dispute paths.
-const escrowTxFor = (db, bookingId) =>
-  db.transactions.find((t) => t.bookingId === bookingId && t.status === TX_STATUS.IN_ESCROW);
-// A transaction that still holds money for this booking (fully or partially).
-const heldTxFor = (db, bookingId) =>
-  db.transactions.find((t) => t.bookingId === bookingId &&
-    (t.status === TX_STATUS.IN_ESCROW || t.status === TX_STATUS.PARTIALLY_RELEASED));
+const HELD = [TX_STATUS.IN_ESCROW, TX_STATUS.PARTIALLY_RELEASED];
 
-/* -------------------- evidence helpers -------------------- */
-const phaseEvidence = (db, bookingId, phase) =>
-  db.evidence.filter((e) => e.bookingId === bookingId && e.phase === phase);
-
-function phaseCounts(db, bookingId, phase) {
-  let photos = 0, videos = 0;
-  for (const e of phaseEvidence(db, bookingId, phase)) {
-    photos += e.photos?.length || 0;
-    videos += e.videos?.length || 0;
-  }
-  return { photos, videos };
-}
 const evidenceMet = (counts, phase) =>
   counts.photos >= EVIDENCE_RULES[phase].minPhotos && counts.videos >= EVIDENCE_RULES[phase].minVideos;
 
 /** Minimal, PII-free transaction summary for the frontend timeline. */
-function txSummary(db, bookingId) {
-  const t = db.transactions.find((x) => x.bookingId === bookingId && x.status !== TX_STATUS.PENDING) ||
-            db.transactions.find((x) => x.bookingId === bookingId);
+function txSummary(t) {
   if (!t) return null;
   return {
     reference: t.reference,
@@ -70,6 +55,13 @@ function txSummary(db, bookingId) {
       stage2: { payoutKobo: t.split.stage2.payoutKobo, status: t.split.stage2.status },
     } : null,
   };
+}
+
+/** Send a guarded state change's result: an {code,error} refusal, or the fresh booking. */
+async function respond(res, result, extra = {}) {
+  if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
+  const booking = await loadBooking(result.bookingId);
+  res.json({ ok: true, booking, ...extra, ...(result.message ? { message: result.message } : {}) });
 }
 
 /**
@@ -89,9 +81,8 @@ export async function createBooking(req, res) {
   if (kobo < MIN_KOBO) return res.status(400).json({ ok: false, error: 'Amount is below the ₦100 minimum.' });
   if (kobo > MAX_KOBO) return res.status(400).json({ ok: false, error: 'Amount exceeds the allowed maximum.' });
 
-  const db = loadDB();
-  const pro = db.professionals.find((p) => String(p.id) === String(proId) && p.status === 'verified');
-  if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
+  const pro = await getPro(proId);
+  if (!pro || pro.status !== 'verified') return res.status(404).json({ ok: false, error: 'Professional not found.' });
 
   if (!customer?.email && !customer?.phone) {
     return res.status(400).json({ ok: false, error: 'Customer email or phone is required.' });
@@ -110,28 +101,21 @@ export async function createBooking(req, res) {
     },
     agreedAmountKobo: kobo,
     status: BOOKING_STATUS.PENDING_PAYMENT,
-    history: [],
-    completedAt: null,
-    autoConfirmAt: null,
-    disputedAt: null,
     createdAt: now(),
-    updatedAt: now(),
   };
-  pushBookingHistory(booking, BOOKING_STATUS.PENDING_PAYMENT, 'customer', 'Booking created — awaiting payment');
-
-  await mutate((d) => d.bookings.push(booking));
-  res.status(201).json({ ok: true, booking });
+  await withTransaction(async (c) => {
+    await insertBooking(c, booking);
+    await addHistory(c, booking.id, BOOKING_STATUS.PENDING_PAYMENT, 'customer', 'Booking created — awaiting payment');
+  });
+  res.status(201).json({ ok: true, booking: await loadBooking(booking.id) });
 }
 
 /** GET /api/bookings/:id  — booking + its evidence + a payment summary. */
-export function getBooking(req, res) {
-  const db = loadDB();
-  const booking = db.bookings.find((b) => b.id === req.params.id);
+export async function getBooking(req, res) {
+  const booking = await loadBooking(req.params.id);
   if (!booking) return res.status(404).json({ ok: false, error: 'Booking not found.' });
-  const evidence = db.evidence
-    .filter((e) => e.bookingId === booking.id)
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  res.json({ ok: true, booking, evidence, transaction: txSummary(db, booking.id) });
+  const [evidence, tx] = await Promise.all([listEvidence(booking.id), latestBookingTx(booking.id)]);
+  res.json({ ok: true, booking, evidence, transaction: txSummary(tx) });
 }
 
 /**
@@ -139,20 +123,16 @@ export function getBooking(req, res) {
  * The professional starts the job: funded → in_progress.
  */
 export async function startJob(req, res) {
-  const result = await mutate((db) => {
-    const b = db.bookings.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const b = await loadBooking(req.params.id, c, { forUpdate: true });
     if (!b) return { code: 404, error: 'Booking not found.' };
-    if (BEARER(req) !== 'demo-' + b.proId) return { code: 403, error: 'Only the assigned professional can start this job.' };
+    if (!isAssignedPro(req, b)) return { code: 403, error: 'Only the assigned professional can start this job.' };
     if (b.kind === 'quote') return { code: 409, error: 'Quote jobs start via the materials-approval flow, not /start.' };
     if (b.status !== BOOKING_STATUS.FUNDED) return { code: 409, error: `Can't start a job from status "${b.status}".` };
-    b.status = BOOKING_STATUS.IN_PROGRESS;
-    b.startedAt = now();
-    b.updatedAt = now();
-    pushBookingHistory(b, BOOKING_STATUS.IN_PROGRESS, 'pro', 'Job started');
-    return { booking: b };
+    await transitionBooking(c, b.id, BOOKING_STATUS.IN_PROGRESS, { actor: 'pro', note: 'Job started', set: { startedAt: now() } });
+    return { bookingId: b.id, message: 'Job started.' };
   });
-  if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
-  res.json({ ok: true, booking: result.booking, message: 'Job started.' });
+  return respond(res, result);
 }
 
 /* ============================================================
@@ -174,9 +154,9 @@ export async function uploadEvidence(req, res) {
 
   // Auth + phase/status precondition (read first so we don't persist media for a
   // request we'll reject).
-  const pre = loadDB().bookings.find((b) => b.id === req.params.id);
+  const pre = await loadBooking(req.params.id);
   if (!pre) return res.status(404).json({ ok: false, error: 'Booking not found.' });
-  if (BEARER(req) !== 'demo-' + pre.proId) return res.status(403).json({ ok: false, error: 'Only the assigned professional can upload evidence.' });
+  if (!isAssignedPro(req, pre)) return res.status(403).json({ ok: false, error: 'Only the assigned professional can upload evidence.' });
   if (pre.kind !== 'quote') return res.status(409).json({ ok: false, error: 'Evidence applies to quote jobs only.' });
 
   const allowedStatus = {
@@ -188,7 +168,7 @@ export async function uploadEvidence(req, res) {
     return res.status(409).json({ ok: false, error: `Can't upload ${phase} evidence while the job is "${pre.status}".` });
   }
 
-  // Persist media to /uploads (sync fs writes, no network) before the mutate.
+  // Persist media (sync fs writes, no network) before the transaction.
   const stored = persistEvidence(photos, videos);
   if (!stored.photos.length && !stored.videos.length) {
     return res.status(400).json({ ok: false, error: 'Attach at least one valid photo or video.' });
@@ -205,12 +185,12 @@ export async function uploadEvidence(req, res) {
     createdAt: now(),
   };
 
-  const result = await mutate((db) => {
-    const b = db.bookings.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const b = await loadBooking(pre.id, c, { forUpdate: true });
     if (!b) return { code: 404, error: 'Booking not found.' };
-    db.evidence.push(entry);
-    b.updatedAt = now();
-    const counts = phaseCounts(db, b.id, phase);
+    await insertEvidence(c, entry);
+    await touchBooking(c, b.id);
+    const counts = await evidenceCounts(c, b.id, phase);
     return { entry, counts, met: evidenceMet(counts, phase), rule: EVIDENCE_RULES[phase] };
   });
   if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
@@ -223,25 +203,24 @@ export async function uploadEvidence(req, res) {
  * (≥2 photos + 1 video). funded → awaiting_material_approval.
  */
 export async function readyToStart(req, res) {
-  const result = await mutate((db) => {
-    const b = db.bookings.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const b = await loadBooking(req.params.id, c, { forUpdate: true });
     if (!b) return { code: 404, error: 'Booking not found.' };
-    if (BEARER(req) !== 'demo-' + b.proId) return { code: 403, error: 'Only the assigned professional can do this.' };
+    if (!isAssignedPro(req, b)) return { code: 403, error: 'Only the assigned professional can do this.' };
     if (b.kind !== 'quote') return { code: 409, error: 'Only quote jobs use this step.' };
     if (b.status !== BOOKING_STATUS.FUNDED) return { code: 409, error: `Can't confirm ready from status "${b.status}".` };
-    const counts = phaseCounts(db, b.id, 'pre_job');
+    const counts = await evidenceCounts(c, b.id, 'pre_job');
     if (!evidenceMet(counts, 'pre_job')) {
       const r = EVIDENCE_RULES.pre_job;
       return { code: 422, error: `Upload at least ${r.minPhotos} photos and ${r.minVideos} video of the site before starting (have ${counts.photos} photos, ${counts.videos} video).` };
     }
-    b.status = BOOKING_STATUS.AWAITING_MATERIAL_APPROVAL;
-    b.readyAt = now();
-    b.updatedAt = now();
-    pushBookingHistory(b, BOOKING_STATUS.AWAITING_MATERIAL_APPROVAL, 'pro', 'Pre-job evidence uploaded; ready to begin — awaiting material-cost approval');
-    return { booking: b };
+    await transitionBooking(c, b.id, BOOKING_STATUS.AWAITING_MATERIAL_APPROVAL, {
+      actor: 'pro', note: 'Pre-job evidence uploaded; ready to begin — awaiting material-cost approval',
+      set: { readyAt: now() },
+    });
+    return { bookingId: b.id, message: 'Ready confirmed. Waiting for the customer to approve the material cost.' };
   });
-  if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
-  res.json({ ok: true, booking: result.booking, message: 'Ready confirmed. Waiting for the customer to approve the material cost.' });
+  return respond(res, result);
 }
 
 /**
@@ -251,22 +230,20 @@ export async function readyToStart(req, res) {
  * in_progress. Labour stays held. Retryable if the transfer can't run yet.
  */
 export async function approveMaterials(req, res) {
-  const db = loadDB();
-  const b = db.bookings.find((x) => x.id === req.params.id);
+  const b = await loadBooking(req.params.id);
   if (!b) return res.status(404).json({ ok: false, error: 'Booking not found.' });
   if (b.kind !== 'quote') return res.status(409).json({ ok: false, error: 'Only quote jobs use this step.' });
   if (b.status !== BOOKING_STATUS.AWAITING_MATERIAL_APPROVAL) {
     return res.status(409).json({ ok: false, error: `This job isn't awaiting material approval (status: ${b.status}).` });
   }
-  const tx = escrowTxFor(db, b.id);
+  const tx = await findBookingTx(b.id, [TX_STATUS.IN_ESCROW]);
   if (!tx) return res.status(409).json({ ok: false, error: 'No funds are held in escrow for this job.' });
 
   const out = await releaseMaterials(tx.reference, 'customer');
   if (!out.ok) return res.status(out.code || 502).json({ ok: false, error: out.error });
 
-  const booking = loadDB().bookings.find((x) => x.id === b.id);
   res.json({
-    ok: true, booking, released: true, stage: 'materials', payoutKobo: out.payoutKobo,
+    ok: true, booking: await loadBooking(b.id), released: true, stage: 'materials', payoutKobo: out.payoutKobo,
     message: 'Material cost approved and released to the professional. Labour stays protected until the job is done.',
   });
 }
@@ -278,10 +255,10 @@ export async function approveMaterials(req, res) {
  *   evidence); redo_in_progress → awaiting_redo_review (needs redo evidence).
  */
 export async function completeJob(req, res) {
-  const result = await mutate((db) => {
-    const b = db.bookings.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const b = await loadBooking(req.params.id, c, { forUpdate: true });
     if (!b) return { code: 404, error: 'Booking not found.' };
-    if (BEARER(req) !== 'demo-' + b.proId) return { code: 403, error: 'Only the assigned professional can mark this job complete.' };
+    if (!isAssignedPro(req, b)) return { code: 403, error: 'Only the assigned professional can mark this job complete.' };
 
     if (b.kind === 'quote') {
       let phase, next;
@@ -289,31 +266,30 @@ export async function completeJob(req, res) {
       else if (b.status === BOOKING_STATUS.REDO_IN_PROGRESS) { phase = 'redo'; next = BOOKING_STATUS.AWAITING_REDO_REVIEW; }
       else return { code: 409, error: `Can't complete a quote job from status "${b.status}".` };
 
-      const counts = phaseCounts(db, b.id, phase);
+      const counts = await evidenceCounts(c, b.id, phase);
       if (!evidenceMet(counts, phase)) {
         const r = EVIDENCE_RULES[phase];
         return { code: 422, error: `Upload at least ${r.minPhotos} photos of the completed work first (have ${counts.photos}).` };
       }
-      b.status = next;
-      b.completedAt = now();
-      b.updatedAt = now();
-      pushBookingHistory(b, next, 'pro', phase === 'redo' ? 'Redo completed — awaiting customer review' : 'Work completed — awaiting customer review');
-      return { booking: b, message: 'Marked complete. Awaiting customer review.' };
+      await transitionBooking(c, b.id, next, {
+        actor: 'pro',
+        note: phase === 'redo' ? 'Redo completed — awaiting customer review' : 'Work completed — awaiting customer review',
+        set: { completedAt: now() },
+      });
+      return { bookingId: b.id, message: 'Marked complete. Awaiting customer review.' };
     }
 
     // Simple booking (legacy single-amount flow).
     if (![BOOKING_STATUS.FUNDED, BOOKING_STATUS.IN_PROGRESS].includes(b.status)) {
       return { code: 409, error: `Can't complete a job from status "${b.status}".` };
     }
-    b.status = BOOKING_STATUS.AWAITING_CONFIRMATION;
-    b.completedAt = now();
-    b.disputeEligibleAt = new Date(Date.now() + DISPUTE_WINDOW_MS).toISOString();
-    b.updatedAt = now();
-    pushBookingHistory(b, BOOKING_STATUS.AWAITING_CONFIRMATION, 'pro', 'Marked complete — awaiting customer confirmation');
-    return { booking: b, message: 'Marked complete. Awaiting customer confirmation.' };
+    await transitionBooking(c, b.id, BOOKING_STATUS.AWAITING_CONFIRMATION, {
+      actor: 'pro', note: 'Marked complete — awaiting customer confirmation',
+      set: { completedAt: now(), disputeEligibleAt: new Date(Date.now() + DISPUTE_WINDOW_MS).toISOString() },
+    });
+    return { bookingId: b.id, message: 'Marked complete. Awaiting customer confirmation.' };
   });
-  if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
-  res.json({ ok: true, booking: result.booking, message: result.message });
+  return respond(res, result);
 }
 
 /**
@@ -322,22 +298,20 @@ export async function completeJob(req, res) {
  * job (completed). Valid from awaiting_completion_review or awaiting_redo_review.
  */
 export async function confirmCompletion(req, res) {
-  const db = loadDB();
-  const b = db.bookings.find((x) => x.id === req.params.id);
+  const b = await loadBooking(req.params.id);
   if (!b) return res.status(404).json({ ok: false, error: 'Booking not found.' });
   if (b.kind !== 'quote') return res.status(409).json({ ok: false, error: 'Only quote jobs use this step.' });
   if (![BOOKING_STATUS.AWAITING_COMPLETION_REVIEW, BOOKING_STATUS.AWAITING_REDO_REVIEW].includes(b.status)) {
     return res.status(409).json({ ok: false, error: `This job isn't awaiting your review (status: ${b.status}).` });
   }
-  const tx = heldTxFor(db, b.id);
+  const tx = await findBookingTx(b.id, HELD);
   if (!tx) return res.status(409).json({ ok: false, error: 'No labour funds are held for this job.' });
 
   const out = await releaseLabour(tx.reference, 'customer');
   if (!out.ok) return res.status(out.code || 502).json({ ok: false, error: out.error });
 
-  const booking = loadDB().bookings.find((x) => x.id === b.id);
   res.json({
-    ok: true, booking, released: true, stage: 'labour', payoutKobo: out.payoutKobo,
+    ok: true, booking: await loadBooking(b.id), released: true, stage: 'labour', payoutKobo: out.payoutKobo,
     message: 'Job completed. The labour fee has been released to the professional. Thank you!',
   });
 }
@@ -349,8 +323,8 @@ export async function confirmCompletion(req, res) {
  */
 export async function requestRedo(req, res) {
   const { reason } = req.body || {};
-  const result = await mutate((db) => {
-    const b = db.bookings.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const b = await loadBooking(req.params.id, c, { forUpdate: true });
     if (!b) return { code: 404, error: 'Booking not found.' };
     if (b.kind !== 'quote') return { code: 409, error: 'Only quote jobs use this step.' };
     if (b.status === BOOKING_STATUS.AWAITING_REDO_REVIEW) {
@@ -360,16 +334,30 @@ export async function requestRedo(req, res) {
       return { code: 409, error: `A redo can only be requested while reviewing the completed work (status: ${b.status}).` };
     }
     if ((b.redoCount || 0) >= 1) return { code: 409, error: 'Only one redo is allowed. Escalate to Servora Support instead.' };
-    b.status = BOOKING_STATUS.REDO_IN_PROGRESS;
-    b.redoCount = (b.redoCount || 0) + 1;
-    b.redoReason = reason ? String(reason).slice(0, 500) : null;
-    b.updatedAt = now();
-    pushBookingHistory(b, BOOKING_STATUS.REDO_IN_PROGRESS, 'customer', b.redoReason ? `Redo requested: ${b.redoReason}` : 'Redo requested');
-    return { booking: b };
+    const redoReason = reason ? String(reason).slice(0, 500) : null;
+    await transitionBooking(c, b.id, BOOKING_STATUS.REDO_IN_PROGRESS, {
+      actor: 'customer', note: redoReason ? `Redo requested: ${redoReason}` : 'Redo requested',
+      set: { redoCount: (b.redoCount || 0) + 1, redoReason },
+    });
+    return { bookingId: b.id, message: 'Redo requested. The professional will perfect the work and re-submit.' };
   });
-  if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
-  res.json({ ok: true, booking: result.booking, message: 'Redo requested. The professional will perfect the work and re-submit.' });
+  return respond(res, result);
 }
+
+/** Build a dispute record for a booking (shared by both escalation paths). */
+const newDispute = (b, tx, { kind, openedBy, reason, amountKobo }) => ({
+  id: 'dsp_' + randomUUID().slice(0, 12),
+  bookingId: b.id,
+  transactionId: tx?.id || null,
+  reference: tx?.reference || null,
+  amountKobo,
+  service: b.service,
+  kind,
+  openedBy,
+  reason,
+  status: 'open',
+  createdAt: now(),
+});
 
 /**
  * POST /api/bookings/:id/escalate   (Customer) — QUOTE bookings.
@@ -379,43 +367,29 @@ export async function requestRedo(req, res) {
  */
 export async function escalateDispute(req, res) {
   const { reason } = req.body || {};
-  const result = await mutate((db) => {
-    const b = db.bookings.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const b = await loadBooking(req.params.id, c, { forUpdate: true });
     if (!b) return { code: 404, error: 'Booking not found.' };
     if (b.kind !== 'quote') return { code: 409, error: 'Only quote jobs use this step.' };
     if (b.status !== BOOKING_STATUS.AWAITING_REDO_REVIEW) {
       return { code: 409, error: `You can escalate to Support only after reviewing the redo (status: ${b.status}).` };
     }
-    const tx = heldTxFor(db, b.id);
-    b.status = BOOKING_STATUS.DISPUTED;
-    b.disputedAt = now();
-    b.updatedAt = now();
-    pushBookingHistory(b, BOOKING_STATUS.DISPUTED, 'customer', 'Escalated to Servora Support after redo');
-    const dispute = {
-      id: 'dsp_' + randomUUID().slice(0, 12),
-      bookingId: b.id,
-      transactionId: tx?.id || null,
-      reference: tx?.reference || null,
+    const tx = await findBookingTx(b.id, HELD, c);
+    const dispute = newDispute(b, tx, {
+      kind: 'quote', openedBy: 'customer',
+      reason: reason ? String(reason).slice(0, 500) : 'Customer not satisfied after the redo.',
       // For split jobs the disputed amount is the still-held labour.
       amountKobo: tx?.split ? tx.split.labourKobo : (tx?.amountKobo ?? b.agreedAmountKobo ?? null),
-      service: b.service,
-      kind: 'quote',
-      openedBy: 'customer',
-      reason: reason ? String(reason).slice(0, 500) : 'Customer not satisfied after the redo.',
-      status: 'open',
-      evidenceRequests: [],
-      evidence: [],
-      resolution: null,
-      createdAt: now(),
-      updatedAt: now(),
-    };
-    db.disputes.push(dispute);
-    if (tx) recordEvent(db, tx, { type: 'dispute_opened', actor: 'customer', data: { disputeId: dispute.id, reason: dispute.reason } });
-    return { booking: b, dispute };
+    });
+    if (!await insertDispute(c, dispute)) return { code: 409, error: 'This job already has an open dispute.' };
+    await transitionBooking(c, b.id, BOOKING_STATUS.DISPUTED,
+      { actor: 'customer', note: 'Escalated to Servora Support after redo', set: { disputedAt: now() } });
+    if (tx) await recordEvent(c, tx, { type: 'dispute_opened', actor: 'customer', data: { disputeId: dispute.id, reason: dispute.reason } });
+    return { bookingId: b.id, disputeId: dispute.id };
   });
   if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
   res.status(201).json({
-    ok: true, booking: result.booking, dispute: result.dispute,
+    ok: true, booking: await loadBooking(result.bookingId), dispute: await getDispute(result.disputeId),
     message: 'Escalated. Servora Support will review the evidence and make a final decision. The labour fee stays held.',
   });
 }
@@ -425,18 +399,16 @@ export async function escalateDispute(req, res) {
  * Confirms satisfactory completion and AUTO-RELEASES the single escrow amount.
  */
 export async function confirmBooking(req, res) {
-  const step = await mutate((db) => {
-    const b = db.bookings.find((x) => x.id === req.params.id);
+  const step = await withTransaction(async (c) => {
+    const b = await loadBooking(req.params.id, c, { forUpdate: true });
     if (!b) return { code: 404, error: 'Booking not found.' };
     if (b.kind === 'quote') return { code: 409, error: 'Quote jobs are confirmed via /confirm-completion.' };
     if (b.status !== BOOKING_STATUS.AWAITING_CONFIRMATION) {
       return { code: 409, error: `This job isn't awaiting your confirmation yet (status: ${b.status}).` };
     }
-    b.status = BOOKING_STATUS.CONFIRMED;
-    b.updatedAt = now();
-    pushBookingHistory(b, BOOKING_STATUS.CONFIRMED, 'customer', 'Customer confirmed completion');
-    const tx = escrowTxFor(db, b.id);
-    return { booking: b, reference: tx?.reference || null };
+    await transitionBooking(c, b.id, BOOKING_STATUS.CONFIRMED, { actor: 'customer', note: 'Customer confirmed completion' });
+    const tx = await findBookingTx(b.id, [TX_STATUS.IN_ESCROW], c);
+    return { bookingId: b.id, reference: tx?.reference || null };
   });
   if (step.error) return res.status(step.code).json({ ok: false, error: step.error });
 
@@ -446,7 +418,7 @@ export async function confirmBooking(req, res) {
 
   res.json({
     ok: true,
-    booking: step.booking,
+    booking: await loadBooking(step.bookingId),
     released: Boolean(release?.ok),
     releaseStatus: release?.status || null,
     message: release?.ok
@@ -462,10 +434,10 @@ export async function confirmBooking(req, res) {
  */
 export async function openDispute(req, res) {
   const { reason } = req.body || {};
-  const result = await mutate((db) => {
-    const b = db.bookings.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const b = await loadBooking(req.params.id, c, { forUpdate: true });
     if (!b) return { code: 404, error: 'Booking not found.' };
-    if (BEARER(req) !== 'demo-' + b.proId) return { code: 403, error: 'Only the assigned professional can open a dispute.' };
+    if (!isAssignedPro(req, b)) return { code: 403, error: 'Only the assigned professional can open a dispute.' };
     if (b.status !== BOOKING_STATUS.AWAITING_CONFIRMATION) {
       return { code: 409, error: `A dispute can only be opened while awaiting customer confirmation (status: ${b.status}).` };
     }
@@ -473,37 +445,23 @@ export async function openDispute(req, res) {
       const hrs = Math.max(1, Math.ceil((new Date(b.disputeEligibleAt).getTime() - Date.now()) / 3600000));
       return { code: 409, error: `You can open a dispute 24 hours after marking the job complete. Try again in ~${hrs}h.` };
     }
-    const tx = escrowTxFor(db, b.id);
-    b.status = BOOKING_STATUS.DISPUTED;
-    b.disputedAt = now();
-    b.updatedAt = now();
-    pushBookingHistory(b, BOOKING_STATUS.DISPUTED, 'pro', 'Pro escalated — customer did not confirm within 24h');
-    const dispute = {
-      id: 'dsp_' + randomUUID().slice(0, 12),
-      bookingId: b.id,
-      transactionId: tx?.id || null,
-      reference: tx?.reference || null,
-      amountKobo: tx?.amountKobo ?? b.agreedAmountKobo ?? null,
-      service: b.service,
-      kind: 'simple',
-      openedBy: 'pro',
+    const tx = await findBookingTx(b.id, [TX_STATUS.IN_ESCROW], c);
+    const dispute = newDispute(b, tx, {
+      kind: 'simple', openedBy: 'pro',
       reason: reason ? String(reason).slice(0, 500) : 'Customer did not confirm within 24 hours.',
-      status: 'open',            // open → evidence_requested → resolved
-      evidenceRequests: [],
-      evidence: [],
-      resolution: null,
-      createdAt: now(),
-      updatedAt: now(),
-    };
-    db.disputes.push(dispute);
-    if (tx) recordEvent(db, tx, { type: 'dispute_opened', actor: 'pro', data: { disputeId: dispute.id, reason: dispute.reason } });
-    return { booking: b, dispute };
+      amountKobo: tx?.amountKobo ?? b.agreedAmountKobo ?? null,
+    });
+    if (!await insertDispute(c, dispute)) return { code: 409, error: 'This job already has an open dispute.' };
+    await transitionBooking(c, b.id, BOOKING_STATUS.DISPUTED,
+      { actor: 'pro', note: 'Pro escalated — customer did not confirm within 24h', set: { disputedAt: now() } });
+    if (tx) await recordEvent(c, tx, { type: 'dispute_opened', actor: 'pro', data: { disputeId: dispute.id, reason: dispute.reason } });
+    return { bookingId: b.id, disputeId: dispute.id };
   });
   if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
   res.status(201).json({
     ok: true,
-    booking: result.booking,
-    dispute: result.dispute,
+    booking: await loadBooking(result.bookingId),
+    dispute: await getDispute(result.disputeId),
     message: 'Dispute opened. Servora Support will review and may request evidence. Funds remain held in escrow.',
   });
 }

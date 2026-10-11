@@ -8,7 +8,7 @@
  *   • "an absolute maximum of 1 request per second"  → global serialised queue,
  *     MIN_INTERVAL_MS between calls, process-wide.
  *   • "Results must be cached on your side"          → every lookup is cached in
- *     db.geocodeCache, keyed on the normalised query. Nigeria has 37 states and
+ *     the geocode_cache table, keyed on the normalised query. Nigeria has 37 states and
  *     ~774 LGAs, so the cache saturates fast and steady-state traffic ≈ 0.
  *   • "provide a valid HTTP Referer or User-Agent identifying the application
  *     (stock User-Agents ... will not do)"           → USER_AGENT below.
@@ -19,7 +19,7 @@
  * Failure is always soft: a pro without coordinates simply can't be
  * distance-ranked and falls back to State/LGA text matching.
  */
-import { loadDB, mutate } from '../store/store.js';
+import { getCachedPlace, cachePlace } from '../store/geocodeCache.js';
 
 const NOMINATIM_URL = process.env.NOMINATIM_URL || 'https://nominatim.openstreetmap.org/search';
 /** Identifies this app per the policy. Override with a real contact in production. */
@@ -46,10 +46,10 @@ function enqueue(fn) {
 }
 
 /** Look up the cache without touching the network. */
-export function cachedCoords(lga, state) {
+export async function cachedCoords(lga, state) {
   const key = cacheKey(lga, state);
   if (!key) return null;
-  const hit = loadDB().geocodeCache.find((c) => c.key === key);
+  const hit = await getCachedPlace(key);
   return hit && hit.lat != null ? { lat: hit.lat, lng: hit.lng, source: 'cache' } : null;
 }
 
@@ -62,8 +62,7 @@ export async function geocodePlace(lga, state) {
   const key = cacheKey(lga, state);
   if (!key) return null;
 
-  const db = loadDB();
-  const hit = db.geocodeCache.find((c) => c.key === key);
+  const hit = await getCachedPlace(key);
   if (hit) return hit.lat != null ? { lat: hit.lat, lng: hit.lng, source: 'cache' } : null;
 
   const query = [lga, state, 'Nigeria'].filter(Boolean).join(', ');
@@ -92,16 +91,12 @@ export async function geocodePlace(lga, state) {
   }
 
   // Cache hits AND misses (a miss is a real answer: "this place isn't resolvable").
-  await mutate((d) => {
-    if (d.geocodeCache.some((c) => c.key === key)) return;
-    d.geocodeCache.push({
-      key, query,
-      lat: result ? result.lat : null,
-      lng: result ? result.lng : null,
-      displayName: result?.displayName ?? null,
-      provider: 'nominatim',
-      cachedAt: new Date().toISOString(),
-    });
+  await cachePlace({
+    key, query,
+    lat: result ? result.lat : null,
+    lng: result ? result.lng : null,
+    displayName: result?.displayName ?? null,
+    provider: 'nominatim',
   });
 
   return result ? { lat: result.lat, lng: result.lng, source: 'nominatim' } : null;

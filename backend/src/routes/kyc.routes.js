@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from '../middleware/asyncRouter.js';
 import { listKycQueue, getKycPro, getKycImage, decideKyc } from '../controllers/kyc.controller.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
 import { rateLimit } from '../middleware/rateLimit.js';

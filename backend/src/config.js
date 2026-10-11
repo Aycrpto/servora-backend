@@ -24,6 +24,13 @@ if (existsSync(ENV_PATH)) {
 export const PORT = process.env.PORT || 8321;
 
 /**
+ * Postgres (Neon) connection string. Read from the environment ONLY — never
+ * hard-code it or write it into docs. Empty = the API boots, but every
+ * database-backed route answers 503 until it is set.
+ */
+export const DATABASE_URL = process.env.DATABASE_URL || '';
+
+/**
  * Professional sign-up collects government ID photos and selfies. It stays
  * CLOSED until there is persistent storage and someone to review IDs: only an
  * explicit PRO_SIGNUP_OPEN=true opens it. Unset (as on Render today) = closed.
@@ -58,6 +65,38 @@ export const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT
 
 /** Guards the money-moving admin endpoints (release/list). Empty = locked. */
 export const ADMIN_API_KEY = process.env.ADMIN_API_KEY || '';
+
+/* ============ OTP ENFORCEMENT CUTOFF ============ */
+
+/**
+ * The instant registration OTP became mandatory.
+ *
+ * Accounts created ON OR AFTER this moment MUST have otpVerified === true to
+ * log in or be listed — no exceptions, and a missing/undefined flag counts as
+ * NOT verified. Accounts created BEFORE it are grandfathered, because they
+ * predate the feature and were never given a chance to verify.
+ *
+ * This replaces the previous `otpVerified !== false` test, which was unsafe:
+ * it treated *any* record without the field as verified, so a new account whose
+ * OTP send failed before the flag was written would have sailed straight
+ * through. The rule is now positional in time and explicit, not a shape check.
+ */
+export const OTP_ENFORCED_FROM = new Date(
+  process.env.OTP_ENFORCED_FROM || '2026-07-29T00:00:00.000Z'
+).getTime();
+
+/** True when this pro must pass OTP before login/listing. */
+export function otpRequiredFor(pro) {
+  const created = new Date(pro?.createdAt || 0).getTime();
+  // Unparseable/absent createdAt → treat as NEW (fail closed, require OTP).
+  if (!Number.isFinite(created) || created === 0) return true;
+  return created >= OTP_ENFORCED_FROM;
+}
+
+/** True when this pro is allowed through the contact-verification gate. */
+export function passesOtpGate(pro) {
+  return !otpRequiredFor(pro) || pro?.otpVerified === true;
+}
 
 /* ============ DOJAH KYC (ID document + selfie verification) ============ */
 

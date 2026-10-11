@@ -16,7 +16,8 @@
  *   node scripts/backfill-coords.js --dry-run
  *   node scripts/backfill-coords.js [--limit 50]
  */
-import { loadDB, mutate } from '../src/store/store.js';
+import { query, closePool } from '../src/db/pool.js';
+import { setLocationIfMissing } from '../src/store/professionals.js';
 import { geocodePlace, cachedCoords } from '../src/services/geocode.js';
 
 const DRY = process.argv.includes('--dry-run');
@@ -26,15 +27,16 @@ const PACE_MS = 15000;   // 4 network requests per minute
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const pros = loadDB().professionals.filter(p => !p.location?.lat && (p.lga || p.state));
+const { rows: pros } = await query(
+  'SELECT id, name, lga, state FROM professionals WHERE lat IS NULL AND (lga IS NOT NULL OR state IS NOT NULL) ORDER BY created_at');
 console.log(`${pros.length} professional(s) without coordinates.`);
-if (!pros.length) process.exit(0);
+if (!pros.length) { await closePool(); process.exit(0); }
 
 let done = 0, cached = 0, fetched = 0, failed = 0;
 
 for (const pro of pros.slice(0, LIMIT)) {
   const place = [pro.lga, pro.state].filter(Boolean).join(', ');
-  const hit = cachedCoords(pro.lga, pro.state);
+  const hit = await cachedCoords(pro.lga, pro.state);
 
   if (DRY) {
     console.log(`  [dry-run] ${pro.name} — ${place} ${hit ? '(cached, free)' : '(needs a network lookup)'}`);
@@ -50,10 +52,7 @@ for (const pro of pros.slice(0, LIMIT)) {
   }
 
   if (coords) {
-    await mutate(d => {
-      const p = d.professionals.find(x => String(x.id) === String(pro.id));
-      if (p && !p.location) p.location = coords;
-    });
+    await setLocationIfMissing(pro.id, coords);
     console.log(`  ✓ ${pro.name} — ${place} -> ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)} (${coords.source})`);
   } else {
     failed++;
@@ -66,3 +65,4 @@ for (const pro of pros.slice(0, LIMIT)) {
 }
 
 console.log(`\nDone: ${done} processed · ${cached} from cache · ${fetched} network lookups · ${failed} unresolved`);
+await closePool();

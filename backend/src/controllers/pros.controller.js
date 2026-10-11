@@ -3,14 +3,22 @@
  * The response shapes here are the contract the frontend's ServoraAPI maps from.
  */
 import { randomUUID } from 'node:crypto';
-import { loadDB, saveDB, mutate } from '../store/store.js';
+import { withTransaction } from '../db/pool.js';
 import { persistPortfolio, deleteStored } from '../store/uploads.js';
+import {
+  getPro, listVerifiedPros, listFeaturedPros, contactTaken, insertPro, insertKycCheck,
+  updatePro as savePro, setLocationIfMissing,
+} from '../store/professionals.js';
+import { leadsForPro } from '../store/leads.js';
+import { listBookingsForPro } from '../store/bookings.js';
+import { isUniqueViolation } from '../store/util.js';
 import { saveKycImage } from '../store/kycStore.js';
 import * as paystack from '../services/paystack.js';
-import { hashPassword } from '../services/passwords.js';
+import { hashPassword, passwordProblem } from '../services/passwords.js';
 import { verifyPhotoIdWithSelfie } from '../services/dojah.js';
+import { requestOtp } from '../services/otp.js';
 import { cachedCoords, geocodePlace, haversineKm, hasCoords } from '../services/geocode.js';
-import { AVATAR_PALETTE } from '../config.js';
+import { AVATAR_PALETTE, passesOtpGate } from '../config.js';
 
 const TIER_RANK = { elite: 0, pro: 1, starter: 2 };
 
@@ -60,11 +68,12 @@ const SORTERS = {
  * returned so the UI can suggest alternatives.
  * Ranking rule: sort key first, then subscription tier (Elite > Pro > Starter).
  */
-export function listPros(req, res) {
+export async function listPros(req, res) {
   const { category, state, area, lat, lng, sort = 'rating' } = req.query;
-  let pros = loadDB().professionals.filter(p => p.status === 'verified');
-
-  if (category) pros = pros.filter(p => p.category === category);
+  // Listed only when BOTH gates pass: ID verified (KYC) and contact verified
+  // (OTP). passesOtpGate() grandfathers accounts created before the feature
+  // shipped by DATE — a missing flag on a new account no longer slips through.
+  let pros = (await listVerifiedPros({ category: category ? String(category) : null })).filter(passesOtpGate);
 
   // GPS mode: rank by real distance from the customer instead of by text.
   // Pros without coordinates can't be measured, so they sort after those that can.
@@ -118,9 +127,9 @@ export function listPros(req, res) {
  * GET /api/pros/featured
  * Paid placement: Elite subscribers first, then Pro, ranked by rating.
  */
-export function featuredPros(_req, res) {
-  const pros = loadDB().professionals
-    .filter(p => p.status === 'verified' && p.tier !== 'starter')
+export async function featuredPros(_req, res) {
+  const pros = (await listFeaturedPros())
+    .filter(passesOtpGate)
     .sort((a, b) => TIER_RANK[a.tier] - TIER_RANK[b.tier] || (b.rating ?? 0) - (a.rating ?? 0))
     .slice(0, 8);
   res.json({ pros: pros.map(publicPro) });
@@ -129,25 +138,19 @@ export function featuredPros(_req, res) {
 /**
  * GET /api/pros/:id/leads
  * A professional's lead inbox: leads addressed to them directly, plus
- * open job posts matching their trade and state.
- * NOTE: no auth yet — the frontend uses a demo profile picker. When
- * auth lands (WhatsApp OTP), this route gets an ownership check.
+ * open job posts matching their trade and state. Signed-in pro, self only
+ * (requirePro + requireSelf on the route): it carries customers' names and
+ * phone numbers.
  */
-export function proLeads(req, res) {
-  const db = loadDB();
-  const pro = db.professionals.find(p => String(p.id) === String(req.params.id));
+export async function proLeads(req, res) {
+  const pro = await getPro(req.params.id);
   if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found' });
 
   // Direct-contact leads go only to the addressed pro. Open job posts fan out
   // STRICTLY by profession: the lead's service must equal the pro's category
   // (a lead with no service reaches no inbox — every entry path sets one), and
   // the state must match when the lead has one.
-  const leads = db.leads.filter(l =>
-    (l.proId && String(l.proId) === String(pro.id)) ||
-    (!l.proId && l.type !== 'direct_contact' &&
-      l.service === pro.category &&
-      (!l.state || l.state === pro.state))
-  ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const leads = await leadsForPro(pro);
 
   res.json({
     pro: { id: pro.id, name: pro.name, category: pro.category, state: pro.state },
@@ -158,21 +161,15 @@ export function proLeads(req, res) {
 /**
  * PATCH /api/pros/:id
  * A professional updates their own editable profile fields from the
- * dashboard: bio, responseMins, priceFrom. Demo auth: the bearer token
- * is "demo-<proId>" (issued at login) and must match the target id.
- * FUTURE: verify a real JWT and its subject claim.
+ * dashboard: bio, responseMins, priceFrom, portfolio. Signed-in pro, self
+ * only (requirePro + requireSelf on the route).
  */
-export function updatePro(req, res) {
-  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (token !== 'demo-' + req.params.id) {
-    return res.status(403).json({ ok: false, error: 'Not authorised to edit this profile.' });
-  }
-
-  const db = loadDB();
-  const pro = db.professionals.find(p => String(p.id) === String(req.params.id));
+export async function updatePro(req, res) {
+  const pro = await getPro(req.params.id);
   if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found' });
 
   const { bio, responseMins, priceFrom, portfolio } = req.body || {};
+  const patch = {};
 
   // Portfolio: the array IS the desired final state. New data URLs are
   // written to disk, kept URLs pass through, and files no longer listed
@@ -183,38 +180,33 @@ export function updatePro(req, res) {
       const url = typeof old === 'string' ? old : old?.url;
       if (url && !next.includes(url)) deleteStored(url);
     });
-    pro.portfolio = next;
+    patch.portfolio = next;
   }
 
-  if (bio !== undefined) pro.bio = bio ? String(bio).trim().slice(0, 300) : pro.bio;
+  if (bio !== undefined && bio) patch.bio = String(bio).trim().slice(0, 300);
   if (responseMins !== undefined) {
     const n = Number(responseMins);
-    if (Number.isFinite(n) && n >= 1 && n <= 720) pro.responseMins = Math.round(n);
+    if (Number.isFinite(n) && n >= 1 && n <= 720) patch.responseMins = Math.round(n);
   }
   if (priceFrom !== undefined) {
     const n = Number(priceFrom);
     if (Number.isFinite(n) && n >= 0) {
-      pro.priceFrom = Math.round(n);
-      pro.priceLabel = n > 0 ? '₦' + Math.round(n).toLocaleString('en-NG') : 'Quote on request';
+      patch.priceFrom = Math.round(n);
+      patch.priceLabel = n > 0 ? '₦' + Math.round(n).toLocaleString('en-NG') : 'Quote on request';
     }
   }
 
-  saveDB(db);
-  res.json({ ok: true, pro: publicPro(pro) });
+  res.json({ ok: true, pro: publicPro(await savePro(pro.id, patch)) });
 }
 
-const BEARER = req => (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
 const NUBAN_RE = /^\d{10}$/;
 
 /**
  * GET /api/pros/:id/availability   (pro, self only)
  * Current "Available now" state plus whether we have coordinates for them.
  */
-export function getAvailability(req, res) {
-  if (BEARER(req) !== 'demo-' + req.params.id) {
-    return res.status(403).json({ ok: false, error: 'Not authorised.' });
-  }
-  const pro = loadDB().professionals.find(p => String(p.id) === String(req.params.id));
+export async function getAvailability(req, res) {
+  const pro = await getPro(req.params.id);
   if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
   res.json({
     ok: true,
@@ -233,23 +225,19 @@ export function getAvailability(req, res) {
  * self-service and instant. Only verified pros can advertise availability.
  */
 export async function setAvailability(req, res) {
-  if (BEARER(req) !== 'demo-' + req.params.id) {
-    return res.status(403).json({ ok: false, error: 'Not authorised.' });
-  }
   const { availableNow } = req.body || {};
   if (typeof availableNow !== 'boolean') {
     return res.status(400).json({ ok: false, error: 'availableNow must be true or false.' });
   }
 
-  const result = await mutate(d => {
-    const p = d.professionals.find(x => String(x.id) === String(req.params.id));
-    if (!p) return { code: 404, error: 'Professional not found.' };
-    if (availableNow && p.status !== 'verified') {
+  const result = await withTransaction(async (c) => {
+    const { rows } = await c.query('SELECT status FROM professionals WHERE id = $1 FOR UPDATE',
+      [/^[0-9a-f-]{36}$/i.test(String(req.params.id)) ? req.params.id : null]);
+    if (!rows[0]) return { code: 404, error: 'Professional not found.' };
+    if (availableNow && rows[0].status !== 'verified') {
       return { code: 409, error: 'Your profile must be verified before you can go available.' };
     }
-    p.availableNow = availableNow;
-    p.availabilityUpdatedAt = new Date().toISOString();
-    return { pro: p };
+    return { pro: await savePro(req.params.id, { availableNow, availabilityUpdatedAt: new Date().toISOString() }, c) };
   });
   if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
 
@@ -268,13 +256,8 @@ export async function setAvailability(req, res) {
  * The pro's jobs, newest first — powers the "My jobs" dashboard section where
  * they start/complete/dispute. Includes customer contact so they can reach out.
  */
-export function proBookings(req, res) {
-  if (BEARER(req) !== 'demo-' + req.params.id) {
-    return res.status(403).json({ ok: false, error: 'Not authorised.' });
-  }
-  const bookings = loadDB().bookings
-    .filter(b => String(b.proId) === String(req.params.id))
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+export async function proBookings(req, res) {
+  const bookings = await listBookingsForPro(req.params.id);
   res.json({ ok: true, count: bookings.length, bookings });
 }
 
@@ -283,11 +266,8 @@ export function proBookings(req, res) {
  * Returns whether the pro has a payout account on file, masked for display.
  * Never returns the recipient_code or the full account number.
  */
-export function getPayoutAccount(req, res) {
-  if (BEARER(req) !== 'demo-' + req.params.id) {
-    return res.status(403).json({ ok: false, error: 'Not authorised.' });
-  }
-  const pro = loadDB().professionals.find(p => String(p.id) === String(req.params.id));
+export async function getPayoutAccount(req, res) {
+  const pro = await getPro(req.params.id);
   if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
 
   const p = pro.payout;
@@ -307,17 +287,13 @@ export function getPayoutAccount(req, res) {
  * lets the release flow pay the pro. The full account number is NOT persisted.
  */
 export async function setPayoutAccount(req, res) {
-  // Auth: a pro may only set their OWN payout account.
-  if (BEARER(req) !== 'demo-' + req.params.id) {
-    return res.status(403).json({ ok: false, error: 'Not authorised to edit this profile.' });
-  }
-
+  // Auth: a pro may only set their OWN payout account (requirePro + requireSelf on the route).
   const acct = String(req.body?.accountNumber || '').replace(/\s/g, '');
   const bank = String(req.body?.bankCode || '').trim();
   if (!NUBAN_RE.test(acct)) return res.status(400).json({ ok: false, error: 'Enter a valid 10-digit account number.' });
   if (!/^\d{3,6}$/.test(bank)) return res.status(400).json({ ok: false, error: 'Select a valid bank.' });
 
-  const pro = loadDB().professionals.find(p => String(p.id) === String(req.params.id));
+  const pro = await getPro(req.params.id);
   if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
 
   // 1) Verify the account with the bank — prevents misdirected payouts.
@@ -358,10 +334,7 @@ export async function setPayoutAccount(req, res) {
     verified: true,
     updatedAt: new Date().toISOString(),
   };
-  await mutate(d => {
-    const p = d.professionals.find(x => String(x.id) === String(req.params.id));
-    if (p) p.payout = payout;
-  });
+  await savePro(pro.id, { payout });
 
   // Safe summary only — no recipient_code, no full account number.
   res.status(200).json({
@@ -390,12 +363,16 @@ const ID_TYPES = ["NIN", "Driver's Licence", "International Passport"];
 
 export async function registerPro(req, res) {
   const { name, phone, email, trade, state, lga, plan, idType, idImage, selfieImage,
-          idFileName, idFileSizeKB, portfolio, password } = req.body || {};
+          idFileName, idFileSizeKB, portfolio, password, otpChannel } = req.body || {};
 
   const missing = ['name', 'phone', 'trade', 'state'].filter(f => !req.body?.[f]?.toString().trim());
   if (missing.length) {
     return res.status(400).json({ ok: false, error: `Missing required fields: ${missing.join(', ')}` });
   }
+
+  // Every account has its own password (there is no shared fallback).
+  const pwProblem = passwordProblem(password);
+  if (pwProblem) return res.status(422).json({ ok: false, field: 'password', error: pwProblem });
 
   // ID verification is MANDATORY: a recognised ID type, the document photo,
   // AND a live selfie to match against it.
@@ -410,16 +387,15 @@ export async function registerPro(req, res) {
     return res.status(422).json({ ok: false, field: 'selfie', error: 'A live selfie is required so we can match it to your ID.' });
   }
 
-  const db = loadDB();
   const cleanEmail = email?.toString().trim().toLowerCase() || null;
 
-  // One account per phone / email. Checked server-side: it owns the data,
-  // so this holds even if a client skips its own validation.
-  const phoneTaken = db.professionals.some(p => normPhone(p.phone) === normPhone(phone));
-  if (phoneTaken) {
+  // One account per phone / email. Checked server-side (it owns the data) and
+  // enforced again by unique indexes when the row is inserted.
+  const taken = await contactTaken({ phoneKey: normPhone(phone), email: cleanEmail });
+  if (taken.phone) {
     return res.status(409).json({ ok: false, field: 'phone', error: 'This phone number is already registered. Try signing in instead.' });
   }
-  if (cleanEmail && db.professionals.some(p => p.email && String(p.email).toLowerCase() === cleanEmail)) {
+  if (taken.email) {
     return res.status(409).json({ ok: false, field: 'email', error: 'This email is already in use. Try signing in instead.' });
   }
 
@@ -464,8 +440,8 @@ export async function registerPro(req, res) {
     // The ID-verified badge is granted ONLY by a real pass (or admin approval).
     badges: passed ? ['v'] : [],
     tier: (plan || 'Starter').toLowerCase(),
-    // scrypt hash — the raw value is never stored (null → shared fallback on login).
-    password: password?.toString().trim() ? hashPassword(password.toString().trim()) : null,
+    // scrypt hash — the raw value is never stored.
+    password: await hashPassword(password),
     // Verification status is carried by the badge alone, never claimed in free text.
     bio: `New on Servora — ${trade.replace(/s$/, '').toLowerCase()} serving ${cleanLga ? cleanLga + ', ' : ''}${state}.`,
     review: null,
@@ -473,7 +449,11 @@ export async function registerPro(req, res) {
     // Only a real pass makes a pro live/bookable; everything else waits for a human.
     status: passed ? 'verified' : 'pending_review',
     idVerified: passed,
-    idDocument: { type: cleanIdType, fileName: idFileName ?? null, sizeKB: idFileSizeKB ?? null },
+    // Contact verification (OTP). The account is NOT active until the code
+    // sent to their phone/email is entered — this is a separate gate from KYC.
+    otpVerified: false,
+    otpVerifiedAt: null,
+    idDocument: { type: cleanIdType, fileName: idFileName ?? null, sizeKB: Number.isInteger(idFileSizeKB) ? idFileSizeKB : null },
     // Private filenames only — served exclusively via the admin-authed endpoint.
     kycMedia: { idDocument: storedId.file, selfie: storedSelfie.file },
     idVerification: {
@@ -504,32 +484,43 @@ export async function registerPro(req, res) {
     // Approximate coordinates for distance ranking. Filled from the geocode
     // cache instantly when the State/LGA has been seen before, otherwise
     // resolved in the background right after we respond (see below).
-    location: cachedCoords(cleanLga, state),
+    location: await cachedCoords(cleanLga, state),
     createdAt: new Date().toISOString(),
   };
 
-  // Written through mutate(): the Dojah call above is an async gap, so a plain
-  // load→save could clobber a concurrent write.
-  const added = await mutate((d) => {
-    // Re-check uniqueness inside the lock in case a duplicate landed meanwhile.
-    if (d.professionals.some(p => normPhone(p.phone) === normPhone(phone))) return false;
-    d.professionals.push(pro);
-    return true;
-  });
-  if (!added) {
-    return res.status(409).json({ ok: false, field: 'phone', error: 'This phone number is already registered. Try signing in instead.' });
+  // The pro and their KYC check are saved together. A duplicate that landed
+  // during the Dojah call is caught by the unique indexes here.
+  try {
+    await withTransaction(async (c) => {
+      await insertPro(c, pro);
+      await insertKycCheck(c, pro.id, pro.idVerification);
+    });
+  } catch (err) {
+    if (isUniqueViolation(err, 'professionals_phone_key_uq')) {
+      return res.status(409).json({ ok: false, field: 'phone', error: 'This phone number is already registered. Try signing in instead.' });
+    }
+    if (isUniqueViolation(err, 'professionals_email_uq')) {
+      return res.status(409).json({ ok: false, field: 'email', error: 'This email is already in use. Try signing in instead.' });
+    }
+    throw err;
   }
 
   // Resolve coordinates in the BACKGROUND when the place wasn't already cached.
   // Registration never waits on (or fails because of) a third-party geocoder.
   if (!pro.location && cleanLga) {
     geocodePlace(cleanLga, state)
-      .then((coords) => coords && mutate((d) => {
-        const p = d.professionals.find((x) => String(x.id) === String(pro.id));
-        if (p && !p.location) p.location = coords;
-      }))
+      .then((coords) => coords && setLocationIfMissing(pro.id, coords))
       .catch(() => { /* soft failure: pro stays matchable by State/LGA text */ });
   }
+
+  // Send the verification code. SMS to their phone by default; email only if
+  // they asked for it AND gave one (email is optional at signup).
+  const wantsEmail = String(otpChannel || '').toLowerCase() === 'email';
+  const otpChan = wantsEmail && cleanEmail ? 'email' : 'sms';
+  const otp = await requestOtp({
+    subjectType: 'pro', subjectId: pro.id,
+    channel: otpChan, destination: otpChan === 'email' ? cleanEmail : pro.phone,
+  });
 
   res.status(201).json({
     ok: true,
@@ -537,8 +528,20 @@ export async function registerPro(req, res) {
     idVerified: pro.idVerified,
     verification: { outcome: verification.outcome, confidence: verification.confidence, reasons: verification.reasons },
     pro: publicPro(pro),
-    message: passed
-      ? 'ID verified — your profile now appears in search.'
-      : 'Application received. Your ID needs a manual check before your profile can appear in search.',
+    // The client must now collect the code; nothing goes live until it does.
+    otpRequired: true,
+    // otpId is returned even when delivery failed, so "Resend code" has
+    // something to retry against instead of dead-ending the registration.
+    otp: {
+      otpId: otp.otpId || null, channel: otp.channel || otpChan,
+      destinationMasked: otp.destinationMasked || null,
+      expiresAt: otp.expiresAt || null,
+      resendAvailableInSec: otp.resendAvailableInSec || 0,
+      sent: Boolean(otp.ok),
+    },
+    otpError: otp.ok ? null : otp.error,
+    message: otp.ok
+      ? `We sent a 6-digit code to ${otp.destinationMasked}. Enter it to activate your account.`
+      : 'Account created, but we could not send your verification code. Use “Resend code” to try again.',
   });
 }

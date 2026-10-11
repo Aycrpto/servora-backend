@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from '../middleware/asyncRouter.js';
 import { createLead } from '../controllers/leads.controller.js';
 
 const router = Router();

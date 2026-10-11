@@ -10,11 +10,12 @@
  *   GET  /api/admin/kyc/:id/image/:kind   idDocument | selfie  (binary)
  *   POST /api/admin/kyc/:id/decision      { decision: 'approve'|'reject', reason? }
  */
-import { loadDB, mutate } from '../store/store.js';
+import { withTransaction } from '../db/pool.js';
 import { readKycImage } from '../store/kycStore.js';
+import { listProsForKyc, getProWithKyc, updatePro, recordKycDecision } from '../store/professionals.js';
+import { isUuid } from '../store/util.js';
 import { isAdmin } from '../middleware/adminAuth.js';
 
-const now = () => new Date().toISOString();
 // The router already enforces requireAdmin; this second check is defence in
 // depth so a handler re-mounted elsewhere can never serve KYC data unguarded.
 const adminOk = (req) => isAdmin(req);
@@ -57,19 +58,17 @@ const reviewPro = (p) => ({
 });
 
 /** GET /api/admin/kyc?status=pending_review|verified|rejected|all */
-export function listKycQueue(req, res) {
+export async function listKycQueue(req, res) {
   if (!adminOk(req)) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-  const status = req.query.status || 'pending_review';
-  const pros = loadDB().professionals
-    .filter((p) => (status === 'all' ? Boolean(p.idVerification) : p.status === status))
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const status = String(req.query.status || 'pending_review');
+  const pros = await listProsForKyc(status);
   res.json({ ok: true, count: pros.length, status, pros: pros.map(reviewPro) });
 }
 
 /** GET /api/admin/kyc/:id */
-export function getKycPro(req, res) {
+export async function getKycPro(req, res) {
   if (!adminOk(req)) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-  const pro = loadDB().professionals.find((p) => String(p.id) === String(req.params.id));
+  const pro = await getProWithKyc(req.params.id);
   if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
   res.json({ ok: true, pro: reviewPro(pro) });
 }
@@ -79,13 +78,13 @@ export function getKycPro(req, res) {
  * Streams the stored KYC image to an authenticated reviewer. This is the ONLY
  * way these files can be read — they are not in any statically served folder.
  */
-export function getKycImage(req, res) {
+export async function getKycImage(req, res) {
   if (!adminOk(req)) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
   const { id, kind } = req.params;
   if (!['idDocument', 'selfie'].includes(kind)) {
     return res.status(400).json({ ok: false, error: "kind must be 'idDocument' or 'selfie'." });
   }
-  const pro = loadDB().professionals.find((p) => String(p.id) === String(id));
+  const pro = await getProWithKyc(id);
   if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
 
   const file = pro.kycMedia?.[kind];
@@ -111,39 +110,42 @@ export async function decideKyc(req, res) {
     return res.status(400).json({ ok: false, error: "decision must be 'approve' or 'reject'." });
   }
 
-  const result = await mutate((db) => {
-    const p = db.professionals.find((x) => String(x.id) === String(req.params.id));
-    if (!p) return { code: 404, error: 'Professional not found.' };
+  if (!isUuid(req.params.id)) return res.status(404).json({ ok: false, error: 'Professional not found.' });
+  const result = await withTransaction(async (c) => {
+    // Lock the row: two reviewers deciding at once must not both win.
+    const { rows } = await c.query('SELECT id FROM professionals WHERE id = $1 FOR UPDATE', [req.params.id]);
+    if (!rows[0]) return { code: 404, error: 'Professional not found.' };
+    const p = await getProWithKyc(rows[0].id, c);
     if (p.status === 'verified' && p.idVerified === true) {
       return { code: 409, error: 'This professional is already verified.' };
     }
     const approved = decision === 'approve';
-    p.status = approved ? 'verified' : 'rejected';
-    p.idVerified = approved;
-    // Badge is granted only alongside idVerified — never left dangling.
-    p.badges = approved
-      ? Array.from(new Set([...(p.badges || []), 'v']))
-      : (p.badges || []).filter((b) => b !== 'v');
-    const prev = p.idVerification || {};
-    p.idVerification = {
-      ...prev,
-      // Preserve what the provider originally said — a manual decision must
-      // never erase the automated verdict it overrode.
-      autoOutcome: prev.autoOutcome ?? prev.outcome ?? null,
-      outcome: approved ? 'manually_approved' : 'manually_rejected',
-      decidedBy: 'admin',
-      decidedAt: now(),
-      decisionReason: reason ? String(reason).slice(0, 500) : null,
-    };
-    p.updatedAt = now();
-    return { pro: p };
+    await updatePro(p.id, {
+      status: approved ? 'verified' : 'rejected',
+      idVerified: approved,
+      // Badge is granted only alongside idVerified — never left dangling.
+      badges: approved
+        ? Array.from(new Set([...(p.badges || []), 'v']))
+        : (p.badges || []).filter((b) => b !== 'v'),
+    }, c);
+    if (p.idVerification) {
+      await recordKycDecision(c, p.idVerification.id, {
+        outcome: approved ? 'manually_approved' : 'manually_rejected',
+        // Preserve what the provider originally said — a manual decision must
+        // never erase the automated verdict it overrode.
+        autoOutcome: p.idVerification.autoOutcome ?? p.idVerification.outcome ?? null,
+        decidedBy: 'admin',
+        decisionReason: reason ? String(reason).slice(0, 500) : null,
+      });
+    }
+    return { id: p.id };
   });
   if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
 
   res.json({
     ok: true,
     decision,
-    pro: reviewPro(result.pro),
+    pro: reviewPro(await getProWithKyc(result.id)),
     message: decision === 'approve'
       ? 'Professional approved — ID Verified badge granted and profile is now live.'
       : 'Professional rejected — profile stays hidden and no badge is shown.',

@@ -7,15 +7,17 @@ Node.js + Express API for the Servora marketplace. Serves the frontend too, so o
 ```bash
 cd backend
 npm install
-npm start          # → http://localhost:8321  (frontend + API)
+cp .env.example .env   # then set DATABASE_URL (Neon pooled connection string)
+npm start              # → http://localhost:8321  (frontend + API)
 ```
 
 `npm run dev` restarts on file changes. Requires Node 18+.
 
-> **No Node yet?** `serve.ps1` in the project root is a dev bridge that
-> implements this exact API contract in PowerShell against the same
-> `data/db.json` — the frontend can't tell the difference. Install Node
-> with `winget install OpenJS.NodeJS.LTS`, then switch to `npm start`.
+Data lives in **Postgres (Neon)**, read from `DATABASE_URL` only. Pending
+migrations in `migrations/` are applied automatically when the server starts
+(under a lock, so concurrent starts are safe); `npm run migrate` applies them
+on demand. Without `DATABASE_URL` the server still boots and serves the site,
+but database-backed API routes answer 503.
 
 ## Endpoints
 
@@ -28,6 +30,9 @@ npm start          # → http://localhost:8321  (frontend + API)
 | GET    | `/api/admin/kyc?status=` | Manual review queue. Requires `x-admin-key`. |
 | GET    | `/api/admin/kyc/:id/image/:kind` | `idDocument` \| `selfie`. Admin-only; KYC media is stored in `backend/private/kyc/` and is never statically served. |
 | POST   | `/api/admin/kyc/:id/decision` | `{ decision: 'approve'\|'reject', reason? }`. Approve grants the ✓ ID Verified badge. |
+| POST   | `/api/auth/login`    | `{ identifier, password }` → `{ token, expiresAt, pro }`. Opaque session token (30 days, revocable; only its SHA-256 is stored). Same error for unknown account and wrong password. |
+| POST   | `/api/auth/logout`   | Revokes the `Authorization: Bearer <token>` session.      |
+| GET    | `/api/auth/me`       | The signed-in pro. Pro-only routes (`/api/pros/:id/*`, quotes, job actions) require the bearer session, and `:id` must be the signed-in pro. |
 | GET    | `/api/services`      | Service taxonomy                                          |
 | POST   | `/api/leads`         | Customer job request — no account needed                  |
 
@@ -35,14 +40,14 @@ npm start          # → http://localhost:8321  (frontend + API)
 
 ```
 backend/
-├── server.js                    Express app: middleware, routes, static frontend
+├── server.js                    Express app: middleware, routes, static frontend, DB start-up
 ├── package.json
-├── data/
-│   ├── db.seed.json             committed seed: empty collections (no demo pros)
-│   └── db.json                  runtime state (git-ignored; created from the seed on first run)
+├── migrations/                  numbered .sql files, applied in order (checksummed)
+├── scripts/migrate.js           `npm run migrate`
 └── src/
-    ├── config.js                PORT, AUTO_VERIFY, avatar palette
-    ├── store/store.js           storage layer — swap this one file for SQLite/Postgres later
+    ├── config.js                env config (DATABASE_URL, Paystack, Dojah, OTP rules…)
+    ├── db/                      pool (Neon-tuned), migration runner, readiness
+    ├── store/                   one module per entity: parameterised SQL ↔ API shapes
     ├── controllers/
     │   ├── pros.controller.js   listing, featured ranking, registration
     │   └── leads.controller.js  lead capture
@@ -60,12 +65,19 @@ backend/
 - Featured slots are Elite-first paid placement.
 - Customers never authenticate; a lead is just the job + a phone number.
 
-## Data & resetting
+## Data
 
-`data/db.json` holds runtime state (professionals, leads, support messages) and is **git-ignored**. It is created automatically from the committed `data/db.seed.json` on first run, so a fresh clone boots with an empty marketplace — only real, ID-checked registrations ever appear in listings. **To reset to a clean slate, delete `data/db.json`** — the next request recreates it from the seed. Uploaded portfolio photos live in the project-root `uploads/` folder (also git-ignored).
+All application data is in Postgres; the schema is `migrations/001_initial_schema.sql`.
+To change it, add a new numbered migration — never edit one that has run (the
+runner refuses edited migrations by checksum). Every query is parameterised.
+
+Not yet in Postgres (planned): KYC images (`backend/private/kyc/`, to move to a
+private Cloudflare R2 bucket) and portfolio/evidence media (`uploads/`, to move
+to Cloudinary). On hosts with an ephemeral disk those files do not survive a
+redeploy.
 
 ## Upgrade path
 
-1. Replace `src/store/store.js` with SQLite (better-sqlite3) or Postgres (Prisma) — nothing else changes.
+1. KYC images → private object storage (R2); media → Cloudinary.
 2. Real ID uploads: `multer` → object storage; verification queue flips `status`.
 3. Auth for pros (JWT/OTP via WhatsApp), payments (Paystack/Flutterwave escrow), commission ledger.

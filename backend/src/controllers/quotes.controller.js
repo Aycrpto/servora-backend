@@ -13,9 +13,13 @@
  * (materials after approval, labour after completion). See escrow.js.
  */
 import { randomUUID } from 'node:crypto';
-import { loadDB, mutate } from '../store/store.js';
-import { BOOKING_STATUS, computeQuoteSplit, pushBookingHistory } from '../services/escrow.js';
+import { withTransaction } from '../db/pool.js';
+import { BOOKING_STATUS } from '../services/escrow.js';
 import { deliverQuote } from '../services/notifications.js';
+import { getProForUpdate } from '../store/professionals.js';
+import { markLeadQuoted } from '../store/leads.js';
+import { getQuote as loadQuote, listQuotesForPro, insertQuote, setQuoteDelivery, setQuoteStatus } from '../store/quotes.js';
+import { getBooking, insertBooking, addHistory } from '../store/bookings.js';
 
 const now = () => new Date().toISOString();
 const isPosInt = (n) => Number.isInteger(n) && n > 0;
@@ -23,8 +27,6 @@ const isNonNegInt = (n) => Number.isInteger(n) && n >= 0;
 const MIN_KOBO = 10000;        // ₦100 floor
 const MAX_KOBO = 500000000;    // ₦5,000,000 ceiling (fat-finger guard)
 
-// A pro proves ownership with their demo bearer token (matches the rest of the app).
-const BEARER = (req) => (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
 
 /** Resolve a naira|kobo pair to integer kobo, or null if neither is a valid positive int. */
 function toKobo(kobo, naira) {
@@ -34,7 +36,7 @@ function toKobo(kobo, naira) {
 }
 
 /**
- * POST /api/quotes   (Pro only — Bearer demo-<proId>)
+ * POST /api/quotes   (signed-in pro — requirePro on the route)
  * Body: {
  *   proId, service?, description?,
  *   customer: { name?, email?, phone? },
@@ -48,10 +50,9 @@ export async function createQuote(req, res) {
   const b = req.body || {};
   const { proId, service, description, customer, materials, labourLabel, note, leadId } = b;
 
-  const db = loadDB();
-  const pro = db.professionals.find((p) => String(p.id) === String(proId) && p.status === 'verified');
-  if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
-  if (BEARER(req) !== 'demo-' + pro.id) {
+  // The signed-in pro issues the quote; a proId in the body, if sent, must be theirs.
+  const pro = req.pro;
+  if (proId != null && String(proId) !== String(pro.id)) {
     return res.status(403).json({ ok: false, error: 'Only the professional can issue this quote.' });
   }
   if (!customer?.email && !customer?.phone) {
@@ -120,25 +121,21 @@ export async function createQuote(req, res) {
     declinedAt: null,
   };
 
-  await mutate((d) => {
-    d.quotes.push(quote);
+  await withTransaction(async (c) => {
+    await insertQuote(c, quote);
     // Quoting from a lead: mark it so the pro's inbox shows "Quoted" and the
     // same request isn't quoted twice blindly. Additive — no state machine.
-    if (leadId) {
-      const l = d.leads.find((x) => String(x.id) === String(leadId));
-      if (l) { l.status = 'quoted'; l.quoteId = quote.id; l.quotedAt = now(); }
-    }
+    if (leadId) await markLeadQuoted(c, String(leadId), quote.id);
   });
 
   // Auto-send to the customer (email / SMS / WhatsApp — whichever their contact
   // details and configured providers allow). Never fails the quote itself.
   let delivery = null;
   try {
-    delivery = await deliverQuote(quote);
-    await mutate((d) => {
-      const q = d.quotes.find((x) => x.id === quote.id);
-      if (q) q.delivery = delivery.channels;
-    });
+    // Pass the pro's number so the customer gets a click-to-WhatsApp link
+    // straight back to them in both the email and the SMS.
+    delivery = await deliverQuote(quote, pro.phone);
+    await setQuoteDelivery(quote.id, delivery.channels);
   } catch (err) {
     console.error('[notify] quote delivery error:', err.message);
   }
@@ -147,22 +144,19 @@ export async function createQuote(req, res) {
 }
 
 /** GET /api/quotes/:id   (capability by id — pro/customer can view). */
-export function getQuote(req, res) {
-  const quote = loadDB().quotes.find((q) => q.id === req.params.id);
+export async function getQuote(req, res) {
+  const quote = await loadQuote(req.params.id);
   if (!quote) return res.status(404).json({ ok: false, error: 'Quote not found.' });
   res.json({ ok: true, quote });
 }
 
-/** GET /api/quotes?proId=<id>   (Pro only) — the pro's issued quotes. */
-export function listQuotes(req, res) {
-  const { proId } = req.query;
-  if (!proId) return res.status(400).json({ ok: false, error: 'proId is required.' });
-  if (BEARER(req) !== 'demo-' + proId) {
-    return res.status(403).json({ ok: false, error: 'Unauthorized.' });
+/** GET /api/quotes?proId=<id>   (signed-in pro) — their own issued quotes. */
+export async function listQuotes(req, res) {
+  const proId = req.query.proId ?? req.pro.id;
+  if (String(proId) !== String(req.pro.id)) {
+    return res.status(403).json({ ok: false, error: 'You can only see your own quotes.' });
   }
-  const quotes = loadDB().quotes
-    .filter((q) => String(q.proId) === String(proId))
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const quotes = await listQuotesForPro(req.pro.id);
   res.json({ ok: true, count: quotes.length, quotes });
 }
 
@@ -173,16 +167,13 @@ export function listQuotes(req, res) {
  * already-accepted quote returns the existing booking.
  */
 export async function acceptQuote(req, res) {
-  const result = await mutate((db) => {
-    const q = db.quotes.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const q = await loadQuote(req.params.id, c, { forUpdate: true });
     if (!q) return { code: 404, error: 'Quote not found.' };
     if (q.status === 'declined') return { code: 409, error: 'This quote was declined.' };
-    if (q.status === 'accepted' && q.bookingId) {
-      const existing = db.bookings.find((x) => x.id === q.bookingId);
-      if (existing) return { booking: existing, quote: q, reused: true };
-    }
+    if (q.status === 'accepted' && q.bookingId) return { bookingId: q.bookingId, reused: true };
 
-    const pro = db.professionals.find((p) => String(p.id) === String(q.proId));
+    const pro = await getProForUpdate(c, q.proId);
     if (!pro) return { code: 404, error: 'Professional no longer available.' };
 
     const booking = {
@@ -195,47 +186,36 @@ export async function acceptQuote(req, res) {
       customer: { ...q.customer },
       agreedAmountKobo: q.totalKobo,
       // Snapshot the priced breakdown onto the booking so the charge + split are
-      // derived from the booking, never from the client.
+      // derived from the booking, never from the client. (Line items are read
+      // from the quote, which is never edited after it is sent.)
       breakdown: {
         materialsKobo: q.materialsKobo,
         labourKobo: q.labourKobo,
         inspectionKobo: q.inspectionKobo,
-        items: q.items,
       },
       redoCount: 0,           // one redo allowed before Support review
       status: BOOKING_STATUS.PENDING_PAYMENT,
-      history: [],
-      startedAt: null,
-      completedAt: null,
-      autoConfirmAt: null,
-      disputedAt: null,
       createdAt: now(),
-      updatedAt: now(),
     };
-    pushBookingHistory(booking, BOOKING_STATUS.PENDING_PAYMENT, 'customer', 'Quote accepted — awaiting payment');
-    db.bookings.push(booking);
-
-    q.status = 'accepted';
-    q.bookingId = booking.id;
-    q.acceptedAt = now();
-    q.updatedAt = now();
-    return { booking, quote: q, reused: false };
+    await insertBooking(c, booking);
+    await addHistory(c, booking.id, BOOKING_STATUS.PENDING_PAYMENT, 'customer', 'Quote accepted — awaiting payment');
+    await setQuoteStatus(c, q.id, 'accepted');
+    return { bookingId: booking.id, reused: false };
   });
   if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
-  res.status(result.reused ? 200 : 201).json({ ok: true, booking: result.booking, quote: result.quote });
+  const [booking, quote] = await Promise.all([getBooking(result.bookingId), loadQuote(req.params.id)]);
+  res.status(result.reused ? 200 : 201).json({ ok: true, booking, quote });
 }
 
 /** POST /api/quotes/:id/decline   (Customer capability). */
 export async function declineQuote(req, res) {
-  const result = await mutate((db) => {
-    const q = db.quotes.find((x) => x.id === req.params.id);
+  const result = await withTransaction(async (c) => {
+    const q = await loadQuote(req.params.id, c, { forUpdate: true });
     if (!q) return { code: 404, error: 'Quote not found.' };
     if (q.status === 'accepted') return { code: 409, error: 'This quote was already accepted.' };
-    q.status = 'declined';
-    q.declinedAt = now();
-    q.updatedAt = now();
-    return { quote: q };
+    await setQuoteStatus(c, q.id, 'declined');
+    return {};
   });
   if (result.error) return res.status(result.code).json({ ok: false, error: result.error });
-  res.json({ ok: true, quote: result.quote });
+  res.json({ ok: true, quote: await loadQuote(req.params.id) });
 }

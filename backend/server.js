@@ -11,8 +11,9 @@
  *   POST /api/payments/*      Paystack escrow: initialize / webhook / release
  *   GET  /api/health          liveness check
  *
- * Storage: JSON file (backend/data/db.json) behind src/store/store.js —
- * swap that one module for SQLite/Postgres later without touching routes.
+ * Storage: Postgres (Neon) via DATABASE_URL — see src/db/ and src/store/.
+ * Migrations in backend/migrations/ are applied automatically at start-up.
+ * Without DATABASE_URL the server still boots; database routes answer 503.
  *
  * Also serves the frontend (../index.html) so one process runs the whole
  * app in dev:  cd backend && npm install && npm start  →  http://localhost:8321
@@ -32,7 +33,11 @@ import quotesRouter from './src/routes/quotes.routes.js';
 import paymentsRouter from './src/routes/payments.routes.js';
 import disputesRouter from './src/routes/disputes.routes.js';
 import kycRouter from './src/routes/kyc.routes.js';
+import otpRouter from './src/routes/otp.routes.js';
 import { paystackWebhook } from './src/controllers/payments.controller.js';
+import { closePool } from './src/db/pool.js';
+import { startDatabase, dbStatus, requireDb } from './src/db/lifecycle.js';
+import { errorHandler } from './src/middleware/errors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -56,9 +61,12 @@ if (!PRO_SIGNUP_OPEN) {
 // are the largest bodies (capped at ~25MB decoded in uploads.js).
 app.use(express.json({ limit: '30mb' }));
 
-app.get('/api/health', (_req, res) => res.json({ ok: true, name: 'servora-api', version: '1.0.0', proSignupOpen: PRO_SIGNUP_OPEN }));
+app.get('/api/health', (_req, res) => res.json({
+  ok: true, name: 'servora-api', version: '1.0.0', proSignupOpen: PRO_SIGNUP_OPEN, db: dbStatus(),
+}));
+app.use('/api/services', servicesRouter);   // static taxonomy: works without a database
+app.use('/api', requireDb);                 // everything below needs Postgres
 app.use('/api/pros', prosRouter);
-app.use('/api/services', servicesRouter);
 app.use('/api/leads', leadsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/support', supportRouter);
@@ -67,11 +75,12 @@ app.use('/api/quotes', quotesRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/disputes', disputesRouter);
 app.use('/api/admin', kycRouter);
+app.use('/api/otp', otpRouter);
 
 /**
  * SECURITY: the frontend lives in the project root, so express.static below
- * would otherwise serve server-side files too — backend/data/db.json (the whole
- * database), source, node_modules and any stray key file. Block those paths
+ * would otherwise serve server-side files too — backend source, .env,
+ * private KYC images, node_modules and any stray key file. Block those paths
  * BEFORE the static handler. Only the frontend assets remain reachable.
  */
 const BLOCKED = /^\/(?:backend|node_modules|\.git|private)(?:\/|$)/i;
@@ -88,4 +97,19 @@ app.use(express.static(path.join(__dirname, '..'), { dotfiles: 'deny' }));
 // JSON 404 for unknown API routes (instead of the HTML fallback)
 app.use('/api', (_req, res) => res.status(404).json({ ok: false, error: 'Not found' }));
 
-app.listen(PORT, () => console.log(`Servora API + frontend on http://localhost:${PORT}`));
+app.use(errorHandler);
+
+const server = app.listen(PORT, () => console.log(`Servora API + frontend on http://localhost:${PORT}`));
+startDatabase();   // migrations under a lock, retried until Neon answers; never throws
+
+// A stray rejection must never take the whole site down.
+process.on('unhandledRejection', (err) => console.error('[process] unhandled rejection:', err));
+
+// Render sends SIGTERM on every deploy: finish in-flight requests, close the pool.
+function shutdown(signal) {
+  console.log(`[server] ${signal} received, shutting down`);
+  server.close(() => closePool().finally(() => process.exit(0)));
+  setTimeout(() => process.exit(0), 10_000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

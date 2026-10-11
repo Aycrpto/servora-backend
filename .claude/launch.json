@@ -3,13 +3,9 @@
   "configurations": [
     {
       "name": "servora-site",
-      "runtimeExecutable": "powershell",
+      "runtimeExecutable": "node",
       "runtimeArgs": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "serve.ps1"
+        "backend/server.js"
       ],
       "port": 8321
     }

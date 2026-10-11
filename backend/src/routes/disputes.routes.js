@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from '../middleware/asyncRouter.js';
 import {
   listDisputes, getDispute, requestEvidence, submitEvidence, resolveDispute,
 } from '../controllers/disputes.controller.js';

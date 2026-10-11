@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from '../middleware/asyncRouter.js';
 import {
   initializePayment, getPaymentStatus, releaseFunds,
   listTransactions, getTransaction, listBanks,

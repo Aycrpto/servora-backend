@@ -456,6 +456,12 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
 .kyc-selfie-actions{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s2)}
 .kyc-selfie-actions .btn{flex:1;min-width:130px}
 .kyc-note{font-size:var(--fs-xs);color:var(--muted);margin-top:var(--s2);line-height:1.45}
+/* ===== registration OTP ===== */
+.modal .otp-input{width:100%;text-align:center;font-size:var(--fs-3xl);font-weight:700;letter-spacing:.34em;
+  text-indent:.34em;padding:var(--s4) var(--s3);font-variant-numeric:tabular-nums}
+.otp-resend{display:flex;align-items:center;justify-content:center;gap:var(--s2);margin-top:var(--s4);
+  font-size:var(--fs-sm);color:var(--muted);flex-wrap:wrap}
+.otp-resend button[disabled]{opacity:.45;cursor:default;text-decoration:none}
 .dash-id{display:flex;align-items:center;gap:var(--s3);background:var(--soft);border:1px solid var(--line2);border-radius:var(--r-sm);padding:10px var(--s3);margin-top:var(--s1)}
 .dash-id .avatar{width:38px;height:38px;font-size:var(--fs-sm)}
 .dash-id .who b{font-size:var(--fs-sm);display:block;line-height:1.25}
@@ -1796,8 +1802,9 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
           <input type="text" id="rLga" placeholder="e.g. Ikeja">
         </div>
       </div>
-      <label for="rPw">Create a password <span class="lbl-soft">(optional, for signing in to view your jobs)</span></label>
-      <input type="password" id="rPw" autocomplete="new-password" placeholder="Choose a password">
+      <label for="rPw">Create a password <span class="lbl-req">Required</span></label>
+      <input type="password" id="rPw" autocomplete="new-password" placeholder="At least 8 characters" required aria-required="true" aria-describedby="rPwErr">
+      <p class="ferr" id="rPwErr" aria-live="polite"></p>
       <label for="rIdType">Verify your identity <span class="lbl-req">Required</span></label>
       <select id="rIdType" aria-describedby="rIdErr">
         <option value="">Choose your ID type…</option>
@@ -1844,6 +1851,25 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
       </div>
       <button class="btn btn-gold" id="rSubmit">Create my profile</button>
     </div>
+
+    <!-- OTP step — shown after the account is created. The account stays
+         inactive until the code is entered. -->
+    <div class="form-view" id="otpView" hidden>
+      <div class="big ok" style="margin-bottom:14px">📱</div>
+      <h3 style="padding-right:0">Enter your code</h3>
+      <p class="sub" id="otpSub">We sent a 6-digit code.</p>
+      <label for="otpCode" class="sr-only">6-digit code</label>
+      <input type="text" id="otpCode" inputmode="numeric" autocomplete="one-time-code"
+             maxlength="6" placeholder="123456" class="otp-input" aria-describedby="otpErr">
+      <p class="ferr" id="otpErr" aria-live="polite"></p>
+      <button class="btn btn-gold" id="otpSubmit" style="width:100%">Verify &amp; activate</button>
+      <div class="otp-resend">
+        <button type="button" class="linkish" id="otpResend">Resend code</button>
+        <span id="otpResendHint"></span>
+      </div>
+      <p class="de-msg" id="otpMsg" aria-live="polite"></p>
+    </div>
+
     <div class="success">
       <div class="big"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
       <h3 style="padding-right:0">Profile submitted</h3>
@@ -1969,9 +1995,8 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
 </div>
 
 <!-- ============ PRO LOGIN ============
-     Demo auth: POST /api/auth/login with WhatsApp number (or email)
-     + password. Pros without a stored password use the shared demo
-     password. FUTURE: bcrypt hashes + WhatsApp OTP, real JWT. -->
+     POST /api/auth/login with WhatsApp number (or email) + the pro's own
+     password → an opaque session token (30 days, revocable). -->
 <div class="modal-bg" id="loginBg">
   <div class="modal" role="dialog" aria-modal="true" aria-label="Professional sign in">
     <button class="close" id="loginClose" aria-label="Close">✕</button>
@@ -1992,7 +2017,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
 <!-- ============ PRO DASHBOARD ============
      Profile summary + stats + inline profile editing + lead inbox with
      search & filters. Data: GET /api/pros/:id/leads;
-     profile updates: PATCH /api/pros/:id (demo bearer token). -->
+     profile updates: PATCH /api/pros/:id (signed-in session). -->
 <div class="modal-bg" id="leadsBg">
   <div class="modal pmodal dash-modal" role="dialog" aria-modal="true">
     <button class="close" id="leadsClose" aria-label="Close">✕</button>
@@ -2153,6 +2178,22 @@ async function apiFetch(path,opts){
   }catch(e){return null}
 }
 
+/* Pro-only requests. Sends the signed-in session token; if the server says the
+   session is no longer valid (401 AUTH_REQUIRED: expired, signed out, or an old
+   pre-session token) the stored session is cleared and the pro is asked to sign
+   in again. Returns the parsed body (errors included), or null when the server
+   is unreachable. */
+async function proFetch(path,opts={},token){
+  try{
+    const headers=Object.assign({'Content-Type':'application/json'},opts.headers||{},
+      {Authorization:'Bearer '+(token||(proSession&&proSession.token)||'')});
+    const r=await fetch(path,Object.assign({},opts,{headers}));
+    const body=await r.json().catch(()=>null);
+    if(r.status===401&&body&&body.code==='AUTH_REQUIRED')sessionEnded();
+    return body;
+  }catch(e){return null}
+}
+
 /* Services offered per trade — shown on profile modals.
    FUTURE: each pro stores their own `skills` array at registration;
    this map is the fallback until then (p.skills || categorySkills[p.cat]). */
@@ -2232,6 +2273,23 @@ const ServoraAPI={
 
   /* POST /api/pros/register — profile enters listings once verified
      (demo mode auto-verifies so it appears immediately) */
+  /* POST /api/otp/verify — activates the account. */
+  async verifyOtp(otpId,code){
+    try{
+      const r=await fetch('/api/otp/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({otpId,code})});
+      return await r.json();
+    }catch(e){return null}
+  },
+  /* POST /api/otp/resend — server re-sends to the stored destination only. */
+  async resendOtp(otpId){
+    try{
+      const r=await fetch('/api/otp/resend',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({otpId})});
+      return await r.json();
+    }catch(e){return null}
+  },
+
   async registerPro(application){
     /* Parses the body on 4xx too, so rejections (duplicate phone/email)
        surface as {ok:false}. Only a truly unreachable server falls back
@@ -2248,20 +2306,25 @@ const ServoraAPI={
   /* GET /api/pros/:id/leads — a professional's lead inbox
      (needs the API; returns null offline so the UI can say so) */
   async getProLeads(proId){
-    return apiFetch('/api/pros/'+encodeURIComponent(proId)+'/leads');
+    const b=await proFetch('/api/pros/'+encodeURIComponent(proId)+'/leads');
+    return b&&b.leads?b:null;
   },
 
-  /* POST /api/auth/login — demo auth: WhatsApp number or email +
-     password (shared demo password when none was set at signup).
-     Parses the body even on 401 so the friendly error reaches the UI;
-     returns null only when the server is unreachable.
-     FUTURE: WhatsApp OTP + hashed passwords, real JWTs. */
+  /* POST /api/auth/login — WhatsApp number or email + password → a session
+     token. Parses the body even on 401 so the error reaches the UI; returns
+     null only when the server is unreachable. */
   async login(credentials){
     try{
       const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(credentials)});
       return await r.json();
     }catch(e){return null}
   },
+  /* POST /api/auth/logout — revoke this device's session on the server. */
+  async logout(token){
+    try{await fetch('/api/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+(token||'')}})}catch(e){}
+  },
+  /* GET /api/auth/me — the signed-in pro, if the stored session is still valid. */
+  async me(){return proFetch('/api/auth/me')},
 
   /* ---- PAYMENTS (escrow checkout) ---- */
   /* POST /api/bookings — create the agreed job + price that drives payment. */
@@ -2292,36 +2355,20 @@ const ServoraAPI={
   /* GET /api/pros/:id/payout — the pro's saved payout status (masked). */
   /* GET /api/pros/:id/availability — the pro's own "Available now" state. */
   async getAvailability(id,token){
-    try{
-      const r=await fetch('/api/pros/'+encodeURIComponent(id)+'/availability',{headers:{Authorization:'Bearer '+(token||'')}});
-      return await r.json();
-    }catch(e){return null}
+    return proFetch('/api/pros/'+encodeURIComponent(id)+'/availability',{},token);
   },
   /* POST /api/pros/:id/availability — flip it on or off. */
   async setAvailability(id,token,availableNow){
-    try{
-      const r=await fetch('/api/pros/'+encodeURIComponent(id)+'/availability',{
-        method:'POST',
-        headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},
-        body:JSON.stringify({availableNow})
-      });
-      return await r.json();
-    }catch(e){return null}
+    return proFetch('/api/pros/'+encodeURIComponent(id)+'/availability',{method:'POST',body:JSON.stringify({availableNow})},token);
   },
 
   async getPayoutAccount(id,token){
-    try{
-      const r=await fetch('/api/pros/'+encodeURIComponent(id)+'/payout',{headers:{Authorization:'Bearer '+(token||'')}});
-      return await r.json();
-    }catch(e){return null}
+    return proFetch('/api/pros/'+encodeURIComponent(id)+'/payout',{},token);
   },
   /* POST /api/pros/:id/payout — verify with the bank + save the recipient.
      Parses the body on errors so 422/503 messages reach the UI. */
   async setPayoutAccount(id,payload,token){
-    try{
-      const r=await fetch('/api/pros/'+encodeURIComponent(id)+'/payout',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},body:JSON.stringify(payload)});
-      return await r.json();
-    }catch(e){return null}
+    return proFetch('/api/pros/'+encodeURIComponent(id)+'/payout',{method:'POST',body:JSON.stringify(payload)},token);
   },
 
   /* ---- BOOKINGS (customer) ---- */
@@ -2340,27 +2387,23 @@ const ServoraAPI={
 
   /* ---- PRO JOB ACTIONS (start / complete / dispute) ---- */
   async getProBookings(id,token){
-    return apiFetch('/api/pros/'+encodeURIComponent(id)+'/bookings',{headers:{Authorization:'Bearer '+(token||'')}});
+    const b=await proFetch('/api/pros/'+encodeURIComponent(id)+'/bookings',{},token);
+    return b&&b.ok?b:null;
   },
-  /* POST /api/bookings/:id/{start|complete|dispute|ready|evidence} — pro token authorises. */
+  /* POST /api/bookings/:id/{start|complete|dispute|ready|evidence} — the signed-in pro. */
   async proBookingAction(id,action,token,body){
-    try{
-      const r=await fetch('/api/bookings/'+encodeURIComponent(id)+'/'+action,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},body:body?JSON.stringify(body):undefined});
-      return await r.json();
-    }catch(e){return null}
+    return proFetch('/api/bookings/'+encodeURIComponent(id)+'/'+action,{method:'POST',body:body?JSON.stringify(body):undefined},token);
   },
 
   /* ---- QUOTES (pro issues; customer accepts) ---- */
   /* POST /api/quotes — pro builds an itemised quote (materials/labour/inspection). */
   async createQuote(payload,token){
-    try{
-      const r=await fetch('/api/quotes',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},body:JSON.stringify(payload)});
-      return await r.json();
-    }catch(e){return null}
+    return proFetch('/api/quotes',{method:'POST',body:JSON.stringify(payload)},token);
   },
   /* GET /api/quotes?proId= — the pro's issued quotes. */
   async listQuotes(proId,token){
-    return apiFetch('/api/quotes?proId='+encodeURIComponent(proId),{headers:{Authorization:'Bearer '+(token||'')}});
+    const b=await proFetch('/api/quotes?proId='+encodeURIComponent(proId),{},token);
+    return b&&b.ok?b:null;
   },
   /* GET /api/quotes/:id — a quote by its (capability) id. */
   async getQuote(id){ return apiFetch('/api/quotes/'+encodeURIComponent(id)); },
@@ -2375,10 +2418,7 @@ const ServoraAPI={
   /* ---- SPLIT-ESCROW JOB ACTIONS ---- */
   /* POST /api/bookings/:id/evidence — pro uploads pre-job/completion/redo media. */
   async uploadEvidence(id,payload,token){
-    try{
-      const r=await fetch('/api/bookings/'+encodeURIComponent(id)+'/evidence',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(token||'')},body:JSON.stringify(payload)});
-      return await r.json();
-    }catch(e){return null}
+    return proFetch('/api/bookings/'+encodeURIComponent(id)+'/evidence',{method:'POST',body:JSON.stringify(payload)},token);
   },
   /* POST /api/bookings/:id/{approve-materials|confirm-completion|request-redo|escalate}
      — customer capability = knowing the booking id (no account). */
@@ -2410,16 +2450,9 @@ const ServoraAPI={
   },
 
   /* PATCH /api/pros/:id — update editable profile fields (bio,
-     responseMins, priceFrom). Demo bearer token authorises the write. */
+     responseMins, priceFrom, portfolio). The signed-in pro only. */
   async updatePro(id,patch,token){
-    try{
-      const r=await fetch('/api/pros/'+encodeURIComponent(id),{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},
-        body:JSON.stringify(patch)
-      });
-      return await r.json();
-    }catch(e){return null}
+    return proFetch('/api/pros/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify(patch)},token);
   }
 };
 const singular={"Electricians":"an electrician","Plumbers":"a plumber","Cleaners":"a cleaner","AC Technicians":"an AC technician","Car Mechanics":"a car mechanic","Tutors":"a tutor","Makeup Artists":"a makeup artist","Photographers":"a photographer"};
@@ -3955,7 +3988,8 @@ document.getElementById('waitForm').addEventListener('submit',e=>{
 const regValidators={
   rName:v=>/^[A-Za-zÀ-ſ][A-Za-zÀ-ſ' -]{2,}$/.test(v.trim())?'':'Please enter your full name.',
   rPhone:v=>/^(\+234|0)[789][01]\d{8}$/.test(v.replace(/[\s()./-]/g,''))?'':'Enter a valid Nigerian number, e.g. 0803 123 4567.',
-  rEmail:v=>!v.trim()||/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())?'':'That email doesn’t look right.'
+  rEmail:v=>!v.trim()||/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())?'':'That email doesn’t look right.',
+  rPw:v=>v.length<8?'Use at least 8 characters for your password.':v.length>200?'That password is too long (200 characters max).':''
 };
 const regTimers={};
 function setRegError(id,msg){
@@ -4010,8 +4044,8 @@ document.getElementById('rSubmit').onclick=async()=>{
     state:document.getElementById('rState').value,
     lga:document.getElementById('rLga').value,
     plan:regPlan,
-    /* DEMO: plain-text password (or null → shared demo password) */
-    password:document.getElementById('rPw').value.trim()||null,
+    /* their own password — the server stores only a scrypt hash */
+    password:document.getElementById('rPw').value,
     /* ID verification is mandatory: the ID photo and a live selfie go to the
        server, which face-matches them via our KYC provider. Both are stored
        privately (never publicly served) for manual review if the check fails. */
@@ -4034,16 +4068,37 @@ document.getElementById('rSubmit').onclick=async()=>{
       document.getElementById(res.field==='selfie'?'rSelfieStart':'rId').focus();
       return;
     }
-    const field=res.field==='email'?'rEmail':'rPhone';
+    const field={email:'rEmail',password:'rPw'}[res.field]||'rPhone';
     setRegError(field,res.error||'That account already exists.');
     document.getElementById(field).focus();
+    return;
+  }
+  /* Account created but INACTIVE until the code is entered — go to the OTP
+     step instead of the success screen. Remember the KYC outcome so the
+     success message after verifying still reflects it. */
+  if(res&&res.otpRequired){
+    otpKycVerified=(res.status==='verified');
+    otpTrade=app.trade;otpState=app.state;
+    startOtpStep(res.otp||{});
+    if(res.otp&&res.otp.sent===false){
+      /* delivery failed — the otpId still exists, so Resend can retry it */
+      document.getElementById('otpMsg').className='de-msg err';
+      document.getElementById('otpMsg').textContent=res.otpError||'We could not send your code.';
+      startOtpCooldown(0);   /* let them retry immediately; nothing was sent */
+    }
     return;
   }
   document.getElementById('regSuccessMsg').innerHTML=(res&&res.status==='verified')
     ?`<b>ID verified.</b> Your profile now appears in search for <b>${app.trade}</b> in <b>${app.state}</b>.`
     :`Your ID couldn’t be confirmed automatically, so it needs a manual check before your profile can appear in search.`;
   regModal.classList.add('done');
-  /* application sent — clear the temporary uploads + credentials for a fresh form */
+  resetRegistrationForm();
+  /* new pro may already be live — refresh any open listings */
+  if(resultsSec.classList.contains('open'))renderResults();
+};
+/* Clear temporary uploads + credentials so the signup form is fresh next time.
+   Called after the OTP step completes, and by the legacy no-OTP path. */
+function resetRegistrationForm(){
   pfFiles=[];renderPortfolio();
   stopSelfieCam();
   regIdDataUrl=null;regSelfieDataUrl=null;
@@ -4057,14 +4112,94 @@ document.getElementById('rSubmit').onclick=async()=>{
   document.getElementById('rPw').value='';
   document.getElementById('rEmail').value='';
   resetRegValidation();
-  /* new pro may already be live — refresh any open listings */
-  if(resultsSec.classList.contains('open'))renderResults();
+  /* restore the signup view for a subsequent registration */
+  const fv=document.querySelector('#regModal .form-view');
+  if(fv)fv.hidden=false;
+  document.getElementById('otpView').hidden=true;
+}
+
+/* ============ REGISTRATION OTP ============
+   The account exists but is inactive until the code is entered. The resend
+   button is cooldown-gated client-side purely for UX; the server enforces the
+   real 60s cooldown and 5/hour cap, so bypassing this UI gains nothing. */
+let otpId=null,otpCooldownTimer=null,otpKycVerified=false,otpTrade='',otpState='';
+
+function startOtpStep(otp){
+  otpId=otp.otpId||null;
+  document.querySelector('#regModal .form-view').hidden=true;   /* the signup form */
+  document.getElementById('otpView').hidden=false;
+  document.getElementById('otpSub').innerHTML=
+    `We sent a 6-digit code to <b>${esc(otp.destinationMasked||'your phone')}</b>. It expires in 10 minutes.`;
+  document.getElementById('otpCode').value='';
+  document.getElementById('otpErr').textContent='';
+  document.getElementById('otpMsg').textContent='';
+  startOtpCooldown(otp.resendAvailableInSec||60);
+  setTimeout(()=>document.getElementById('otpCode').focus(),80);
+}
+function startOtpCooldown(sec){
+  const btn=document.getElementById('otpResend'),hint=document.getElementById('otpResendHint');
+  clearInterval(otpCooldownTimer);
+  let left=Math.max(0,Math.ceil(sec));
+  const tick=()=>{
+    if(left<=0){clearInterval(otpCooldownTimer);btn.disabled=false;hint.textContent='';return}
+    btn.disabled=true;hint.textContent=`in ${left}s`;left--;
+  };
+  tick();otpCooldownTimer=setInterval(tick,1000);
+}
+document.getElementById('otpCode').addEventListener('input',e=>{
+  e.target.value=e.target.value.replace(/\D/g,'').slice(0,6);
+  document.getElementById('otpErr').textContent='';
+  if(e.target.value.length===6)document.getElementById('otpSubmit').click();  /* auto-submit */
+});
+document.getElementById('otpSubmit').onclick=async()=>{
+  const code=document.getElementById('otpCode').value.trim();
+  const err=document.getElementById('otpErr'),msg=document.getElementById('otpMsg');
+  if(code.length!==6){err.textContent='Enter the 6-digit code.';return}
+  if(!otpId){err.textContent='No active code — tap “Resend code”.';return}
+  const btn=document.getElementById('otpSubmit');
+  btn.disabled=true;btn.textContent='Verifying…';msg.textContent='';
+  const res=await ServoraAPI.verifyOtp(otpId,code);
+  btn.disabled=false;btn.textContent='Verify & activate';
+  if(!res||!res.ok){err.textContent=(res&&res.error)||'Could not verify that code.';return}
+  /* verified → show the success screen, wording depends on the KYC outcome */
+  clearInterval(otpCooldownTimer);
+  document.getElementById('otpView').hidden=true;
+  document.getElementById('regSuccessMsg').innerHTML=res.live
+    ? `<b>Phone and ID verified.</b> Your profile now appears in search for <b>${esc(otpTrade)}</b> in <b>${esc(otpState)}</b>.`
+    : `<b>Phone verified.</b> Your ID still needs a manual check before your profile can appear in search for <b>${esc(otpTrade)}</b> in <b>${esc(otpState)}</b>.`;
+  regModal.classList.add('done');
+  resetRegistrationForm();
 };
+document.getElementById('otpResend').onclick=async()=>{
+  const msg=document.getElementById('otpMsg'),err=document.getElementById('otpErr');
+  if(!otpId){err.textContent='This registration has expired — please sign up again.';return}
+  const btn=document.getElementById('otpResend');
+  btn.disabled=true;err.textContent='';msg.className='de-msg';msg.textContent='Sending…';
+  const res=await ServoraAPI.resendOtp(otpId);
+  if(!res||!res.ok){
+    msg.className='de-msg err';
+    msg.textContent=(res&&res.error)||'Could not resend the code.';
+    /* honour the server's own cooldown/cap rather than guessing */
+    startOtpCooldown((res&&res.retryAfterSec)||60);
+    return;
+  }
+  msg.className='de-msg';msg.textContent=res.message||'A new code is on its way.';
+  document.getElementById('otpCode').value='';
+  startOtpCooldown(res.resendAvailableInSec||60);
+};
+
 /* ============ PRO SESSION + LOGIN ============
-   Demo auth: the session (token + public pro profile) lives in
-   localStorage. FUTURE: httpOnly cookie/JWT + WhatsApp OTP. */
+   Signing in returns an opaque session token (30 days, revocable) that is
+   kept with the public profile in localStorage and sent as a Bearer header on
+   pro-only calls. A stored session from before real sign-in existed (an old
+   "demo-…" token) is discarded, and the pro is asked to sign in again. */
 let proSession=null;
 try{proSession=JSON.parse(localStorage.getItem('servora-pro')||'null')}catch(e){}
+const hadStaleSession=Boolean(proSession)&&!/^sv_/.test(String(proSession.token||''));
+if(hadStaleSession){
+  proSession=null;
+  try{localStorage.removeItem('servora-pro')}catch(e){}
+}
 function setProSession(s){
   proSession=s;
   if(s)localStorage.setItem('servora-pro',JSON.stringify(s));
@@ -4075,9 +4210,9 @@ function updateProUI(){
   document.querySelectorAll('[data-login-label]').forEach(el=>el.textContent=proSession?'My Jobs':'Pro Login');
 }
 const loginBg=document.getElementById('loginBg');
-function openLogin(){
+function openLogin(notice){
   document.getElementById('lgIdErr').textContent='';
-  document.getElementById('lgPwErr').textContent='';
+  document.getElementById('lgPwErr').textContent=typeof notice==='string'?notice:'';
   loginBg.classList.add('open');document.body.style.overflow='hidden';
   document.getElementById('lgId').focus();
 }
@@ -4102,6 +4237,17 @@ document.getElementById('loginForm').addEventListener('submit',async e=>{
   closeLogin();
   openLeadsDash();   /* straight to the inbox — no profile picking */
 });
+/* The server no longer accepts this session (expired, signed out elsewhere,
+   or verification withdrawn): clear it and ask for a fresh sign-in. */
+function sessionEnded(){
+  if(!proSession)return;   /* several calls can fail at once — handle it once */
+  setProSession(null);
+  if(typeof closeQuoteBuilder==='function')closeQuoteBuilder();
+  if(typeof closeEvidence==='function')closeEvidence();
+  closeLeadsDash();
+  openLogin('Your session has ended. Please sign in again.');
+}
+if(hadStaleSession)openLogin('Pro sign-in has been upgraded. Please sign in again.');
 
 /* ============ PRO LEADS INBOX ============ */
 const leadsBg=document.getElementById('leadsBg'),leadsList=document.getElementById('leadsList'),dashWho=document.getElementById('dashWho'),dashStats=document.getElementById('dashStats');
@@ -4122,7 +4268,10 @@ function openLeadsDash(){
     <div class="avatar" style="background:${esc(p.avatarColor||'#0e7a4a')}">${esc(initials(p.name))}</div>
     <div class="who"><b>${esc(p.name)}</b><span>${esc(p.category.replace(/s$/,''))} · ${esc(stateDisplay(p.state))}${p.rating?' · ★ '+Number(p.rating).toFixed(1):' · ✦ New'}</span></div>
     <button type="button" class="lo" id="dashLogout">Log out</button>`;
-  document.getElementById('dashLogout').onclick=()=>{setProSession(null);closeLeadsDash()};
+  document.getElementById('dashLogout').onclick=()=>{
+    ServoraAPI.logout(proSession&&proSession.token);   /* revoke it server-side too */
+    setProSession(null);closeLeadsDash();
+  };
   /* seed the edit form from the session's profile */
   document.getElementById('eBio').value=p.bio||'';
   document.getElementById('eResp').value=p.responseMins||'';

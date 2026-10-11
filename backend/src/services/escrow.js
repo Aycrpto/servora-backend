@@ -131,20 +131,6 @@ export function computeQuoteSplit(materialsKobo, labourKobo, inspectionKobo = 0,
 export const genReference = (prefix = 'SRV') => `${prefix}_${Date.now()}_${randomUUID().slice(0, 8)}`;
 
 /**
- * Append an immutable audit event. Call inside a mutate() so it's written
- * atomically with the status change it describes. Never mutate/delete events.
- */
-export function recordEvent(db, tx, { type, fromStatus = null, toStatus = null, actor = 'system', data = {} }) {
-  db.transactionEvents.push({
-    id: randomUUID(),
-    transactionId: tx.id,
-    reference: tx.reference,
-    type, fromStatus, toStatus, actor, data,
-    createdAt: new Date().toISOString(),
-  });
-}
-
-/**
  * Human-readable status labels, audience-aware. The single backend vocabulary
  * for job statuses — mirrors the frontend STATUS map so API consumers (and the
  * booking history below) are self-describing without knowing the state machine.
@@ -167,13 +153,6 @@ export const STATUS_LABELS = {
 export const statusLabel = (status, audience = 'customer') =>
   STATUS_LABELS[status]?.[audience] ?? String(status || '').replace(/_/g, ' ');
 
-/**
- * Append a booking status-history entry. Kept on the booking itself (b.history)
- * so both parties can see a plain, ordered timeline of what happened and when.
- * Each entry carries the customer-facing label so the API is self-describing.
- * Call inside a mutate() alongside the status change.
- */
-export function pushBookingHistory(b, status, actor = 'system', note = null) {
-  if (!Array.isArray(b.history)) b.history = [];
-  b.history.push({ status, label: statusLabel(status), actor, note, at: new Date().toISOString() });
-}
+// The audit log (recordEvent) and booking timeline (addHistory/transitionBooking)
+// are written by store/transactions.js and store/bookings.js, inside the same
+// database transaction as the change they describe.
