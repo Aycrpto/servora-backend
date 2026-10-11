@@ -2,7 +2,7 @@
  * Servora backend — Node.js + Express.
  *
  * v1 scope:
- *   POST /api/pros/register   professional registration (ID upload simulated)
+ *   POST /api/pros/register   professional registration (closed unless PRO_SIGNUP_OPEN=true)
  *   GET  /api/pros            list verified pros, filter by category + state
  *   GET  /api/pros/featured   paid placement — Elite/Pro subscribers first
  *   GET  /api/services        service taxonomy
@@ -21,7 +21,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PORT } from './src/config.js';
+import { PORT, PRO_SIGNUP_OPEN } from './src/config.js';
 import prosRouter from './src/routes/pros.routes.js';
 import servicesRouter from './src/routes/services.routes.js';
 import leadsRouter from './src/routes/leads.routes.js';
@@ -43,12 +43,20 @@ app.use(cors());               // allow the frontend to run from another origin 
 // mounted with express.raw BEFORE the JSON parser below (which would discard it).
 app.post('/api/payments/webhook', express.raw({ type: '*/*' }), paystackWebhook);
 
+// Pro sign-up is PAUSED until launch (see PRO_SIGNUP_OPEN in config.js). It is
+// refused here, before the JSON parser, so an ID photo is never even read.
+if (!PRO_SIGNUP_OPEN) {
+  app.post('/api/pros/register', (_req, res) => res.status(503).json({
+    ok: false, error: 'Professional sign-up opens at launch. You can join the waitlist on the homepage.',
+  }));
+}
+
 // Generous limit: portfolio photos AND job-evidence videos arrive as base64
 // data URLs in JSON. Photos are downscaled client-side; short evidence videos
 // are the largest bodies (capped at ~25MB decoded in uploads.js).
 app.use(express.json({ limit: '30mb' }));
 
-app.get('/api/health', (_req, res) => res.json({ ok: true, name: 'servora-api', version: '1.0.0' }));
+app.get('/api/health', (_req, res) => res.json({ ok: true, name: 'servora-api', version: '1.0.0', proSignupOpen: PRO_SIGNUP_OPEN }));
 app.use('/api/pros', prosRouter);
 app.use('/api/services', servicesRouter);
 app.use('/api/leads', leadsRouter);

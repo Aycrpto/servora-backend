@@ -4,9 +4,9 @@
  * (e.g. better-sqlite3 or Prisma); routes and controllers stay untouched.
  *
  * data/db.json is RUNTIME STATE and is git-ignored. On first run it is
- * created from data/db.seed.json (the 20 demo professionals), so a fresh
- * clone boots with a populated marketplace and every developer starts
- * from the same baseline. Delete db.json to reset back to the seed.
+ * created from data/db.seed.json (empty collections — no demo
+ * professionals, so nothing fabricated is ever served) and every developer
+ * starts from the same baseline. Delete db.json to reset back to the seed.
  *
  * ⚠️ Money note: this JSON store does whole-file read-modify-write with no
  * OS-level locking. That is fine for dev/test, but before holding REAL money

@@ -24,6 +24,13 @@ if (existsSync(ENV_PATH)) {
 export const PORT = process.env.PORT || 8321;
 
 /**
+ * Professional sign-up collects government ID photos and selfies. It stays
+ * CLOSED until there is persistent storage and someone to review IDs: only an
+ * explicit PRO_SIGNUP_OPEN=true opens it. Unset (as on Render today) = closed.
+ */
+export const PRO_SIGNUP_OPEN = process.env.PRO_SIGNUP_OPEN === 'true';
+
+/**
  * DEPRECATED — pro verification is now driven by the real Dojah ID+selfie
  * check in pros.controller.js (pass → verified, anything else → manual review).
  * Kept only so older tooling that reads it doesn't break; it no longer grants

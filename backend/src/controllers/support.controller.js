@@ -36,7 +36,7 @@ export function createSupportMessage(req, res) {
   res.status(201).json({
     ok: true,
     ref: 'SUP-' + entry.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
-    message: 'Support message received — we reply within 24 hours.',
+    message: 'Support message received.',
   });
 }
 

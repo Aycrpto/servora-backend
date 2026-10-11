@@ -459,14 +459,15 @@ export async function registerPro(req, res) {
     jobsDone: 0,
     priceFrom: null,
     priceLabel: 'Quote on request',
-    responseMins: 20,
+    responseMins: null,    // set by the pro from their dashboard, never assumed
     avatarColor: AVATAR_PALETTE[Math.floor(Math.random() * AVATAR_PALETTE.length)],
     // The ID-verified badge is granted ONLY by a real pass (or admin approval).
     badges: passed ? ['v'] : [],
     tier: (plan || 'Starter').toLowerCase(),
     // scrypt hash — the raw value is never stored (null → shared fallback on login).
     password: password?.toString().trim() ? hashPassword(password.toString().trim()) : null,
-    bio: `New on Servora — ID-verified ${trade.replace(/s$/, '').toLowerCase()} serving ${cleanLga ? cleanLga + ', ' : ''}${state}.`,
+    // Verification status is carried by the badge alone, never claimed in free text.
+    bio: `New on Servora — ${trade.replace(/s$/, '').toLowerCase()} serving ${cleanLga ? cleanLga + ', ' : ''}${state}.`,
     review: null,
     skills: null,
     // Only a real pass makes a pro live/bookable; everything else waits for a human.
@@ -537,7 +538,7 @@ export async function registerPro(req, res) {
     verification: { outcome: verification.outcome, confidence: verification.confidence, reasons: verification.reasons },
     pro: publicPro(pro),
     message: passed
-      ? 'ID verified — your profile is live in listings now.'
-      : 'Application received. Your ID needs a quick manual check by our team, usually within 24 hours. Your profile stays hidden until then.',
+      ? 'ID verified — your profile now appears in search.'
+      : 'Application received. Your ID needs a manual check before your profile can appear in search.',
   });
 }

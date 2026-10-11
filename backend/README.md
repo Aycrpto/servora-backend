@@ -38,7 +38,7 @@ backend/
 ├── server.js                    Express app: middleware, routes, static frontend
 ├── package.json
 ├── data/
-│   ├── db.seed.json             committed seed: 20 demo professionals
+│   ├── db.seed.json             committed seed: empty collections (no demo pros)
 │   └── db.json                  runtime state (git-ignored; created from the seed on first run)
 └── src/
     ├── config.js                PORT, AUTO_VERIFY, avatar palette
@@ -62,7 +62,7 @@ backend/
 
 ## Data & resetting
 
-`data/db.json` holds runtime state (professionals, leads, support messages) and is **git-ignored**. It is created automatically from the committed `data/db.seed.json` on first run, so a fresh clone boots with 20 demo pros. **To reset to a clean slate, delete `data/db.json`** — the next request recreates it from the seed. Uploaded portfolio photos live in the project-root `uploads/` folder (also git-ignored).
+`data/db.json` holds runtime state (professionals, leads, support messages) and is **git-ignored**. It is created automatically from the committed `data/db.seed.json` on first run, so a fresh clone boots with an empty marketplace — only real, ID-checked registrations ever appear in listings. **To reset to a clean slate, delete `data/db.json`** — the next request recreates it from the seed. Uploaded portfolio photos live in the project-root `uploads/` folder (also git-ignored).
 
 ## Upgrade path
 
