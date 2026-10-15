@@ -446,6 +446,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
 .lead-card .lc-cta a:hover,.lead-card .lc-cta button:hover{border-color:var(--green)}
 .leads-empty{text-align:center;color:var(--muted);padding:var(--s6) 10px;font-size:var(--fs-sm);line-height:1.6}
 /* login + signed-in bar */
+.lg-alt{text-align:center;margin-top:var(--s4);font-size:var(--fs-sm);color:var(--muted)}
 .linkish{color:var(--green);font-weight:700;text-decoration:underline;font-size:inherit;padding:0}
 .lbl-soft{font-weight:500;color:var(--faint)}
 .lbl-req{font-weight:700;color:var(--gold-deep);font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.04em;margin-left:var(--s1)}
@@ -2003,6 +2004,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
     <form id="loginForm" novalidate>
       <h3>Pro sign in</h3>
       <p class="sub">Sign in to see your jobs. New here? <button type="button" class="linkish" data-post-pro="Starter">Join the pro waitlist</button></p>
+      <p class="de-msg" id="lgOk" aria-live="polite"></p>
       <label for="lgId">WhatsApp number or email</label>
       <input type="text" id="lgId" name="identifier" inputmode="tel" autocomplete="username" placeholder="080X XXX XXXX" required aria-required="true" aria-describedby="lgIdErr">
       <p class="ferr" id="lgIdErr" aria-live="polite"></p>
@@ -2010,6 +2012,33 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
       <input type="password" id="lgPw" name="password" autocomplete="current-password" placeholder="Your password" required aria-required="true" aria-describedby="lgPwErr">
       <p class="ferr" id="lgPwErr" aria-live="polite"></p>
       <button type="submit" class="btn btn-gold" id="lgSubmit">Sign in →</button>
+      <p class="lg-alt"><button type="button" class="linkish" id="lgForgot">Forgot your password?</button></p>
+    </form>
+    <!-- Self-serve reset: request a link by email (same answer for every email) -->
+    <form id="forgotForm" novalidate hidden>
+      <h3>Reset your password</h3>
+      <p class="sub">Enter the email address on your professional account. We’ll email you a link to choose a new password.</p>
+      <label for="fpEmail">Email</label>
+      <input type="email" id="fpEmail" autocomplete="email" placeholder="you@example.com" required aria-required="true" aria-describedby="fpEmailErr">
+      <p class="ferr" id="fpEmailErr" aria-live="polite"></p>
+      <button type="submit" class="btn btn-gold" id="fpSubmit">Email me a reset link</button>
+      <p class="de-msg" id="fpDone" aria-live="polite"></p>
+      <p class="kyc-note">No email on your account? Write to <b>support@servora.ng</b> from your registered details.</p>
+      <p class="lg-alt"><button type="button" class="linkish" data-lg-back>Back to sign in</button></p>
+    </form>
+    <!-- Opened from the emailed link (/#reset=…) -->
+    <form id="resetForm" novalidate hidden>
+      <h3>Choose a new password</h3>
+      <p class="sub">Saving it signs you out on every device.</p>
+      <label for="rpPw">New password</label>
+      <input type="password" id="rpPw" autocomplete="new-password" placeholder="At least 8 characters" required aria-required="true" aria-describedby="rpPwErr">
+      <p class="ferr" id="rpPwErr" aria-live="polite"></p>
+      <label for="rpPw2">Confirm new password</label>
+      <input type="password" id="rpPw2" autocomplete="new-password" required aria-required="true" aria-describedby="rpPw2Err">
+      <p class="ferr" id="rpPw2Err" aria-live="polite"></p>
+      <button type="submit" class="btn btn-gold" id="rpSubmit">Save new password</button>
+      <p class="de-msg err" id="rpFail" aria-live="polite"></p>
+      <p class="lg-alt"><button type="button" class="linkish" data-lg-forgot>Request a new link</button></p>
     </form>
   </div>
 </div>
@@ -2325,6 +2354,20 @@ const ServoraAPI={
   },
   /* GET /api/auth/me — the signed-in pro, if the stored session is still valid. */
   async me(){return proFetch('/api/auth/me')},
+  /* POST /api/auth/forgot-password — the same answer for every email (no account enumeration). */
+  async forgotPassword(email){
+    try{
+      const r=await fetch('/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+      return await r.json();
+    }catch(e){return null}
+  },
+  /* POST /api/auth/reset-password — set a new password with the emailed token. */
+  async resetPassword(token,password){
+    try{
+      const r=await fetch('/api/auth/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,password})});
+      return await r.json();
+    }catch(e){return null}
+  },
 
   /* ---- PAYMENTS (escrow checkout) ---- */
   /* POST /api/bookings — create the agreed job + price that drives payment. */
@@ -4210,7 +4253,13 @@ function updateProUI(){
   document.querySelectorAll('[data-login-label]').forEach(el=>el.textContent=proSession?'My Jobs':'Pro Login');
 }
 const loginBg=document.getElementById('loginBg');
+/* The sign-in modal holds three views: sign in, request a reset, choose a new password. */
+function showLoginView(id){
+  ['loginForm','forgotForm','resetForm'].forEach(v=>{document.getElementById(v).hidden=(v!==id)});
+}
 function openLogin(notice){
+  showLoginView('loginForm');
+  document.getElementById('lgOk').textContent='';
   document.getElementById('lgIdErr').textContent='';
   document.getElementById('lgPwErr').textContent=typeof notice==='string'?notice:'';
   loginBg.classList.add('open');document.body.style.overflow='hidden';
@@ -4248,6 +4297,72 @@ function sessionEnded(){
   openLogin('Your session has ended. Please sign in again.');
 }
 if(hadStaleSession)openLogin('Pro sign-in has been upgraded. Please sign in again.');
+
+/* ---- forgot / reset password ---- */
+function openForgot(){
+  showLoginView('forgotForm');
+  document.getElementById('fpDone').textContent='';
+  document.getElementById('fpEmailErr').textContent='';
+  const typed=document.getElementById('lgId').value.trim();
+  if(typed.includes('@'))document.getElementById('fpEmail').value=typed;
+  document.getElementById('fpEmail').focus();
+}
+document.getElementById('lgForgot').onclick=openForgot;
+document.querySelector('[data-lg-forgot]').onclick=openForgot;
+document.querySelector('[data-lg-back]').onclick=()=>{showLoginView('loginForm');document.getElementById('lgId').focus()};
+document.getElementById('forgotForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const el=document.getElementById('fpEmail'),err=document.getElementById('fpEmailErr'),done=document.getElementById('fpDone');
+  err.textContent='';done.textContent='';
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(el.value.trim())){err.textContent='Enter the email address on your account.';el.focus();return}
+  const btn=document.getElementById('fpSubmit');
+  btn.disabled=true;btn.textContent='Sending…';
+  const res=await ServoraAPI.forgotPassword(el.value.trim());
+  btn.disabled=false;btn.textContent='Email me a reset link';
+  if(!res){err.textContent='Couldn’t reach Servora. Please try again.';return}
+  if(!res.ok){err.textContent=res.error||'Please wait a few minutes and try again.';return}
+  done.textContent=res.message;
+});
+
+/* A reset link lands as /#reset=<token>. The token is read once and removed
+   from the address bar immediately, so it doesn't linger in browser history. */
+let resetToken=null;
+function handleResetLink(){
+  const m=/^#reset=([A-Za-z0-9_-]{20,})$/.exec(location.hash);
+  if(!m)return;
+  resetToken=m[1];
+  history.replaceState(null,'',location.pathname+location.search);
+  openLogin();
+  showLoginView('resetForm');
+  document.getElementById('rpFail').textContent='';
+  document.getElementById('rpPw').focus();
+}
+handleResetLink();
+/* the link may also be opened in a tab that's already on the site (no reload) */
+addEventListener('hashchange',handleResetLink);
+document.getElementById('resetForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const pw=document.getElementById('rpPw'),pw2=document.getElementById('rpPw2');
+  const err=document.getElementById('rpPwErr'),err2=document.getElementById('rpPw2Err'),fail=document.getElementById('rpFail');
+  err.textContent='';err2.textContent='';fail.textContent='';
+  if(pw.value.length<8){err.textContent='Use at least 8 characters for your password.';pw.focus();return}
+  if(pw.value.length>200){err.textContent='That password is too long (200 characters max).';pw.focus();return}
+  if(pw.value!==pw2.value){err2.textContent='The two passwords don’t match.';pw2.focus();return}
+  const btn=document.getElementById('rpSubmit');
+  btn.disabled=true;btn.textContent='Saving…';
+  const res=await ServoraAPI.resetPassword(resetToken,pw.value);
+  btn.disabled=false;btn.textContent='Save new password';
+  if(!res){fail.textContent='Couldn’t reach Servora. Please try again.';return}
+  if(!res.ok){
+    if(res.field==='password'){err.textContent=res.error;pw.focus()}
+    else fail.textContent=res.error||'This reset link is invalid or has expired. Request a new one.';
+    return;
+  }
+  resetToken=null;pw.value='';pw2.value='';
+  if(proSession)setProSession(null);   /* every session was just revoked on the server */
+  openLogin();
+  document.getElementById('lgOk').textContent=res.message;
+});
 
 /* ============ PRO LEADS INBOX ============ */
 const leadsBg=document.getElementById('leadsBg'),leadsList=document.getElementById('leadsList'),dashWho=document.getElementById('dashWho'),dashStats=document.getElementById('dashStats');

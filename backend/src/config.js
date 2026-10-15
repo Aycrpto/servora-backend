@@ -61,7 +61,10 @@ export const SERVORA_COMMISSION_BPS = parseInt(process.env.SERVORA_COMMISSION_BP
 export const CURRENCY = process.env.CURRENCY || 'NGN';
 
 /** Used to build the post-payment callback URL. */
-export const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
+/** Public site URL for links in emails and payment callbacks. Set APP_BASE_URL in
+ *  production; on Render it falls back to the service's own URL (RENDER_EXTERNAL_URL). */
+export const APP_BASE_URL = (process.env.APP_BASE_URL || process.env.RENDER_EXTERNAL_URL
+  || `http://localhost:${PORT}`).replace(/\/+$/, '');
 
 /** Guards the money-moving admin endpoints (release/list). Empty = locked. */
 export const ADMIN_API_KEY = process.env.ADMIN_API_KEY || '';

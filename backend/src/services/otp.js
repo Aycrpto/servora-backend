@@ -29,15 +29,12 @@ import {
 } from '../store/otpRequests.js';
 import { hashPassword, verifyPassword } from './passwords.js';
 import { intlPhone } from './notifications.js';
+import { sendEmail } from './email.js';
 
 const TERMII_API_KEY = process.env.TERMII_API_KEY || '';
 const TERMII_SENDER_ID = process.env.TERMII_SENDER_ID || 'Servora';
 const TERMII_BASE = process.env.TERMII_BASE_URL || 'https://api.ng.termii.com';
 const TERMII_CHANNEL = process.env.TERMII_CHANNEL || 'generic';   // 'generic' | 'dnd'
-const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-// Overridable so tests can point at a local stub instead of spending money.
-const RESEND_BASE = process.env.RESEND_BASE_URL || 'https://api.resend.com';
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Servora <no-reply@servora.ng>';
 
 export const OTP_TTL_MINUTES = 10;
 export const RESEND_COOLDOWN_MS = 60 * 1000;
@@ -58,7 +55,11 @@ export function normaliseDestination(channel, value) {
 
 /** Termii managed OTP send. Returns { ok, pinId } or { ok:false, error }. */
 async function termiiSendToken(phoneIntl) {
-  if (!TERMII_API_KEY) return { ok: true, pinId: null, simulated: true };
+  if (!TERMII_API_KEY) {
+    // Fail loudly — never pretend a code went out, and never print one.
+    console.error('[otp] NOT SENT: SMS delivery is not configured (set TERMII_API_KEY).');
+    return { ok: false, error: 'SMS delivery is not configured' };
+  }
   const body = {
     api_key: TERMII_API_KEY,
     message_type: 'NUMERIC',
@@ -87,7 +88,7 @@ async function termiiSendToken(phoneIntl) {
 
 /** Termii managed OTP verify. `verified` is the string "True" on success. */
 async function termiiVerifyToken(pinId, pin) {
-  if (!TERMII_API_KEY) return { ok: true, verified: null, simulated: true };
+  if (!TERMII_API_KEY) return { ok: false, error: 'SMS verification is not configured' };
   try {
     const r = await fetch(`${TERMII_BASE}/api/sms/otp/verify`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -110,14 +111,10 @@ async function sendCodeByEmail(email, code) {
     ``,
     `It expires in ${OTP_TTL_MINUTES} minutes. If you didn't request this, ignore this email.`,
   ].join('\n');
-  if (!RESEND_API_KEY) { console.log(`[otp] (no email provider) code for ${email}: ${code}`); return { ok: true, simulated: true }; }
+  // services/email.js fails (and says so in the log) when email isn't
+  // configured; the code itself is never logged.
   try {
-    const r = await fetch(`${RESEND_BASE}/emails`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: EMAIL_FROM, to: [email], subject, text }),
-    });
-    if (!r.ok) return { ok: false, error: `Resend ${r.status}` };
+    await sendEmail({ to: email, subject, text });
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err.message };
@@ -190,10 +187,8 @@ export async function requestOtp({ subjectType = 'pro', subjectId, channel, dest
   let pinId = null, codeHash = null, sendError = null;
   if (chan === 'sms') {
     const sent = await termiiSendToken(dest);
-    if (sent.ok) {
-      pinId = sent.pinId;
-      if (sent.simulated) console.log(`[otp] (no SMS provider) would send a ${OTP_LENGTH}-digit code to ${dest}`);
-    } else sendError = sent.error || 'send failed';
+    if (sent.ok) pinId = sent.pinId;
+    else sendError = sent.error || 'send failed';
   } else {
     const code = String(randomInt(0, 10 ** OTP_LENGTH)).padStart(OTP_LENGTH, '0');
     const sent = await sendCodeByEmail(dest, code);
@@ -206,7 +201,7 @@ export async function requestOtp({ subjectType = 'pro', subjectId, channel, dest
   // may still be sitting in their inbox.
   if (sendError) {
     await recordOtpSendFailure(record.id, sendError);
-    console.error(`[otp] send failed for ${dest} via ${chan}: ${sendError}`);
+    console.error(`[otp] send failed for ${maskDestination(chan, dest)} via ${chan}: ${sendError}`);
     return { ok: false, code: 502, otpId: record.id, providerError: sendError,
       error: 'We could not send your code right now. Please try “Resend code”.' };
   }

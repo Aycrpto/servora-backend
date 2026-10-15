@@ -6,17 +6,15 @@
  *   sms      → Termii      (TERMII_API_KEY + TERMII_SENDER_ID)
  *   whatsapp → Termii      (same keys, whatsapp channel)
  *
- * With no provider configured, the composed message is LOGGED and the channel
- * reports status 'logged' — the API response still tells the frontend exactly
- * what was composed, so the pro can one-tap share it via wa.me / sms: / mailto:.
- * Delivery must never fail the quote: every send is caught and reported.
+ * A channel with no provider configured is NOT sent and reports status
+ * 'not_configured' (with an error in the server log). The message is never
+ * printed — it carries the quote link. The API response still returns the
+ * composed message to the pro, so they can one-tap share it via wa.me / sms: /
+ * mailto:. Delivery never fails the quote: every send is caught and reported.
  */
 import { APP_BASE_URL } from '../config.js';
+import { sendEmail as sendViaResend, EMAIL_CONFIGURED } from './email.js';
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-// Overridable so tests can point at a local stub instead of spending money.
-const RESEND_BASE = process.env.RESEND_BASE_URL || 'https://api.resend.com';
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Servora <quotes@servora.ng>';
 const TERMII_API_KEY = process.env.TERMII_API_KEY || '';
 const TERMII_SENDER_ID = process.env.TERMII_SENDER_ID || 'Servora';
 const TERMII_BASE = process.env.TERMII_BASE_URL || 'https://api.ng.termii.com';
@@ -67,18 +65,13 @@ export function composeQuoteMessage(quote, proPhone = null) {
 }
 
 async function sendEmail(to, { subject, text }) {
-  if (!RESEND_API_KEY) return { channel: 'email', to, status: 'logged' };
-  const r = await fetch(`${RESEND_BASE}/emails`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, text }),
-  });
-  if (!r.ok) throw new Error(`Resend ${r.status}`);
+  if (!EMAIL_CONFIGURED) return { channel: 'email', to, status: 'not_configured' };
+  await sendViaResend({ to, subject, text });
   return { channel: 'email', to, status: 'sent' };
 }
 
 async function sendTermii(channel, to, { text }) {
-  if (!TERMII_API_KEY) return { channel, to, status: 'logged' };
+  if (!TERMII_API_KEY) return { channel, to, status: 'not_configured' };
   const r = await fetch(`${TERMII_BASE}/api/sms/send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -94,8 +87,8 @@ async function sendTermii(channel, to, { text }) {
 /**
  * Deliver a quote on every channel the customer's contact details allow.
  * Returns { channels: [{channel,to,status}], message } — statuses are
- * 'sent' (provider accepted), 'logged' (no provider configured — composed
- * message logged for the share buttons), 'failed', or 'skipped'.
+ * 'sent' (provider accepted), 'not_configured' (no provider set up), 'failed',
+ * or 'skipped' (no address/number for that channel).
  */
 export async function deliverQuote(quote, proPhone = null) {
   const message = composeQuoteMessage(quote, proPhone);
@@ -113,8 +106,10 @@ export async function deliverQuote(quote, proPhone = null) {
     r.status === 'fulfilled' ? r.value
       : { channel: ['email', 'sms'][i], to: null, status: 'failed', error: r.reason?.message });
 
-  if (channels.some((c) => c.status === 'logged')) {
-    console.log(`[notify] quote ${quote.id} composed for ${email || ''} ${phone || ''}:\n${message.text}`);
+  // Report what didn't go out — never the message, link or recipient.
+  const unsent = channels.filter((c) => c.status === 'not_configured' || c.status === 'failed');
+  if (unsent.length) {
+    console.error(`[notify] quote not delivered by ${unsent.map((c) => `${c.channel} (${c.error || c.status})`).join(', ')}`);
   }
   return { channels, message };
 }

@@ -18,6 +18,8 @@ import { verifyPassword, needsRehash, hashPassword } from '../services/passwords
 import { passesOtpGate } from '../config.js';
 import { requestOtp } from '../services/otp.js';
 import { bearerToken } from '../middleware/proAuth.js';
+import { loginKey, lockedOut, recordFailure, clearFailures } from '../services/loginLockout.js';
+import { processResetRequest, resetPasswordWithToken } from '../services/passwordReset.js';
 
 /** Compare phone numbers by their last 10 digits (0803… === +234803…). */
 const normPhone = s => String(s || '').replace(/\D/g, '').slice(-10);
@@ -27,30 +29,6 @@ const LOGIN_FAILED = 'That phone number or email and password don’t match a ve
 // Verified against when there is no account (or no password), so a miss costs
 // the same scrypt work as a real check. Same cost parameters as real hashes.
 const dummyHash = hashPassword(randomBytes(16).toString('hex'));
-
-/*
- * Per-account lockout, on top of the per-IP limit on the route: after 10
- * failures for one phone/email in 15 minutes, that account is locked for the
- * rest of the window — so spreading guesses across many IPs doesn't help.
- * In memory (one instance); a restart clears it.
- */
-const FAIL_WINDOW_MS = 15 * 60 * 1000;
-const MAX_FAILS = 10;
-const failures = new Map();   // key -> { count, resetAt }
-setInterval(() => {
-  const now = Date.now();
-  for (const [k, v] of failures) if (v.resetAt <= now) failures.delete(k);
-}, 60_000).unref();
-
-const lockedOut = (key) => {
-  const f = failures.get(key);
-  return f && f.resetAt > Date.now() && f.count >= MAX_FAILS ? Math.ceil((f.resetAt - Date.now()) / 1000) : 0;
-};
-const recordFailure = (key) => {
-  const f = failures.get(key);
-  if (!f || f.resetAt <= Date.now()) failures.set(key, { count: 1, resetAt: Date.now() + FAIL_WINDOW_MS });
-  else f.count += 1;
-};
 
 /** The profile fields the dashboard shows and lets the pro edit — never credentials or documents. */
 export const dashboardPro = (pro) => ({
@@ -69,7 +47,7 @@ export async function login(req, res) {
 
   const idText = identifier.toString().trim().toLowerCase();
   const idPhone = normPhone(identifier);
-  const key = idPhone.length === 10 ? 'p:' + idPhone : 'e:' + idText;
+  const key = loginKey(identifier);   // per-account lockout (services/loginLockout.js)
 
   const wait = lockedOut(key);
   if (wait) {
@@ -84,7 +62,7 @@ export async function login(req, res) {
     recordFailure(key);
     return res.status(401).json({ ok: false, error: LOGIN_FAILED });
   }
-  failures.delete(key);
+  clearFailures(key);
 
   /**
    * CONTACT VERIFICATION GATE — blocks login for any account created on or
@@ -128,6 +106,32 @@ export async function login(req, res) {
 export async function logout(req, res) {
   await revokeSession(bearerToken(req));
   res.json({ ok: true });
+}
+
+const RESET_REQUESTED = 'If a professional account uses that email, we’ve sent a link to reset your password. It expires in 1 hour.';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/**
+ * POST /api/auth/forgot-password   { email }
+ * Answers FIRST, then does the work: every well-formed email gets the same
+ * response in the same time, so it can't be used to find out who has an account.
+ */
+export function forgotPassword(req, res) {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (email.length > 254 || !EMAIL_RE.test(email)) {
+    return res.status(400).json({ ok: false, error: 'Enter the email address on your account.' });
+  }
+  res.json({ ok: true, message: RESET_REQUESTED });
+  setImmediate(() => processResetRequest(email)
+    .catch((err) => console.error('[password-reset] request failed:', err.message)));
+}
+
+/** POST /api/auth/reset-password   { token, password } */
+export async function resetPassword(req, res) {
+  const { token, password } = req.body || {};
+  const out = await resetPasswordWithToken(token, password);
+  if (!out.ok) return res.status(out.code).json({ ok: false, field: out.field, error: out.error });
+  res.json({ ok: true, message: 'Password changed. You’ve been signed out everywhere — sign in with your new password.' });
 }
 
 /** GET /api/auth/me — the signed-in pro (via requirePro). */

@@ -54,6 +54,6 @@ export async function revokeSession(token) {
 }
 
 /** Revoke every session a professional has (e.g. after a password change). */
-export async function revokeAllSessions(proId) {
-  await db().query('UPDATE pro_sessions SET revoked_at = now() WHERE pro_id = $1 AND revoked_at IS NULL', [proId]);
+export async function revokeAllSessions(proId, client) {
+  await db(client).query('UPDATE pro_sessions SET revoked_at = now() WHERE pro_id = $1 AND revoked_at IS NULL', [proId]);
 }

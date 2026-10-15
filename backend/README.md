@@ -32,6 +32,8 @@ but database-backed API routes answer 503.
 | POST   | `/api/admin/kyc/:id/decision` | `{ decision: 'approve'\|'reject', reason? }`. Approve grants the ✓ ID Verified badge. |
 | POST   | `/api/auth/login`    | `{ identifier, password }` → `{ token, expiresAt, pro }`. Opaque session token (30 days, revocable; only its SHA-256 is stored). Same error for unknown account and wrong password. |
 | POST   | `/api/auth/logout`   | Revokes the `Authorization: Bearer <token>` session.      |
+| POST   | `/api/auth/forgot-password` | `{ email }` → the same 200 answer for every email (no account enumeration). If a pro uses that email, a single-use reset link (1 hour, only its SHA-256 stored) is emailed. Limits: 5/15 min per IP, 3/hour per account. |
+| POST   | `/api/auth/reset-password`  | `{ token, password }` → sets the new password (registration rules) and revokes every session for the account. |
 | GET    | `/api/auth/me`       | The signed-in pro. Pro-only routes (`/api/pros/:id/*`, quotes, job actions) require the bearer session, and `:id` must be the signed-in pro. |
 | GET    | `/api/services`      | Service taxonomy                                          |
 | POST   | `/api/leads`         | Customer job request — no account needed                  |

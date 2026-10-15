@@ -163,6 +163,15 @@ export async function findVerifiedForLogin({ phoneKey, email }) {
   return toPro(rows[0]);
 }
 
+/** The professional with this email (case-insensitive), whatever their status. */
+export async function findProByEmail(email) {
+  const e = String(email || '').trim().toLowerCase();
+  if (!e) return null;
+  const { rows } = await db().query(
+    'SELECT * FROM professionals WHERE email IS NOT NULL AND lower(email) = $1', [e]);
+  return toPro(rows[0]);
+}
+
 /** Is this phone (last 10 digits) or email already registered? */
 export async function contactTaken({ phoneKey, email }) {
   const { rows } = await db().query(
