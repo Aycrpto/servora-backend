@@ -11,10 +11,11 @@ Paystack webhook on one trusted origin.
 ## 0. Prerequisites before real money
 
 Application data now lives in **Postgres (Neon)** via `DATABASE_URL`, so it
-survives deploys and restarts. Still on local disk (and therefore wiped on an
-ephemeral PaaS filesystem): KYC images (`backend/private/kyc/`) and media in
-`uploads/` — both planned to move to object storage. The notes below predate
-the Postgres move:
+survives deploys and restarts. KYC images (government ID + selfie) live in a
+private Cloudflare R2 bucket, EU jurisdiction (`R2_*` env vars; registration
+refuses without them — there is no disk fallback). Still on local disk (wiped
+on an ephemeral PaaS filesystem): portfolio/evidence media in `uploads/`,
+planned to move to Cloudinary. The notes below predate the Postgres move:
 
 - **Fast launch:** a VPS with a **persistent disk**; keep JSON, add nightly
   backups. Works, but no atomic transactions (a real concurrency risk for money).

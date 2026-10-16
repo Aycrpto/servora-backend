@@ -12,7 +12,7 @@ import {
 import { leadsForPro } from '../store/leads.js';
 import { listBookingsForPro } from '../store/bookings.js';
 import { isUniqueViolation } from '../store/util.js';
-import { saveKycImage } from '../store/kycStore.js';
+import { decodeKycImage, storeKycImages, deleteKycImages, kycStorageReady, StorageError } from '../store/kycStore.js';
 import * as paystack from '../services/paystack.js';
 import { hashPassword, passwordProblem } from '../services/passwords.js';
 import { verifyPhotoIdWithSelfie } from '../services/dojah.js';
@@ -445,12 +445,19 @@ export async function registerPro(req, res) {
     return res.status(409).json({ ok: false, field: 'email', error: 'This email is already in use. Try signing in instead.' });
   }
 
-  // Persist both images to PRIVATE storage (never /uploads) so a reviewer can
-  // see exactly what was submitted if the automated check doesn't pass.
-  const storedId = saveKycImage(idImage, 'id');
-  const storedSelfie = saveKycImage(selfieImage, 'selfie');
-  if (!storedId || !storedSelfie) {
+  // Both images are kept in PRIVATE storage (R2, never /uploads) so a reviewer
+  // can see exactly what was submitted if the automated check doesn't pass.
+  // Check them now; store them only once everything else has passed.
+  const idDoc = decodeKycImage(idImage);
+  const selfie = decodeKycImage(selfieImage);
+  if (!idDoc || !selfie) {
     return res.status(422).json({ ok: false, field: 'id', error: 'Those images could not be read. Upload clear JPG or PNG photos under 10MB.' });
+  }
+  // No private storage, no registration: ID images are never kept on the
+  // server's disk as a fallback. Checked before the paid ID check runs.
+  if (!kycStorageReady()) {
+    console.error('[kyc] registration refused: R2 storage is not configured');
+    return res.status(503).json({ ok: false, error: 'We can’t accept registrations right now. Please try again later.' });
   }
 
   // Run the real check. Never throws — a failure becomes a review, not a 500.
@@ -463,11 +470,20 @@ export async function registerPro(req, res) {
   });
   const passed = verification.outcome === 'verified';
 
+  const proId = randomUUID();
+  let kycKeys;
+  try {
+    kycKeys = await storeKycImages(proId, { idDocument: idDoc, selfie });
+  } catch (err) {
+    console.error(`[kyc] registration refused: ${err instanceof StorageError ? err.message : 'image storage failed'}`);
+    return res.status(503).json({ ok: false, error: 'We couldn’t store your ID securely just now, so nothing was saved. Please try again in a few minutes.' });
+  }
+
   // Location fields: lga holds the canonical LGA, city holds the state —
   // the UI displays "LGA, State" (never "Ikeja, Ikeja").
 
   const pro = {
-    id: randomUUID(),
+    id: proId,
     name: cleanName,
     phone: phone.trim(),
     email: cleanEmail,
@@ -500,7 +516,7 @@ export async function registerPro(req, res) {
     otpVerifiedAt: null,
     idDocument: { type: cleanIdType, fileName: idFileName ?? null, sizeKB: Number.isInteger(idFileSizeKB) ? idFileSizeKB : null },
     // Private filenames only — served exclusively via the admin-authed endpoint.
-    kycMedia: { idDocument: storedId.file, selfie: storedSelfie.file },
+    kycMedia: { idDocument: kycKeys.idDocument, selfie: kycKeys.selfie },   // R2 object keys
     idVerification: {
       provider: verification.provider,
       outcome: verification.outcome,          // verified | rejected | inconclusive
@@ -541,6 +557,8 @@ export async function registerPro(req, res) {
       await insertKycCheck(c, pro.id, pro.idVerification);
     });
   } catch (err) {
+    // Nothing references the uploaded images now — remove them.
+    await deleteKycImages([kycKeys.idDocument, kycKeys.selfie]);
     if (isUniqueViolation(err, 'professionals_phone_key_uq')) {
       return res.status(409).json({ ok: false, field: 'phone', error: 'This phone number is already registered. Try signing in instead.' });
     }

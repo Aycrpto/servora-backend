@@ -39,6 +39,7 @@ import { paystackWebhook } from './src/controllers/payments.controller.js';
 import { closePool } from './src/db/pool.js';
 import { startDatabase, dbStatus, requireDb } from './src/db/lifecycle.js';
 import { errorHandler } from './src/middleware/errors.js';
+import { r2Configured } from './src/services/r2.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -64,6 +65,7 @@ app.use(express.json({ limit: '30mb' }));
 
 app.get('/api/health', (_req, res) => res.json({
   ok: true, name: 'servora-api', version: '1.0.0', proSignupOpen: PRO_SIGNUP_OPEN, db: dbStatus(),
+  idStorage: r2Configured() ? 'r2' : 'not configured',
 }));
 app.use('/api/services', servicesRouter);   // static taxonomy: works without a database
 app.use('/api/locations', locationsRouter); // states + LGAs, same: static

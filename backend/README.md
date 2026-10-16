@@ -28,7 +28,7 @@ but database-backed API routes answer 503.
 | GET    | `/api/pros/featured` | Paid placement: Elite subscribers first, then Pro, by rating |
 | POST   | `/api/pros/register` | Body: `{ name, phone, trade, state, lga, plan, idType, idImage, selfieImage, … }`. **Real KYC:** the ID photo + live selfie go to Dojah `/api/v1/kyc/photoid/verify`. Pass → `verified` + `idVerified:true`; fail/inconclusive → `pending_review` (never auto-rejected). |
 | GET    | `/api/admin/kyc?status=` | Manual review queue. Requires `x-admin-key`. |
-| GET    | `/api/admin/kyc/:id/image/:kind` | `idDocument` \| `selfie`. Admin-only; KYC media is stored in `backend/private/kyc/` and is never statically served. |
+| GET    | `/api/admin/kyc/:id/image/:kind` | `idDocument` \| `selfie`. Admin-only; returns `{ url, expiresIn: 60 }`, a 60-second signed link into the private R2 bucket (KYC media has no public URL). |
 | POST   | `/api/admin/kyc/:id/decision` | `{ decision: 'approve'\|'reject', reason? }`. Approve grants the ✓ ID Verified badge. |
 | POST   | `/api/auth/login`    | `{ identifier, password }` → `{ token, expiresAt, pro }`. Opaque session token (30 days, revocable; only its SHA-256 is stored). Same error for unknown account and wrong password. |
 | POST   | `/api/auth/logout`   | Revokes the `Authorization: Bearer <token>` session.      |
@@ -73,13 +73,14 @@ All application data is in Postgres; the schema is `migrations/001_initial_schem
 To change it, add a new numbered migration — never edit one that has run (the
 runner refuses edited migrations by checksum). Every query is parameterised.
 
-Not yet in Postgres (planned): KYC images (`backend/private/kyc/`, to move to a
-private Cloudflare R2 bucket) and portfolio/evidence media (`uploads/`, to move
-to Cloudinary). On hosts with an ephemeral disk those files do not survive a
-redeploy.
+KYC images are in a private Cloudflare R2 bucket (EU jurisdiction); Postgres
+holds only their object keys (`professionals.kyc_id_image_key` /
+`kyc_selfie_key`). Portfolio/evidence media is still on local disk (`uploads/`,
+planned to move to Cloudinary) and does not survive a redeploy on an ephemeral
+host.
 
 ## Upgrade path
 
-1. KYC images → private object storage (R2); media → Cloudinary.
+1. Media → Cloudinary (KYC images are already in R2).
 2. Real ID uploads: `multer` → object storage; verification queue flips `status`.
 3. Auth for pros (JWT/OTP via WhatsApp), payments (Paystack/Flutterwave escrow), commission ledger.

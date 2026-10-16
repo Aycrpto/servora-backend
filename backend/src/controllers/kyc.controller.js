@@ -7,11 +7,11 @@
  *
  *   GET  /api/admin/kyc            queue (default: pending_review)
  *   GET  /api/admin/kyc/:id        one pro's full verification record
- *   GET  /api/admin/kyc/:id/image/:kind   idDocument | selfie  (binary)
+ *   GET  /api/admin/kyc/:id/image/:kind   idDocument | selfie → 60-second signed link
  *   POST /api/admin/kyc/:id/decision      { decision: 'approve'|'reject', reason? }
  */
 import { withTransaction } from '../db/pool.js';
-import { readKycImage } from '../store/kycStore.js';
+import { kycImageLink, kycStorageReady, KYC_KINDS, KYC_LINK_SECONDS } from '../store/kycStore.js';
 import { listProsForKyc, getProWithKyc, updatePro, recordKycDecision } from '../store/professionals.js';
 import { isUuid } from '../store/util.js';
 import { isAdmin } from '../middleware/adminAuth.js';
@@ -75,26 +75,28 @@ export async function getKycPro(req, res) {
 
 /**
  * GET /api/admin/kyc/:id/image/:kind   (kind = idDocument | selfie)
- * Streams the stored KYC image to an authenticated reviewer. This is the ONLY
- * way these files can be read — they are not in any statically served folder.
+ * Answers an authenticated reviewer with a 60-second signed link to the image
+ * in the private R2 bucket. The link is the ONLY way to read these files, it is
+ * issued only after the admin key check, and it is never logged or cached.
+ * Returned as JSON (not a redirect) so the admin key can never follow the
+ * request to Cloudflare.
  */
 export async function getKycImage(req, res) {
   if (!adminOk(req)) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
   const { id, kind } = req.params;
-  if (!['idDocument', 'selfie'].includes(kind)) {
+  if (!KYC_KINDS.includes(kind)) {
     return res.status(400).json({ ok: false, error: "kind must be 'idDocument' or 'selfie'." });
   }
   const pro = await getProWithKyc(id);
   if (!pro) return res.status(404).json({ ok: false, error: 'Professional not found.' });
 
-  const file = pro.kycMedia?.[kind];
-  if (!file) return res.status(404).json({ ok: false, error: 'No image on file.' });
-  const img = readKycImage(file);
-  if (!img) return res.status(404).json({ ok: false, error: 'Image is no longer available.' });
+  const key = pro.kycMedia?.[kind];
+  if (!key) return res.status(404).json({ ok: false, error: 'No image on file.' });
+  if (!kycStorageReady()) return res.status(503).json({ ok: false, error: 'ID image storage is not configured.' });
 
-  res.set('Content-Type', img.mime);
-  res.set('Cache-Control', 'no-store, private');   // never cached by proxies
-  res.send(img.buffer);
+  console.info(`[kyc] ${kind} link issued for pro ${pro.id}`);   // audit trail; never the link
+  res.set('Cache-Control', 'no-store, private');
+  res.json({ ok: true, url: kycImageLink(key), expiresIn: KYC_LINK_SECONDS });
 }
 
 /**

@@ -171,16 +171,22 @@ async function apiJson(path, opts) {
   return data;
 }
 
-/* Images are behind the admin key, so they're fetched as blobs rather than
-   dropped into a plain <img src> (which couldn't send the header). */
+/* Images live in a private bucket. The server checks the admin key and hands
+   back a 60-second signed link, which goes straight into a plain <img>. The
+   key itself never leaves this page for anywhere but our own API. */
 async function loadImage(proId, kind, el) {
   try {
     const r = await api(`/kyc/${encodeURIComponent(proId)}/image/${kind}`);
-    if (!r.ok) { el.innerHTML = '<div class="none">No image on file</div>'; return; }
-    const url = URL.createObjectURL(await r.blob());
+    const data = await r.json().catch(() => null);
+    if (!r.ok || !data || !data.url) {
+      el.innerHTML = `<div class="none">${esc((data && data.error) || 'No image on file')}</div>`;
+      return;
+    }
     const img = new Image();
-    img.src = url; img.alt = kind === 'selfie' ? 'Submitted selfie' : 'Submitted ID document';
-    img.onload = () => URL.revokeObjectURL(url);
+    img.referrerPolicy = 'no-referrer';
+    img.alt = kind === 'selfie' ? 'Submitted selfie' : 'Submitted ID document';
+    img.onerror = () => { el.innerHTML = '<div class="none">The link expired before the image loaded. Reload to try again.</div>'; };
+    img.src = data.url;
     el.innerHTML = ''; el.appendChild(img);
   } catch (err) {
     if (err.kind === 'auth') return relock('Your admin key was rejected — sign in again.');
