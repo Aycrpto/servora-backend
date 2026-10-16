@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { PORT, PRO_SIGNUP_OPEN } from './src/config.js';
 import prosRouter from './src/routes/pros.routes.js';
 import servicesRouter from './src/routes/services.routes.js';
+import locationsRouter from './src/routes/locations.routes.js';
 import leadsRouter from './src/routes/leads.routes.js';
 import authRouter from './src/routes/auth.routes.js';
 import supportRouter from './src/routes/support.routes.js';
@@ -65,6 +66,7 @@ app.get('/api/health', (_req, res) => res.json({
   ok: true, name: 'servora-api', version: '1.0.0', proSignupOpen: PRO_SIGNUP_OPEN, db: dbStatus(),
 }));
 app.use('/api/services', servicesRouter);   // static taxonomy: works without a database
+app.use('/api/locations', locationsRouter); // states + LGAs, same: static
 app.use('/api', requireDb);                 // everything below needs Postgres
 app.use('/api/pros', prosRouter);
 app.use('/api/leads', leadsRouter);

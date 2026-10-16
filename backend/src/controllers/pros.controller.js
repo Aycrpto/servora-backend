@@ -19,13 +19,9 @@ import { verifyPhotoIdWithSelfie } from '../services/dojah.js';
 import { requestOtp } from '../services/otp.js';
 import { cachedCoords, geocodePlace, haversineKm, hasCoords } from '../services/geocode.js';
 import { AVATAR_PALETTE, passesOtpGate } from '../config.js';
+import { canonicalTrade, canonicalState, canonicalLga } from '../services/locations.js';
 
 const TIER_RANK = { elite: 0, pro: 1, starter: 2 };
-
-/** Title-case free-text places ("ikeja" → "Ikeja"), preserving short acronyms (GRA, VI). */
-const titleCase = s => String(s || '').trim().replace(/\s+/g, ' ').split(' ')
-  .map(w => /^[A-Z0-9]{2,4}$/.test(w) ? w : (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
-  .join(' ');
 
 /**
  * Public listing shape — never expose credentials, contact, bank/payout data,
@@ -384,6 +380,28 @@ export async function registerPro(req, res) {
     return res.status(422).json({ ok: false, field: 'name', error: 'Enter your name using letters only (spaces, apostrophes, hyphens and dots are fine), 2–80 characters.' });
   }
 
+  // Trade, state and LGA must come from the real lists (services.json, the
+  // 36 states + FCT, and that state's LGAs; see services/locations.js), and
+  // the canonical spelling is what gets stored. Escaping on output is the
+  // second line of defence, not the first.
+  const cleanTrade = canonicalTrade(trade);
+  if (!cleanTrade) {
+    return res.status(422).json({ ok: false, field: 'trade', error: 'Choose your trade from the list.' });
+  }
+  const cleanState = canonicalState(state);
+  if (!cleanState) {
+    return res.status(422).json({ ok: false, field: 'state', error: 'Choose the state you work in from the list.' });
+  }
+  const cleanLga = canonicalLga(cleanState, lga);
+  if (!cleanLga) {
+    return res.status(422).json({ ok: false, field: 'lga', error: `Choose your LGA from the list for ${cleanState}.` });
+  }
+  // Tier drives ranking, so the client never picks it. Pre-launch there is
+  // one plan (free, Starter); anything else is refused, not silently mapped.
+  if ((plan ?? 'Starter').toString().trim().toLowerCase() !== 'starter') {
+    return res.status(422).json({ ok: false, field: 'plan', error: 'Only the free Starter plan is available right now.' });
+  }
+
   // Every account has its own password (there is no shared fallback).
   const pwProblem = passwordProblem(password);
   if (pwProblem) return res.status(422).json({ ok: false, field: 'password', error: pwProblem });
@@ -431,20 +449,19 @@ export async function registerPro(req, res) {
   });
   const passed = verification.outcome === 'verified';
 
-  // Location fields: lga holds the title-cased LGA, city holds the state —
+  // Location fields: lga holds the canonical LGA, city holds the state —
   // the UI displays "LGA, State" (never "Ikeja, Ikeja").
-  const cleanLga = lga?.toString().trim() ? titleCase(lga) : null;
 
   const pro = {
     id: randomUUID(),
     name: cleanName,
     phone: phone.trim(),
     email: cleanEmail,
-    category: trade,
-    state,
+    category: cleanTrade,
+    state: cleanState,
     lga: cleanLga,
-    area: cleanLga || state,
-    city: state,
+    area: cleanLga,
+    city: cleanState,
     rating: null,          // earned job by job
     jobsDone: 0,
     priceFrom: null,
@@ -453,11 +470,11 @@ export async function registerPro(req, res) {
     avatarColor: AVATAR_PALETTE[Math.floor(Math.random() * AVATAR_PALETTE.length)],
     // The ID-verified badge is granted ONLY by a real pass (or admin approval).
     badges: passed ? ['v'] : [],
-    tier: (plan || 'Starter').toLowerCase(),
+    tier: 'starter',
     // scrypt hash — the raw value is never stored.
     password: await hashPassword(password),
     // Verification status is carried by the badge alone, never claimed in free text.
-    bio: `New on Servora — ${trade.replace(/s$/, '').toLowerCase()} serving ${cleanLga ? cleanLga + ', ' : ''}${state}.`,
+    bio: `New on Servora — ${cleanTrade.replace(/s$/, '').toLowerCase()} serving ${cleanLga}, ${cleanState}.`,
     review: null,
     skills: null,
     // Only a real pass makes a pro live/bookable; everything else waits for a human.
@@ -498,7 +515,7 @@ export async function registerPro(req, res) {
     // Approximate coordinates for distance ranking. Filled from the geocode
     // cache instantly when the State/LGA has been seen before, otherwise
     // resolved in the background right after we respond (see below).
-    location: await cachedCoords(cleanLga, state),
+    location: await cachedCoords(cleanLga, cleanState),
     createdAt: new Date().toISOString(),
   };
 
@@ -521,8 +538,8 @@ export async function registerPro(req, res) {
 
   // Resolve coordinates in the BACKGROUND when the place wasn't already cached.
   // Registration never waits on (or fails because of) a third-party geocoder.
-  if (!pro.location && cleanLga) {
-    geocodePlace(cleanLga, state)
+  if (!pro.location) {
+    geocodePlace(cleanLga, cleanState)
       .then((coords) => coords && setLocationIfMissing(pro.id, coords))
       .catch(() => { /* soft failure: pro stays matchable by State/LGA text */ });
   }

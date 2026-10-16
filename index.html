@@ -1802,16 +1802,21 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
       <label for="rEmail">Email <span class="lbl-soft">(optional, lets you sign in with email too)</span></label>
       <input type="email" id="rEmail" inputmode="email" placeholder="you@example.com" aria-describedby="rEmailErr" autocomplete="email">
       <p class="ferr" id="rEmailErr" aria-live="polite"></p>
-      <label>Your trade</label>
-      <select id="rTrade"></select>
+      <label for="rTrade">Your trade</label>
+      <select id="rTrade" aria-describedby="rTradeErr"></select>
+      <p class="ferr" id="rTradeErr" aria-live="polite"></p>
       <div class="row2">
         <div>
-          <label>State you work in</label>
-          <select id="rState"></select>
+          <label for="rState">State you work in</label>
+          <select id="rState" aria-describedby="rStateErr"></select>
+          <p class="ferr" id="rStateErr" aria-live="polite"></p>
         </div>
         <div>
-          <label>LGA / Area</label>
-          <input type="text" id="rLga" placeholder="e.g. Ikeja">
+          <label for="rLga">LGA</label>
+          <!-- the state's real LGAs, from GET /api/locations (the server
+               only accepts these) -->
+          <select id="rLga" aria-describedby="rLgaErr" required aria-required="true"><option value="">Choose your LGA…</option></select>
+          <p class="ferr" id="rLgaErr" aria-live="polite"></p>
         </div>
       </div>
       <label for="rPw">Create a password <span class="lbl-req">Required</span></label>
@@ -3985,9 +3990,31 @@ pfGrid.addEventListener('click',e=>{
    (PRO_SIGNUP_OPEN); until it says so, every "Join" opens the waitlist. */
 let proSignupOpen=false;
 apiFetch('/api/health').then(h=>{proSignupOpen=!!(h&&h.proSignupOpen===true)});
+/* LGAs per state: the same list the server validates against. */
+let lgaByState=null;
+async function loadLgas(){
+  if(!lgaByState){
+    const r=await apiFetch('/api/locations');
+    if(r&&Array.isArray(r.states))lgaByState=Object.fromEntries(r.states.map(s=>[s.name,s.lgas]));
+  }
+  return lgaByState;
+}
+function fillLgaSelect(){
+  const sel=document.getElementById('rLga'),lgas=lgaByState&&lgaByState[document.getElementById('rState').value];
+  const keep=sel.value;
+  sel.innerHTML=`<option value="">${lgas?'Choose your LGA…':'Loading LGAs…'}</option>`+(lgas||[]).map(l=>`<option>${esc(l)}</option>`).join('');
+  sel.disabled=!lgas;
+  if(lgas&&lgas.includes(keep))sel.value=keep;
+}
+document.getElementById('rState').addEventListener('change',()=>{fillLgaSelect();setRegError('rLga','')});
 function openRegister(plan){
   if(!proSignupOpen){openWaitlist();return}
   regPlan=plan;
+  fillLgaSelect();
+  loadLgas().then(list=>{
+    fillLgaSelect();
+    if(!list)setRegError('rLga','Couldn’t load the list of LGAs. Check your connection, then close and reopen this form.');
+  });
   document.getElementById('regTitle').textContent='Join Servora';
   if(typeof closeBookPro==='function')closeBookPro();   /* arriving from a Book-a-Pro empty state */
   /* photos are kept in memory until the form is actually submitted,
@@ -4039,9 +4066,10 @@ document.getElementById('waitForm').addEventListener('submit',e=>{
    Field rules mirror the server's; the server stays authoritative for
    duplicates (it owns the data) and its message is shown inline. */
 const regValidators={
-  rName:v=>/^[A-Za-zÀ-ſ][A-Za-zÀ-ſ' -]{2,}$/.test(v.trim())?'':'Please enter your full name.',
+  rName:v=>/^\p{L}[\p{L}\p{M}' .’-]{1,79}$/u.test(v.normalize('NFC').trim().replace(/\s+/g,' '))?'':'Please enter your full name (letters, spaces, apostrophes, hyphens and dots).',
   rPhone:v=>/^(\+234|0)[789][01]\d{8}$/.test(v.replace(/[\s()./-]/g,''))?'':'Enter a valid Nigerian number, e.g. 0803 123 4567.',
   rEmail:v=>!v.trim()||/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())?'':'That email doesn’t look right.',
+  rLga:v=>v?'':'Choose the LGA you work in.',
   rPw:v=>v.length<8?'Use at least 8 characters for your password.':v.length>200?'That password is too long (200 characters max).':''
 };
 const regTimers={};
@@ -4066,6 +4094,8 @@ function resetRegValidation(){
     document.getElementById(id+'Err').textContent='';
   });
   document.getElementById('rIdErr').textContent='';
+  document.getElementById('rTradeErr').textContent='';
+  document.getElementById('rStateErr').textContent='';
   document.getElementById('pfErr').textContent='';
   document.getElementById('rId').classList.remove('invalid');
 }
@@ -4121,7 +4151,7 @@ document.getElementById('rSubmit').onclick=async()=>{
       document.getElementById(res.field==='selfie'?'rSelfieStart':'rId').focus();
       return;
     }
-    const field={email:'rEmail',password:'rPw',name:'rName'}[res.field]||'rPhone';
+    const field={email:'rEmail',password:'rPw',name:'rName',trade:'rTrade',state:'rState',lga:'rLga'}[res.field]||'rPhone';
     setRegError(field,res.error||'That account already exists.');
     document.getElementById(field).focus();
     return;
