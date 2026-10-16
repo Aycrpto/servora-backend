@@ -19,7 +19,7 @@ import { verifyPhotoIdWithSelfie } from '../services/dojah.js';
 import { requestOtp } from '../services/otp.js';
 import { cachedCoords, geocodePlace, haversineKm, hasCoords } from '../services/geocode.js';
 import { AVATAR_PALETTE, passesOtpGate } from '../config.js';
-import { canonicalTrade, canonicalState, canonicalLga } from '../services/locations.js';
+import { canonicalTrade, canonicalState, canonicalLga, resolveArea } from '../services/locations.js';
 
 const TIER_RANK = { elite: 0, pro: 1, starter: 2 };
 
@@ -58,8 +58,12 @@ const SORTERS = {
  * Only verified pros are listed. If the requested state has no pros yet,
  * falls back to nationwide results with stateCovered:false so the UI can
  * say "no pros in X yet — showing top pros nationwide".
- * `area` (LGA/neighbourhood) is matched case-insensitively against each pro's
- * lga/area; `areaCovered` tells the "Book a Pro" wizard whether to offer the
+ * `area` is what the customer typed (an LGA or a neighbourhood). Known names
+ * resolve to LGAs through services/locations.js ("Lekki" → Eti-Osa); only text
+ * the map doesn't recognise falls back to a case-insensitive match against each
+ * pro's lga/area. Each pro carries `areaMatch`, and `area` reports what the text
+ * resolved to, so the UI can say why a pro matched. `areaCovered` tells the
+ * "Book a Pro" wizard whether to offer the
  * matched pros or fall back to "Post a job". Nearby (same-state) pros are still
  * returned so the UI can suggest alternatives.
  * Ranking rule: sort key first, then subscription tier (Elite > Pro > Starter).
@@ -99,9 +103,15 @@ export async function listPros(req, res) {
   const stateCovered = Boolean(state) && inState.length > 0;
   if (stateCovered) pros = inState;
 
-  // Area match (only meaningful once we're within the requested state).
-  const q = area ? String(area).trim().toLowerCase() : '';
-  const matchesArea = p => q && [p.lga, p.area].some(v => v && String(v).toLowerCase().includes(q));
+  // Area match (only meaningful once we're within the requested state). A
+  // recognised name decides on its own, so "Lekki" can't also substring-match
+  // Ibeju-Lekki; the plain text match is only for names the map doesn't know.
+  const typed = area ? String(area).trim() : '';
+  const q = typed.toLowerCase();
+  const resolved = stateCovered && typed ? resolveArea(state, typed) : { recognised: false, lgas: [], matched: [] };
+  const matchesArea = p => Boolean(q) && (resolved.recognised
+    ? resolved.lgas.includes(p.lga)
+    : [p.lga, p.area].some(v => v && String(v).toLowerCase().includes(q)));
   const areaCovered = stateCovered && q ? pros.some(matchesArea) : false;
 
   const sorter = SORTERS[sort] || SORTERS.rating;
@@ -116,7 +126,11 @@ export async function listPros(req, res) {
     pros.sort(rank);
   }
 
-  res.json({ pros: pros.map(publicPro), stateCovered, areaCovered });
+  res.json({
+    pros: pros.map(p => (q ? { ...publicPro(p), areaMatch: matchesArea(p) } : publicPro(p))),
+    stateCovered, areaCovered,
+    ...(q ? { area: { lgas: resolved.lgas, matched: resolved.matched } } : {}),
+  });
 }
 
 /**

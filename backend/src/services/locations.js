@@ -68,3 +68,67 @@ export const canonicalLga = (state, v) => lgaIndex.get(state)?.get(key(v)) ?? nu
 export const lgasOf = (state) => LGAS_BY_STATE[state] ?? [];
 /** States with their LGAs, for the sign-up form's pickers. */
 export const locationList = () => STATES.map((name) => ({ name, lgas: LGAS_BY_STATE[name] }));
+
+/* ---------------------------------------------------------------------------
+ * Customer areas → LGAs. Pros are listed by LGA ("Eti-Osa"); customers type
+ * neighbourhoods ("Lekki", "VI, near Ajah"). data/neighbourhoods.json holds
+ * the names we're confident about; LGA names and their aliases count too.
+ *
+ * Matching is by whole words, longest name first, within the chosen state:
+ * "Ojota" is not Ojo, "Ibadan" is not Iba, "Lekki Free Trade Zone" beats
+ * "Lekki", and "Mile 2" in Rivers is not "Mile 2" in Lagos. Spacing and
+ * punctuation don't matter ("V.I." = "VI", "lekki phase1" = "Lekki Phase 1").
+ * ------------------------------------------------------------------------- */
+const areaWords = (s) => String(s ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+  .replace(/(\p{L})(\p{N})/gu, '$1 $2').replace(/(\p{N})(\p{L})/gu, '$1 $2')
+  .split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+const NEIGHBOURHOODS = read('neighbourhoods.json');
+const AREA_INDEX = new Map(STATES.map((state) => {
+  const phrases = new Map();   // collapsed words → { label, lgas: Set }
+  const add = (name, lgas) => {
+    const k = areaWords(name).join('');
+    if (!k) return;
+    const e = phrases.get(k) || { label: name, lgas: new Set() };
+    lgas.forEach((l) => e.lgas.add(l));
+    phrases.set(k, e);
+  };
+  for (const l of LGAS_BY_STATE[state]) add(l, [l]);
+  for (const [alias, canonical] of Object.entries(LGA_ALIASES[state] || {})) add(alias, [canonical]);
+  for (const [lga, names] of Object.entries(NEIGHBOURHOODS[state] || {})) {
+    if (lga === '_unmapped') { names.forEach((n) => add(n, [])); continue; }
+    if (canonicalLga(state, lga) !== lga) throw new Error(`neighbourhoods.json: "${lga}" is not an LGA of ${state}`);
+    names.forEach((n) => add(n, [lga]));
+  }
+  const maxWords = Math.max(...[...phrases.values()].map((e) => areaWords(e.label).length));
+  return [state, { phrases, maxWords }];
+}));
+
+/**
+ * Resolve what a customer typed as their area, within a state.
+ * Returns { recognised, lgas, matched }:
+ *   recognised — at least one known name (or LGA) appeared in the text
+ *   lgas       — the canonical LGAs those names sit in (may be empty)
+ *   matched    — the names as we spell them, e.g. ["Lekki"]
+ * Unrecognised text resolves to nothing; the caller decides the fallback.
+ */
+export function resolveArea(state, text) {
+  const idx = AREA_INDEX.get(canonicalState(state));
+  const out = { recognised: false, lgas: [], matched: [] };
+  if (!idx) return out;
+  const ws = areaWords(text);
+  const lgas = new Set(), matched = [];
+  for (let i = 0; i < ws.length;) {
+    let hit = null, len = 0;
+    for (let n = Math.min(idx.maxWords, ws.length - i); n >= 1 && !hit; n--) {
+      const e = idx.phrases.get(ws.slice(i, i + n).join(''));
+      if (e) { hit = e; len = n; }
+    }
+    if (!hit) { i++; continue; }
+    out.recognised = true;
+    if (hit.lgas.size) { hit.lgas.forEach((l) => lgas.add(l)); if (!matched.includes(hit.label)) matched.push(hit.label); }
+    i += len;
+  }
+  out.lgas = [...lgas];
+  out.matched = matched;
+  return out;
+}

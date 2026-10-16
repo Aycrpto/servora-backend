@@ -1,0 +1,36 @@
+{
+  "_about": "Neighbourhood names customers type, grouped under the LGA they sit in; services/locations.js resolves a customer's typed area through it. Only names whose LGA is known with confidence are listed: anything uncertain stays out, because a wrong mapping sends customers to the wrong part of the city. A name listed under two LGAs covers both. Each state's _unmapped phrases are recognised but sent nowhere, so their words can't fall through to a shorter name (Ogba-Aguda is not Aguda). Lagos names added after the first draft were placed by the product owner from Lagos State council ward lists (2026-10-16): good, not infallible.",
+  "Lagos": {
+    "_unmapped": ["Alaba Oro"],
+    "Agege": ["Dopemu", "Oko Oba", "Orile Agege", "Pen Cinema"],
+    "Ajeromi-Ifelodun": ["Ajegunle"],
+    "Alimosho": ["Agbado", "Akowonjo", "Ayobo", "Baruwa", "Egbe", "Egbeda", "Gowon Estate", "Idimu", "Igando", "Ikotun", "Ipaja", "Iyana Ipaja", "Mosan Okunola", "Shasha"],
+    "Amuwo-Odofin": ["Amuwo", "Festac", "Festac Town", "Mile 2", "Satellite Town"],
+    "Badagry": ["Seme"],
+    "Epe": ["Eredo"],
+    "Eti-Osa": ["Abraham Adesanya", "Agungi", "Ajah", "Badore", "Banana Island", "Chevron", "Dolphin Estate", "Elegushi", "Igbo Efon", "Ikota", "Ikoyi", "Ilasan", "Lekki", "Lekki Phase 1", "Maroko", "Obalende", "Ologolo", "Oniru", "Osapa", "Osapa London", "Parkview Estate", "Sangotedo", "VGC", "VI", "Victoria Garden City", "Victoria Island"],
+    "Ibeju-Lekki": ["Akodo", "Eleko", "Ibeju", "Lekki Free Trade Zone"],
+    "Ifako-Ijaiye": ["Abule Egba", "Ijaiye", "Ojokoro"],
+    "Ikeja": ["Agidingbi", "Alausa", "Allen", "Allen Avenue", "Computer Village", "Ikeja GRA", "Ogba", "Ogba Aguda", "Ojodu", "Omole", "Omole Phase 1", "Omole Phase 2", "Onigbongbo", "Opebi", "Oregun"],
+    "Ikorodu": ["Bayeku", "Igbogbo", "Ijede", "Imota"],
+    "Kosofe": ["Agboyi", "Alapere", "Anthony", "Anthony Village", "Gbagada", "Ifako Gbagada", "Ikosi", "Ketu", "Magodo", "Maryland", "Mile 12", "Ogudu", "Ojota", "Oworonshoki", "Soluyi"],
+    "Lagos Island": ["Adeniji Adele", "Balogun Market", "Broad Street", "CMS", "Ebute Ero", "Epetedo", "Idumota", "Isale Eko", "Lafiaji", "Marina", "Onikan"],
+    "Lagos Mainland": ["Alagomeji", "Ebute Metta", "Iddo", "Iwaya", "Jibowu", "Makoko", "Onike", "Otto", "Oyingbo", "Yaba"],
+    "Mushin": ["Fadeyi", "Idi Araba", "Ilasamaja", "Ilupeju", "Odi Olowo", "Ojuwoye", "Papa Ajao"],
+    "Ojo": ["Alaba", "Alaba International", "Iba", "Iyana Iba", "Okokomaiko"],
+    "Oshodi-Isolo": ["Ago Palace", "Ajao Estate", "Ejigbo", "Ilasamaja", "Isolo", "Mafoluku", "Okota", "Oshodi", "Shogunle"],
+    "Shomolu": ["Akoka", "Bariga", "Fadeyi", "Gbagada", "Onipanu", "Palmgrove", "Pedro", "UNILAG"],
+    "Surulere": ["Aguda", "Bode Thomas", "Itire", "Lawanson", "Masha", "Ojuelegba", "Shitta"]
+  },
+  "FCT Abuja": {
+    "Abuja Municipal": ["Apo", "Asokoro", "CBD", "Central Business District", "Durumi", "Galadimawa", "Garki", "Gudu", "Guzape", "Gwarinpa", "Jabi", "Jahi", "Jikwoyi", "Kado", "Karshi", "Karu", "Katampe", "Life Camp", "Lokogoma", "Lugbe", "Mabushi", "Maitama", "Nyanya", "Utako", "Wuse", "Wuse 2", "Wuye"],
+    "Bwari": ["Kubwa"]
+  },
+  "Rivers": {
+    "Port Harcourt": ["PH", "Port Harcourt", "Borokiri", "D-Line", "Diobu", "Marine Base", "Mile 1", "Mile 2", "Mile 3", "Old GRA", "Township"],
+    "Eleme": ["Akpajo", "Alesa", "Aleto", "Onne"],
+    "Ikwerre": ["Elele", "Isiokpo", "Omagwa"],
+    "Obio/Akpor": ["PH", "Port Harcourt", "Alakahia", "Choba", "Elelenwo", "Eliozu", "Eneka", "Mgbuoba", "Ozuoba", "Rumueme", "Rumuibekwe", "Rumuigbo", "Rumuodara", "Rumuogba", "Rumuokoro", "Rumuokwuta", "Rumuola", "Rumuolumeni", "Rumuomasi", "Woji"],
+    "Oyigbo": ["Afam"]
+  }
+}
