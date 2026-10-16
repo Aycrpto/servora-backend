@@ -43,6 +43,10 @@
   --r-xs:8px; --r-sm:12px; --r-md:16px; --r-lg:22px; --r-xl:30px; --r-pill:999px;
   --shadow-1:0 1px 2px rgba(11,31,23,.05),0 8px 24px rgba(11,31,23,.06);
   --shadow-2:0 2px 4px rgba(11,31,23,.06),0 16px 48px rgba(11,31,23,.13);
+  /* dropdown panels: a solid surface with a real edge and a deep shadow, so a
+     panel reads as one piece over the dark hero and the light page alike */
+  --pop-bg:#ffffff; --pop-line:#d6ccb8;
+  --pop-shadow:0 1px 3px rgba(11,31,23,.10),0 12px 28px rgba(11,31,23,.16),0 32px 64px rgba(11,31,23,.20);
   --overlay:rgba(6,32,21,.6);
   --ease:cubic-bezier(.22,.61,.36,1);
   --max:1180px;
@@ -55,6 +59,8 @@
   --gold-soft:rgba(242,184,75,.14);
   --shadow-1:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3);
   --shadow-2:0 2px 4px rgba(0,0,0,.35),0 16px 48px rgba(0,0,0,.45);
+  --pop-bg:#15281e; --pop-line:#4a6e5c;
+  --pop-shadow:0 1px 3px rgba(0,0,0,.5),0 12px 28px rgba(0,0,0,.55),0 32px 64px rgba(0,0,0,.6);
   --overlay:rgba(2,10,7,.72);
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -125,7 +131,10 @@ section{position:relative}
 /* ============ HERO ============ */
 .hero{background:radial-gradient(1200px 700px at 75% -10%,rgba(25,176,107,.28),transparent 55%),radial-gradient(900px 500px at -5% 110%,rgba(233,161,59,.18),transparent 55%),linear-gradient(168deg,#071f15 0%,#06301d 55%,#083b24 100%);color:#f4f8f5;overflow:hidden}
 .hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:28px 28px;mask-image:radial-gradient(800px 500px at 50% 20%,#000 30%,transparent 75%);pointer-events:none}
-.hero-in{display:grid;grid-template-columns:1.08fr .92fr;gap:var(--s14);align-items:center;padding-block:var(--s18) var(--s24)}
+.hero-in{display:grid;grid-template-columns:1.08fr .92fr;gap:var(--s14);align-items:center;padding-block:var(--s18) var(--s24);position:relative;z-index:2}
+/* Clip sideways only. The search dropdowns hang below the hero, over the next
+   section; clipping vertically cut them off at the hero's edge. */
+@supports (overflow:clip){.hero{overflow:visible;overflow-x:clip}}
 .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:var(--fs-sm);font-weight:600;letter-spacing:.04em;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:var(--r-pill);padding:var(--s2) var(--s4);color:#dcefe4;margin-bottom:var(--s7)}
 .hero h1{font-family:var(--serif);font-weight:600;font-size:var(--fs-display);line-height:var(--lh-tight);letter-spacing:-.02em;margin-bottom:var(--s6)}
 .hero h1 em{font-style:italic;font-weight:500;color:var(--gold-hi)}
@@ -134,6 +143,7 @@ section{position:relative}
 .hero-sub b{color:#fff;font-weight:600}
 .search{background:var(--card);border-radius:var(--r-md);padding:var(--s2);display:flex;gap:var(--s2);box-shadow:0 24px 60px rgba(0,0,0,.35);position:relative;max-width:640px;border:1px solid var(--line2)}
 .search input,.search select{border:none;outline:none;font-family:inherit;font-size:var(--fs-base);color:var(--ink);background:transparent}
+.search .trade{flex:1;display:flex;position:relative;min-width:0}
 .search .field{flex:1;display:flex;align-items:center;gap:10px;padding:10px var(--s4);min-width:0}
 /* the input fills the field's full height so the whole box is tappable */
 .search .field input{align-self:stretch;min-height:44px}
@@ -153,17 +163,24 @@ section{position:relative}
 .city.open .state-trigger{background:var(--soft);color:var(--green)}
 .city.open .state-trigger .pin{color:var(--green)}
 .city.open .state-trigger .chev{transform:rotate(180deg);color:var(--green)}
-.state-pop{position:absolute;top:calc(100% + 10px);right:0;width:280px;background:var(--card);border:1px solid var(--line2);border-radius:var(--r-md);box-shadow:var(--shadow-2);z-index:45;padding:var(--s2);opacity:0;transform:translateY(-8px) scale(.97);transform-origin:top right;pointer-events:none;transition:opacity .2s ease,transform .22s cubic-bezier(.22,.61,.36,1)}
-.city.open .state-pop{opacity:1;transform:none;pointer-events:auto}
+/* ---- searchable picker: the one dropdown component behind both the trade
+   and the state fields. Panel (.sp-pop) > optional search (.sp-search) >
+   scrolling listbox (.sp-list) of .sp-opt options with .sp-label headings. */
+.sp-pop{position:absolute;top:calc(100% + 10px);z-index:45;background:var(--pop-bg);border:1px solid var(--pop-line);border-radius:var(--r-md);box-shadow:var(--pop-shadow);padding:var(--s2);color:var(--ink);text-align:left;opacity:0;visibility:hidden;transform:translateY(-8px) scale(.97);pointer-events:none;transition:opacity .2s ease,transform .22s var(--ease),visibility 0s linear .22s}
+.open>.sp-pop{opacity:1;visibility:visible;transform:none;pointer-events:auto;transition-delay:0s}
+.state-pop{right:0;width:280px;transform-origin:top right}
+.trade-pop{left:0;right:0;transform-origin:top left}
 .sp-search{display:flex;align-items:center;gap:var(--s2);padding:0 var(--s3);border:1.5px solid var(--line);border-radius:var(--r-sm);background:var(--soft);margin-bottom:6px;transition:border-color .2s,background .2s}
 .sp-search:focus-within{border-color:var(--green);background:var(--card)}
 .sp-search svg{color:var(--faint);flex:none}
 .sp-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:inherit;font-size:var(--fs-base);color:var(--ink);padding:10px 0;min-height:42px}
-.sp-list{max-height:262px;overflow-y:auto;overscroll-behavior:contain}
+.sp-list{max-height:262px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .sp-list::-webkit-scrollbar{width:7px}
 .sp-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:var(--r-pill)}
 .sp-label{font-size:var(--fs-2xs);font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:10px var(--s3) var(--s1)}
-.sp-opt{display:flex;align-items:center;gap:var(--s2);width:100%;padding:10px var(--s3);border-radius:var(--r-sm);font-size:var(--fs-md);font-weight:500;color:var(--ink2);text-align:left;min-height:42px;transition:background .15s,color .15s}
+.sp-opt{display:flex;align-items:center;gap:var(--s2);width:100%;padding:10px var(--s3);border-radius:var(--r-sm);font-size:var(--fs-md);font-weight:500;color:var(--ink2);text-align:left;min-height:44px;transition:background .15s,color .15s}
+.sp-opt .ico{flex:none;color:var(--faint);transition:color .15s}
+.sp-opt:hover .ico,.sp-opt.active .ico,.sp-opt.sel .ico{color:var(--green)}
 .sp-opt:hover,.sp-opt.active{background:var(--soft);color:var(--green)}
 .sp-opt.sel{color:var(--green);font-weight:700;background:var(--chip-green-bg)}
 .sp-opt .tick{margin-left:auto;flex:none;opacity:0;transition:opacity .15s}
@@ -173,20 +190,7 @@ section{position:relative}
 .combo-toggle{flex:none;width:36px;height:36px;border-radius:var(--r-sm);display:grid;place-items:center;color:var(--faint);transition:background .2s,color .2s;min-height:36px}
 .combo-toggle:hover{background:var(--soft);color:var(--green)}
 .combo-toggle svg{transition:transform .25s}
-.search.open .combo-toggle svg{transform:rotate(180deg)}
-.suggest{position:absolute;top:calc(100% + 10px);left:0;right:0;background:var(--card);border:1px solid var(--line2);border-radius:var(--r-md);box-shadow:var(--shadow-2);padding:var(--s2);display:none;z-index:40;color:var(--ink);max-height:min(560px,72vh);overflow-y:auto;overscroll-behavior:contain}
-.suggest.open{display:block}
-.suggest::-webkit-scrollbar{width:8px}
-.suggest::-webkit-scrollbar-thumb{background:var(--line);border-radius:var(--r-pill)}
-.suggest .sug-label{font-size:var(--fs-2xs);font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:10px var(--s4) 6px}
-.sug-list{display:grid;grid-template-columns:1fr}
-@media(min-width:761px){.sug-list{grid-template-columns:1fr 1fr;gap:2px}}
-.suggest button{display:flex;width:100%;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);border-radius:var(--r-sm);font-size:var(--fs-base);color:var(--ink2);text-align:left;transition:background .15s;min-height:46px}
-.suggest button:hover{background:var(--soft)}
-.suggest button.sel{background:var(--chip-green-bg)}
-.suggest button.sel .tag{color:var(--green);font-weight:700}
-.suggest button.active{background:var(--chip-green-bg);color:var(--green)}
-.suggest .tag{margin-left:auto;font-size:var(--fs-xs);color:var(--faint);flex:none}
+.trade.open .combo-toggle svg{transform:rotate(180deg)}
 .hero-chips{display:flex;flex-wrap:wrap;gap:var(--s4);margin-top:var(--s6);font-size:var(--fs-sm);color:#bcd3c4}
 .hero-chips span{display:inline-flex;align-items:center;gap:var(--s2)}
 .hero-chips svg{color:var(--green-hi);flex:none}
@@ -874,6 +878,7 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
   .btn-sm{min-height:46px}
   .search{flex-direction:column;padding:10px;gap:var(--s2)}
   .search .divider{display:none}
+  .search .trade{width:100%}
   .search .field{border:1.5px solid var(--line);border-radius:var(--r-sm);width:100%;min-height:52px}
   .combo-toggle{width:44px;height:44px;min-height:44px}
   .search .city{border:1.5px solid var(--line);border-radius:var(--r-sm);width:100%;justify-content:flex-start;min-height:52px;padding:2px}
@@ -1064,12 +1069,20 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
       <h1>Hire a pro, <em>not&nbsp;a&nbsp;gamble.</em></h1>
       <p class="hero-sub">Servora is a new marketplace for electricians, plumbers, cleaners and more. Every professional’s <b>government ID is checked</b> before they’re listed, quotes are <b>itemised up front</b>, and payment is <b>held in escrow</b> until you confirm the job is done.</p>
       <form class="search" id="searchForm" autocomplete="off">
-        <div class="field">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="searchInput" placeholder="What do you need?" role="combobox" aria-expanded="false" aria-controls="suggest" aria-autocomplete="list" autocomplete="off">
-          <button type="button" class="combo-toggle" id="comboToggle" aria-label="Show popular services" tabindex="-1">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
+        <!-- Trade field: the input is the picker's search box; the panel below
+             is the same searchable-picker component as the state field. -->
+        <div class="trade" id="tradeWrap">
+          <div class="field">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="searchInput" placeholder="What do you need?" role="combobox" aria-expanded="false" aria-controls="tradeList" aria-autocomplete="list" autocomplete="off">
+            <button type="button" class="combo-toggle" id="comboToggle" aria-label="Show all services" tabindex="-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
+          <!-- DYNAMIC: options come from the service taxonomy (ServoraAPI.getServices()) -->
+          <div class="sp-pop trade-pop" id="tradePop">
+            <div class="sp-list" id="tradeList" role="listbox" aria-label="Services"></div>
+          </div>
         </div>
         <div class="divider"></div>
         <div class="city" id="cityWrap">
@@ -1082,17 +1095,15 @@ footer{background:var(--green-ink);color:#a9c6b4;margin-top:var(--s24);padding:v
             <span id="stateLabel">Lagos</span>
             <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </button>
-          <div class="state-pop" id="statePop">
+          <div class="sp-pop state-pop" id="statePop">
             <div class="sp-search">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="text" id="stateSearch" placeholder="Search states…" aria-label="Search states" autocomplete="off">
+              <input type="text" id="stateSearch" placeholder="Search states…" aria-label="Search states" aria-controls="stateList" autocomplete="off">
             </div>
             <div class="sp-list" id="stateList" role="listbox" aria-label="States"></div>
           </div>
         </div>
         <button type="submit" class="btn btn-gold">Find Pros</button>
-        <!-- DYNAMIC: combobox options come from the service taxonomy (ServoraAPI.getServices()) -->
-        <div class="suggest" id="suggest" role="listbox" aria-label="Service suggestions"></div>
       </form>
       <div class="hero-chips">
         <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg> Free for customers</span>
@@ -2583,7 +2594,7 @@ function proCard(p){
      <div><h4>${p.n}</h4><div class="trade">${p.cat.replace(/s$/,'')} · ${proLocation(p)}</div></div>
    </div>
    <div class="rating"><span class="s">${p.r?'★ '+Number(p.r).toFixed(1):'✦ New'}</span><span class="n">(${p.j||0} jobs)</span></div>
-   <div class="badges">${p.b.map(b=>badgeMap[b]).join('')}</div>
+   <div class="badges">${p.b.map(b=>badgeMap[b]||'').join('')}</div>
    ${matchLine(p)}
    ${(sh=>sh.length?`<div class="pro-shots">${sh.slice(0,2).map((s,i)=>`<img src="${esc(s)}" alt="${esc(p.n)}, past work ${i+1}" decoding="async">`).join('')}</div>`:'')(proPhotos(p))}
    <div class="statline"><span>Starting price</span><b>${p.pl}</b></div>
@@ -2618,7 +2629,7 @@ document.getElementById('prosNext').onclick=()=>document.getElementById('prosTra
 document.getElementById('prosPrev').onclick=()=>document.getElementById('prosTrack').scrollBy({left:-310,behavior:'smooth'});
 
 /* ============ SEARCH + RESULTS ============ */
-const input=document.getElementById('searchInput'),sug=document.getElementById('suggest'),citySel=document.getElementById('citySelect');
+const input=document.getElementById('searchInput'),citySel=document.getElementById('citySelect');
 const resultsSec=document.getElementById('results'),resultsGrid=document.getElementById('resultsGrid');
 let currentCat=null,currentSort='rating';
 
@@ -2631,85 +2642,112 @@ function fillStateSelect(sel,def='Lagos'){
 }
 fillStateSelect(citySel);
 
-/* ============ SEARCHABLE STATE SELECTOR ============
-   A custom panel over the (now hidden) native #citySelect. The select
-   stays the single source of truth: picking an option writes to it and
-   fires 'change', so renderResults() and the lead payload need no
-   changes and the field still works if this script never runs. */
-(function initStateCombo(){
-  const wrap=document.getElementById('cityWrap'),trigger=document.getElementById('stateTrigger'),
-        pop=document.getElementById('statePop'),search=document.getElementById('stateSearch'),
-        list=document.getElementById('stateList'),label=document.getElementById('stateLabel');
+/* ============ SEARCHABLE PICKER ============
+   The one dropdown component behind both hero fields (trade and state):
+   a .sp-pop panel holding a scrolling .sp-list listbox of .sp-opt options,
+   filtered as you type, ↑/↓ + Enter to pick, Esc or Tab to close, and a
+   click anywhere else closes it. Each field supplies its own options
+   (render) and what picking one does (onPick). */
+const TICK='<svg class="tick" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+function searchPicker({wrap,search,list,render,onPick,onToggle,pickFirstOnEnter=false}){
+  const pop=list.closest('.sp-pop');
   let active=-1;
-  const TICK='<svg class="tick" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-  const opt=s=>{
-    const sel=s===citySel.value;
-    return `<button type="button" class="sp-opt${sel?' sel':''}" role="option" aria-selected="${sel}" data-state="${esc(s)}">${esc(s)}${TICK}</button>`;
-  };
-  function render(q=''){
-    const query=q.trim().toLowerCase();
-    if(!query){
-      list.innerHTML='<div class="sp-label">Popular</div>'+POPULAR_STATES.map(opt).join('')+
-                     '<div class="sp-label">All states (A–Z)</div>'+NIGERIAN_STATES.map(opt).join('');
-    }else{
-      /* rank prefix matches above mid-word ones, so "riv" offers
-         Rivers before Cross River */
-      const hits=NIGERIAN_STATES.filter(s=>s.toLowerCase().includes(query))
-        .sort((a,b)=>(b.toLowerCase().startsWith(query)-a.toLowerCase().startsWith(query))||a.localeCompare(b));
-      list.innerHTML=hits.length?hits.map(opt).join('')
-        :`<div class="sp-none">No state matches “${esc(q.trim())}”.<br>Servora covers all 36 states + FCT.</div>`;
-    }
-    active=-1;
-  }
   const opts=()=>[...list.querySelectorAll('.sp-opt')];
+  const isOpen=()=>wrap.classList.contains('open');
   function setActive(i){
     const o=opts();if(!o.length)return;
     active=(i+o.length)%o.length;
     o.forEach((b,bi)=>b.classList.toggle('active',bi===active));
+    search.setAttribute('aria-activedescendant',o[active].id);
     o[active].scrollIntoView({block:'nearest'});
   }
-  function open(){
-    render();
+  function refresh(q=''){
+    list.innerHTML=render(q);
+    opts().forEach((o,i)=>{o.id=list.id+'-opt-'+i});
+    list.scrollTop=0;
+    active=-1;search.removeAttribute('aria-activedescendant');
+  }
+  /* Nudge the page so the whole panel is on screen (no-op if it already is).
+     Smooth first; instant fallback for webviews that freeze animations. */
+  function keepOnScreen(){
+    const gap=()=>Math.ceil(pop.getBoundingClientRect().bottom-innerHeight);
+    setTimeout(()=>{if(isOpen()&&gap()>0)scrollBy({top:gap()+16,behavior:'smooth'})},80);
+    setTimeout(()=>{if(isOpen()&&gap()>0)scrollBy({top:gap()+16,behavior:'instant'})},480);
+  }
+  function open(q=''){
+    refresh(q);
+    if(isOpen())return;
     wrap.classList.add('open');
-    trigger.setAttribute('aria-expanded','true');
-    search.value='';
-    setTimeout(()=>search.focus(),60);
-    /* keep the panel on screen when it opens near the fold */
-    setTimeout(()=>{
-      const gap=Math.ceil(pop.getBoundingClientRect().bottom-innerHeight);
-      if(gap>0)scrollBy({top:gap+16,behavior:'smooth'});
-    },80);
+    if(onToggle)onToggle(true);
+    keepOnScreen();
   }
   function close(){
+    if(!isOpen())return;
     wrap.classList.remove('open');
-    trigger.setAttribute('aria-expanded','false');
-    active=-1;
+    if(onToggle)onToggle(false);
+    active=-1;search.removeAttribute('aria-activedescendant');
   }
-  function choose(state){
-    citySel.value=state;                                   /* source of truth */
-    label.textContent=state;
-    citySel.dispatchEvent(new Event('change',{bubbles:true})); /* existing listeners */
-    close();
-    trigger.focus();
-  }
-  label.textContent=citySel.value;
-  trigger.addEventListener('click',e=>{e.stopPropagation();wrap.classList.contains('open')?close():open()});
-  search.addEventListener('input',()=>render(search.value));
-  list.addEventListener('click',e=>{
-    const b=e.target.closest('[data-state]');
-    if(b)choose(b.dataset.state);
-  });
+  list.addEventListener('click',e=>{const b=e.target.closest('.sp-opt');if(b)onPick(b)});
   search.addEventListener('keydown',e=>{
-    if(e.key==='ArrowDown'){e.preventDefault();setActive(active+1)}
-    else if(e.key==='ArrowUp'){e.preventDefault();setActive(active-1)}
-    else if(e.key==='Enter'){
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
       e.preventDefault();
-      const o=opts();
-      if(o.length)choose((active>=0?o[active]:o[0]).dataset.state);
-    }else if(e.key==='Escape'){e.preventDefault();close();trigger.focus()}
+      if(!isOpen()){open(search.value);return}
+      const dir=e.key==='ArrowDown'?1:-1;
+      setActive(active<0&&dir<0?-1:active+dir);
+    }else if(e.key==='Enter'&&isOpen()){
+      const o=opts(),pick=active>=0?o[active]:(pickFirstOnEnter?o[0]:null);
+      if(pick){e.preventDefault();pick.click()}
+    }else if(e.key==='Escape'&&isOpen()){e.preventDefault();close()}
+    else if(e.key==='Tab')close();
   });
-  /* clicking anywhere outside closes it */
-  document.addEventListener('click',e=>{if(!e.target.closest('#cityWrap'))close()});
+  document.addEventListener('click',e=>{if(!wrap.contains(e.target))close()});
+  return{open,close,refresh,isOpen};
+}
+
+/* ============ STATE FIELD ============
+   The picker over the (now hidden) native #citySelect. The select stays the
+   single source of truth: picking an option writes to it and fires 'change',
+   so renderResults() and the lead payload need no changes and the field
+   still works if this script never runs. */
+(function initStatePicker(){
+  const trigger=document.getElementById('stateTrigger'),search=document.getElementById('stateSearch'),
+        label=document.getElementById('stateLabel');
+  const opt=s=>{
+    const sel=s===citySel.value;
+    return `<button type="button" class="sp-opt${sel?' sel':''}" role="option" aria-selected="${sel}" data-state="${esc(s)}">${esc(s)}${TICK}</button>`;
+  };
+  const picker=searchPicker({
+    wrap:document.getElementById('cityWrap'),search,list:document.getElementById('stateList'),
+    pickFirstOnEnter:true,
+    render(q){
+      const query=q.trim().toLowerCase();
+      if(!query)return '<div class="sp-label">Popular</div>'+POPULAR_STATES.map(opt).join('')+
+                       '<div class="sp-label">All states (A–Z)</div>'+NIGERIAN_STATES.map(opt).join('');
+      /* rank prefix matches above mid-word ones, so "riv" offers
+         Rivers before Cross River */
+      const hits=NIGERIAN_STATES.filter(s=>s.toLowerCase().includes(query))
+        .sort((a,b)=>(b.toLowerCase().startsWith(query)-a.toLowerCase().startsWith(query))||a.localeCompare(b));
+      return hits.length?hits.map(opt).join('')
+        :`<div class="sp-none">No state matches “${esc(q.trim())}”.<br>Servora covers all 36 states + FCT.</div>`;
+    },
+    onPick(b){
+      citySel.value=b.dataset.state;                          /* source of truth */
+      label.textContent=b.dataset.state;
+      citySel.dispatchEvent(new Event('change',{bubbles:true})); /* existing listeners */
+      picker.close();
+      trigger.focus();
+    },
+    onToggle(open){trigger.setAttribute('aria-expanded',open)},
+  });
+  label.textContent=citySel.value;
+  trigger.addEventListener('click',()=>{
+    if(picker.isOpen()){picker.close();return}
+    search.value='';
+    picker.open();
+    setTimeout(()=>search.focus(),60);
+  });
+  search.addEventListener('input',()=>picker.refresh(search.value));
+  search.addEventListener('keydown',e=>{if(e.key==='Escape')trigger.focus()});
   /* keep the label in sync if anything else sets the value */
   citySel.addEventListener('change',()=>{label.textContent=citySel.value});
 })();
@@ -2761,79 +2799,48 @@ document.getElementById('sorts').addEventListener('click',e=>{
   renderResults();
 });
 citySel.addEventListener('change',()=>{if(resultsSec.classList.contains('open'))renderResults()});
-/* ============ SERVICE COMBOBOX ============
-   Works like the states dropdown: click the chevron (or focus/type)
-   to open, ↑/↓ + Enter to pick, Esc to close. Options come from the
-   service taxonomy — future: ServoraAPI.getServices(). */
-let sugActive=-1;
-function setSugOpen(open){
-  sug.classList.toggle('open',open);
-  document.querySelector('.search').classList.toggle('open',open);
-  input.setAttribute('aria-expanded',open);
-  if(!open){sugActive=-1;input.removeAttribute('aria-activedescendant')}
-}
-function renderSug(list,label){
-  sugActive=-1;
-  const cur=input.value.trim().toLowerCase();
-  sug.innerHTML=list.length
-    ?`<div class="sug-label">${label}</div><div class="sug-list">`+list.map((s,i)=>{const sel=s.name.toLowerCase()===cur;return `<button type="button" id="sug-opt-${i}" role="option" aria-selected="${sel}" class="${sel?'sel':''}" data-browse="${s.name}">${s.icon.replace('width="26" height="26"','width="18" height="18"')} ${s.name}<span class="tag">${sel?'✓ Selected':'from '+s.from}</span></button>`}).join('')+`</div>`
-    :`<div class="sug-label">No matching service</div><div class="sug-list"><button type="button" role="option" id="sug-opt-0" data-post>📝 Post your job instead, pros come to you</button></div>`;
-  setSugOpen(true);
-  ensureSugVisible();
-}
-/* Nudge the page so the whole list is on screen (no-op if already visible).
-   Smooth scroll first; instant fallback for webviews that freeze animations. */
-function ensureSugVisible(){
-  const gap=()=>Math.ceil(sug.getBoundingClientRect().bottom-innerHeight);
-  if(gap()>0){
-    scrollBy({top:gap()+16,behavior:'smooth'});
-    setTimeout(()=>{if(sug.classList.contains('open')&&gap()>0)scrollBy({top:gap()+16,behavior:'instant'})},400);
-  }
-}
-function filterSug(){
-  const q=input.value.toLowerCase().trim();
-  const tokens=q.split(/\s+/);
-  const list=q?services.filter(s=>s.name.toLowerCase().includes(q)||s.kw.some(k=>k.startsWith(q)||tokens.includes(k))):services;
-  renderSug(list,q?'Matching services':'Popular services');
-}
-input.addEventListener('focus',filterSug);
-input.addEventListener('input',filterSug);
-input.addEventListener('keydown',e=>{
-  const opts=[...sug.querySelectorAll('[role="option"]')];
-  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
-    e.preventDefault();
-    if(!sug.classList.contains('open')){filterSug();return}
-    if(!opts.length)return;
-    sugActive=e.key==='ArrowDown'?(sugActive+1)%opts.length:(sugActive-1+opts.length)%opts.length;
-    opts.forEach((o,i)=>o.classList.toggle('active',i===sugActive));
-    input.setAttribute('aria-activedescendant',opts[sugActive].id);
-    opts[sugActive].scrollIntoView({block:'nearest'});
-  }else if(e.key==='Enter'&&sugActive>=0&&opts[sugActive]){
-    e.preventDefault();opts[sugActive].click();
-  }else if(e.key==='Escape'){setSugOpen(false)}
+/* ============ TRADE FIELD ============
+   Same picker as the state field; here the hero input is its search box.
+   Options come from the service taxonomy — future: ServoraAPI.getServices().
+   A trade has no price of its own, so an option is just icon + name. */
+const tradePicker=searchPicker({
+  wrap:document.getElementById('tradeWrap'),search:input,list:document.getElementById('tradeList'),
+  render(q){
+    const query=q.trim().toLowerCase(),tokens=query.split(/\s+/);
+    const cur=input.value.trim().toLowerCase();
+    const hits=query?services.filter(s=>s.name.toLowerCase().includes(query)||s.kw.some(k=>k.startsWith(query)||tokens.includes(k))):services;
+    const opt=s=>{
+      const sel=s.name.toLowerCase()===cur;
+      return `<button type="button" class="sp-opt${sel?' sel':''}" role="option" aria-selected="${sel}" data-browse="${esc(s.name)}">`+
+        `${s.icon.replace('width="26" height="26"','class="ico" aria-hidden="true" width="18" height="18"')}${esc(s.name)}${TICK}</button>`;
+    };
+    return hits.length
+      ?`<div class="sp-label">${query?'Matching services':'All services'}</div>`+hits.map(opt).join('')
+      :`<div class="sp-none">No service matches “${esc(q.trim())}”.<br>Servora covers 8 trades to start.</div>`+
+       `<button type="button" class="sp-opt" role="option" aria-selected="false" data-post>Post your job instead</button>`;
+  },
+  /* picking a trade fills the input, then the global [data-browse]
+     delegation opens the matching listings ([data-post] opens Book-a-Pro) */
+  onPick(b){if(b.dataset.browse)input.value=b.dataset.browse;tradePicker.close()},
+  onToggle(open){input.setAttribute('aria-expanded',open)},
 });
-document.getElementById('comboToggle').addEventListener('click',e=>{
-  e.stopPropagation();
-  if(sug.classList.contains('open'))setSugOpen(false);
-  else{input.focus();renderSug(services,'Popular services')}
+input.addEventListener('focus',()=>tradePicker.open(input.value));
+input.addEventListener('input',()=>tradePicker.open(input.value));
+document.getElementById('comboToggle').addEventListener('click',()=>{
+  if(tradePicker.isOpen()){tradePicker.close();return}
+  input.focus();
+  tradePicker.open();          /* the chevron always shows every trade */
 });
 /* clicking anywhere in the field (icon, padding) opens the list too */
-document.querySelector('.search .field').addEventListener('click',e=>{
+document.querySelector('#tradeWrap .field').addEventListener('click',e=>{
   if(e.target.closest('.combo-toggle'))return;
   input.focus();
-  if(!sug.classList.contains('open'))filterSug();
+  if(!tradePicker.isOpen())tradePicker.open(input.value);
 });
-/* picking a suggestion fills the input, then the global [data-browse]
-   delegation opens the matching listings */
-sug.addEventListener('click',e=>{
-  const b=e.target.closest('[data-browse]');
-  if(b){input.value=b.dataset.browse;setSugOpen(false)}
-});
-document.addEventListener('click',e=>{if(!e.target.closest('.search'))setSugOpen(false)});
 document.getElementById('searchForm').addEventListener('submit',e=>{
   e.preventDefault();
   const m=matchService(input.value);
-  setSugOpen(false);
+  tradePicker.close();
   openResults(m?m.name:null);
 });
 
@@ -2907,7 +2914,7 @@ function showModal(){
   if(g.name&&!nm.value)nm.value=g.name;
   if(g.phone&&!ph.value)ph.value=g.phone;
   modalBg.classList.add('open');document.body.style.overflow='hidden';
-  setSugOpen(false);
+  tradePicker.close();
   closeProfile();
   if(typeof closeBookPro==='function')closeBookPro();
 }
@@ -3263,7 +3270,7 @@ function openProfile(id){
   document.getElementById('pfAvatar').style.background=p.c;
   document.getElementById('pfName').textContent=p.n;
   document.getElementById('pfTrade').textContent=`${p.cat.replace(/s$/,'')} · ${proLocation(p)}`;
-  document.getElementById('pfBadges').innerHTML=p.b.map(b=>badgeMap[b]).join('');
+  document.getElementById('pfBadges').innerHTML=p.b.map(b=>badgeMap[b]||'').join('');
   document.getElementById('pfRating').textContent=p.r?Number(p.r).toFixed(1)+'★':'New';
   document.getElementById('pfJobs').textContent=p.j||0;
   /* response time is shown only if the pro set it themselves */
@@ -3286,7 +3293,7 @@ function openProfile(id){
   document.getElementById('pfSkills').innerHTML=(p.skills||categorySkills[p.cat]||[]).map(s=>`<span class="skill-chip">${s}</span>`).join('');
   document.querySelector('#profileBg .rev').style.display=p.rev?'':'none';
   document.getElementById('pfRev').textContent=p.rev||'';
-  document.getElementById('pfRevWho').textContent=p.rev?(p.who+' · verified booking'):'';
+  document.getElementById('pfRevWho').textContent=p.rev?(p.who?p.who+' · verified booking':'Verified booking'):'';
   document.getElementById('pfPrice').textContent=p.pl;
   profileBg.classList.add('open');document.body.style.overflow='hidden';
 }
@@ -3533,7 +3540,7 @@ function evidenceSections(evidence){
     return g?`<div class="ev-sec"><span class="ev-sec-h">${PHASE_LABEL[ph]}</span>${g}</div>`:'';
   }).join('');
 }
-function fmtWhen(at){ try{return new Date(at).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return''} }
+function fmtWhen(at){ const d=new Date(at); if(!at||isNaN(d))return ''; try{return d.toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return''} }
 function bkTimeline(history){
   if(!history||!history.length)return '';
   const rows=history.map(h=>`<li><span class="tl-dot"></span><div>${esc(h.note||(STATUS[h.status]?STATUS[h.status].c[0]:String(h.status).replace(/_/g,' ')))}<span class="tl-when">${esc(fmtWhen(h.at))}</span></div></li>`).join('');
