@@ -361,6 +361,15 @@ export async function setPayoutAccount(req, res) {
  */
 const ID_TYPES = ["NIN", "Driver's Licence", "International Passport"];
 
+/**
+ * Pro display name: letters in any script (accented and combining marks
+ * included, e.g. Yoruba tone marks), spaces, apostrophes (' or ’), hyphens
+ * and dots; starts with a letter; 2–80 characters. The name is shown on
+ * public listings, so nothing markup-like is ever stored.
+ */
+const PRO_NAME_RE = /^\p{L}[\p{L}\p{M}' .’-]{1,79}$/u;
+const cleanProName = s => String(s ?? '').normalize('NFC').trim().replace(/\s+/g, ' ');
+
 export async function registerPro(req, res) {
   const { name, phone, email, trade, state, lga, plan, idType, idImage, selfieImage,
           idFileName, idFileSizeKB, portfolio, password, otpChannel } = req.body || {};
@@ -368,6 +377,11 @@ export async function registerPro(req, res) {
   const missing = ['name', 'phone', 'trade', 'state'].filter(f => !req.body?.[f]?.toString().trim());
   if (missing.length) {
     return res.status(400).json({ ok: false, error: `Missing required fields: ${missing.join(', ')}` });
+  }
+
+  const cleanName = cleanProName(name);
+  if (!PRO_NAME_RE.test(cleanName)) {
+    return res.status(422).json({ ok: false, field: 'name', error: 'Enter your name using letters only (spaces, apostrophes, hyphens and dots are fine), 2–80 characters.' });
   }
 
   // Every account has its own password (there is no shared fallback).
@@ -408,7 +422,7 @@ export async function registerPro(req, res) {
   }
 
   // Run the real check. Never throws — a failure becomes a review, not a 500.
-  const nameParts = name.trim().split(/\s+/);
+  const nameParts = cleanName.split(' ');
   const verification = await verifyPhotoIdWithSelfie({
     selfieImage,
     photoIdImage: idImage,
@@ -423,7 +437,7 @@ export async function registerPro(req, res) {
 
   const pro = {
     id: randomUUID(),
-    name: name.trim(),
+    name: cleanName,
     phone: phone.trim(),
     email: cleanEmail,
     category: trade,

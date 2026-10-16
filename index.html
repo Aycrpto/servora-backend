@@ -2586,21 +2586,24 @@ function matchLine(p){
 
 /* ============ PRO CARD TEMPLATE ============
    Renders one pro profile record (see schema above). Cards reference
-   pros by id, so server-fetched lists plug straight in. */
+   pros by id, so server-fetched lists plug straight in.
+   Every pro-supplied string (name, trade, location, price) goes through
+   esc(): these are self-entered at registration and land in innerHTML. */
 function proCard(p){
- return `<div class="pro" data-profile="${p.id}">
+ const id=esc(p.id);
+ return `<div class="pro" data-profile="${id}">
    <div class="top">
-     <div class="avatar" style="background:${p.c}">${initials(p.n)}</div>
-     <div><h4>${p.n}</h4><div class="trade">${p.cat.replace(/s$/,'')} · ${proLocation(p)}</div></div>
+     <div class="avatar" style="background:${esc(p.c)}">${esc(initials(p.n))}</div>
+     <div><h4>${esc(p.n)}</h4><div class="trade">${esc(p.cat.replace(/s$/,''))} · ${esc(proLocation(p))}</div></div>
    </div>
    <div class="rating"><span class="s">${p.r?'★ '+Number(p.r).toFixed(1):'✦ New'}</span><span class="n">(${p.j||0} jobs)</span></div>
    <div class="badges">${p.b.map(b=>badgeMap[b]||'').join('')}</div>
    ${matchLine(p)}
    ${(sh=>sh.length?`<div class="pro-shots">${sh.slice(0,2).map((s,i)=>`<img src="${esc(s)}" alt="${esc(p.n)}, past work ${i+1}" decoding="async">`).join('')}</div>`:'')(proPhotos(p))}
-   <div class="statline"><span>Starting price</span><b>${p.pl}</b></div>
+   <div class="statline"><span>Starting price</span><b>${esc(p.pl)}</b></div>
    <div class="cta-row">
-     <button class="btn btn-ghost btn-sm" data-profile="${p.id}">Profile</button>
-     <button class="btn btn-primary btn-sm" data-contact="${p.id}">Contact</button>
+     <button class="btn btn-ghost btn-sm" data-profile="${id}">Profile</button>
+     <button class="btn btn-primary btn-sm" data-contact="${id}">Contact</button>
    </div>
    <div class="free-tag">Free to contact · no signup</div>
  </div>`;
@@ -2889,8 +2892,8 @@ function openContact(id){
   const p=proById(id);modalPro=p;modalService=p.cat;
   document.getElementById('modalTitle').textContent=`Contact ${p.n.split(' ')[0]}, free`;
   document.getElementById('modalSub').textContent=`${p.n} · ${p.cat.replace(/s$/,'')}, ${proLocation(p)}. No account needed.`;
-  document.getElementById('successMsg').innerHTML=`Your request was sent to <b>${p.n.split(' ')[0]}</b>.`;
-  document.getElementById('nsTime').innerHTML=`If ${p.n.split(' ')[0]} takes the job, they’ll send you an itemised quote.`;
+  document.getElementById('successMsg').innerHTML=`Your request was sent to <b>${esc(p.n.split(' ')[0])}</b>.`;
+  document.getElementById('nsTime').textContent=`If ${p.n.split(' ')[0]} takes the job, they’ll send you an itemised quote.`;
   showModal();
 }
 function showModal(){
@@ -3290,7 +3293,7 @@ function openProfile(id){
     :'📷 No portfolio photos uploaded yet.';
   lbShots=shots;
   /* per-pro skills once registration stores them; category fallback for seeds */
-  document.getElementById('pfSkills').innerHTML=(p.skills||categorySkills[p.cat]||[]).map(s=>`<span class="skill-chip">${s}</span>`).join('');
+  document.getElementById('pfSkills').innerHTML=(p.skills||categorySkills[p.cat]||[]).map(s=>`<span class="skill-chip">${esc(s)}</span>`).join('');
   document.querySelector('#profileBg .rev').style.display=p.rev?'':'none';
   document.getElementById('pfRev').textContent=p.rev||'';
   document.getElementById('pfRevWho').textContent=p.rev?(p.who?p.who+' · verified booking':'Verified booking'):'';
@@ -4118,7 +4121,7 @@ document.getElementById('rSubmit').onclick=async()=>{
       document.getElementById(res.field==='selfie'?'rSelfieStart':'rId').focus();
       return;
     }
-    const field={email:'rEmail',password:'rPw'}[res.field]||'rPhone';
+    const field={email:'rEmail',password:'rPw',name:'rName'}[res.field]||'rPhone';
     setRegError(field,res.error||'That account already exists.');
     document.getElementById(field).focus();
     return;
@@ -4139,7 +4142,7 @@ document.getElementById('rSubmit').onclick=async()=>{
     return;
   }
   document.getElementById('regSuccessMsg').innerHTML=(res&&res.status==='verified')
-    ?`<b>ID verified.</b> Your profile now appears in search for <b>${app.trade}</b> in <b>${app.state}</b>.`
+    ?`<b>ID verified.</b> Your profile now appears in search for <b>${esc(app.trade)}</b> in <b>${esc(app.state)}</b>.`
     :`Your ID couldn’t be confirmed automatically, so it needs a manual check before your profile can appear in search.`;
   regModal.classList.add('done');
   resetRegistrationForm();
